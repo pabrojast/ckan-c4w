@@ -1,0 +1,30 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ _('Citizens4Water') }}{% endblock %}
+
+{% block c4w_content %}
+  <section class="c4w-hero">
+    <h1>{{ _('Citizens4Water') }}</h1>
+    <p class="c4w-hero__lead">
+      {% trans %}A hub for citizen science initiatives on hydrology and water management: find projects, organisations, resources, repositories and events, and add your own.{% endtrans %}
+    </p>
+  </section>
+
+  {#
+    Counts come from a fail-soft helper: an empty dict renders no tiles rather
+    than an error page. The portal's front door must survive a database hiccup.
+  #}
+  {% set stats = h.c4w_stats() %}
+  {% if stats %}
+    <section class="c4w-stats" aria-label="{{ _('Citizens4Water at a glance') }}">
+      <ul>
+        {% for key, label in [('projects', _('Projects')), ('organisations', _('Organisations')), ('resources', _('Resources')), ('events', _('Events'))] %}
+          {% if stats.get(key) is not none %}
+            <li><span class="c4w-stats__value">{{ stats.get(key) }}</span>
+                <span class="c4w-stats__label">{{ label }}</span></li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+{% endblock %}

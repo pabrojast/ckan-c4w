@@ -1,0 +1,37 @@
+version: 1
+groups:
+  - annotation: Citizens4Water portal
+    options:
+      - key: ckanext.c4w.preview_prefix
+        description: |
+          Mount the portal at a SECOND URL prefix in addition to
+          /citizens4water. Used only to QA the migrated portal in production
+          while the legacy Django app still owns /citizens4water; unset it and
+          delete the preview branch in blueprint.py once the cutover is
+          stable. Must not be a path the legacy ingress already captures --
+          on Azure Application Gateway a `pathType: Prefix` rule matches
+          literally, so /citizens4water-preview would still reach Django.
+        default:
+        required: false
+
+      - key: ckanext.c4w.import_fallback_user
+        description: |
+          CKAN username to own imported rows whose original Django author
+          cannot be matched to a CKAN account. Leave unset to fall back to the
+          site user. The importer NEVER creates CKAN users.
+        default:
+        required: false
+
+  - annotation: Citizens4Water media uploads
+    options:
+      - key: ckan.upload.c4w.types
+        description: |
+          Upload families accepted for portal images. Space separated.
+        default: image
+
+      - key: ckan.upload.c4w.mimetypes
+        description: |
+          MIME types accepted for portal images. The uploader also verifies
+          the real file signature with Pillow, so this list narrows what is
+          offered rather than being the only gate.
+        default: image/jpeg image/png image/webp

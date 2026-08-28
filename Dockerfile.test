@@ -1,0 +1,26 @@
+# ckanext-c4w -- CKAN-load + behavioural test harness.
+#
+# Installs the plugin into a real CKAN 2.10 dev image so the harness can
+# (a) instantiate C4wPlugin and assert its interface registries are coherent,
+# and (b) run the behavioural pytest suite against real CKAN code.
+#
+# NOTE: the source is COPYied, not bind-mounted, on purpose. Bind mounts fail
+# under SELinux -- the container cannot read the host-labelled directory -- so
+# baking the code in keeps the harness portable across hosts.
+
+FROM ckan/ckan-dev:2.10
+
+# Root is needed to pip-install into the image's site-packages.
+USER root
+
+COPY . /plugin
+
+# Editable install so the entry point (c4w=...:C4wPlugin) registers and
+# install_requires (bleach, Pillow) is pulled in.
+RUN pip install -e /plugin
+
+# The upstream start script looks for /usr/local/bin/ckan, but the image
+# installs the console script at /usr/bin/ckan, so running this image as a
+# server crash-loops with "No such file or directory".
+RUN ln -sf "$(command -v ckan)" /usr/local/bin/ckan \
+    && ln -sf "$(command -v python3)" /usr/local/bin/python

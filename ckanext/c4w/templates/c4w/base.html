@@ -1,0 +1,37 @@
+{% extends "page.html" %}
+
+{#
+  Base template for the Citizens4Water section.
+
+  Child templates fill `c4w_content`. The section keeps its own visual
+  identity -- a brand band above the content and a brand footer below it --
+  INSIDE the portal chrome, rather than replacing header and footer: the
+  visitor stays recognisably on IHP-WINS while Citizens4Water keeps the logo,
+  navigation and sponsors it had as a standalone platform.
+
+  The section has no CKAN sidebar, so the WHOLE `secondary` block is emptied.
+  Emptying only its contents leaves core's <aside class="col-sm-3"> in place,
+  which pushes the content off centre. `primary` is overridden rather than
+  `primary_content` so the row takes the full width.
+#}
+
+{% block styles %}
+  {{ super() }}
+  {% asset 'c4w/c4w-css' %}
+{% endblock %}
+
+{% block secondary %}{% endblock %}
+
+{% block primary %}
+  <main class="primary col-sm-12 c4w-main" role="main">
+    {% block c4w_brand %}
+      {% snippet 'c4w/snippets/brand_band.html' %}
+    {% endblock %}
+
+    {% block c4w_content %}{% endblock %}
+
+    {% block c4w_brand_footer %}
+      {% snippet 'c4w/snippets/brand_footer.html' %}
+    {% endblock %}
+  </main>
+{% endblock %}

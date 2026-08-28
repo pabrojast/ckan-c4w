@@ -1,0 +1,139 @@
+/* Citizens4Water portal styles.
+ *
+ * Scoped under .c4w-main so nothing here can leak into the rest of the IHP-WINS
+ * portal. Colours are declared as tokens on the section root rather than the
+ * document root for the same reason.
+ */
+
+.c4w-main {
+  --c4w-blue: #0072BC;          /* UNESCO blue, shared with the portal */
+  --c4w-blue-dark: #005A9C;     /* white text on this passes AA */
+  --c4w-ink: #2c3e50;
+  --c4w-muted: #5b6b7a;
+  --c4w-rule: #e2e8ee;
+  --c4w-radius: 8px;
+  --c4w-space: 1rem;
+  color: var(--c4w-ink);
+}
+
+/* --- brand band --------------------------------------------------------- */
+
+.c4w-brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--c4w-space);
+  padding-bottom: var(--c4w-space);
+  border-bottom: 1px solid var(--c4w-rule);
+  margin-bottom: calc(var(--c4w-space) * 1.5);
+}
+
+.c4w-brand__logo img {
+  display: block;
+  width: auto;
+  height: 56px;
+  max-width: 100%;
+}
+
+.c4w-brand__nav {
+  margin-left: auto;
+}
+
+.c4w-brand__nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--c4w-space) * 0.75);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.c4w-brand__nav a {
+  display: inline-block;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--c4w-radius);
+  color: var(--c4w-blue-dark);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.c4w-brand__nav a:hover,
+.c4w-brand__nav a:focus-visible {
+  background: #eef5fb;
+  text-decoration: underline;
+}
+
+.c4w-brand__nav .is-active > a {
+  background: var(--c4w-blue-dark);
+  color: #fff;
+}
+
+/* --- home --------------------------------------------------------------- */
+
+.c4w-hero h1 {
+  margin-top: 0;
+}
+
+.c4w-hero__lead {
+  max-width: 60ch;
+  font-size: 1.1rem;
+  color: var(--c4w-muted);
+}
+
+.c4w-stats ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--c4w-space);
+  margin: calc(var(--c4w-space) * 1.5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.c4w-stats li {
+  flex: 1 1 8rem;
+  padding: var(--c4w-space);
+  border: 1px solid var(--c4w-rule);
+  border-radius: var(--c4w-radius);
+  text-align: center;
+}
+
+.c4w-stats__value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--c4w-blue-dark);
+  line-height: 1.1;
+}
+
+.c4w-stats__label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--c4w-muted);
+}
+
+/* --- brand footer ------------------------------------------------------- */
+
+.c4w-brand-footer {
+  margin-top: calc(var(--c4w-space) * 2.5);
+  padding-top: var(--c4w-space);
+  border-top: 1px solid var(--c4w-rule);
+  font-size: 0.9rem;
+  color: var(--c4w-muted);
+}
+
+.c4w-brand-footer__about {
+  max-width: 65ch;
+}
+
+.c4w-brand-footer__social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--c4w-space);
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.c4w-brand-footer__licence {
+  margin: 0;
+}

@@ -1,0 +1,217 @@
+# encoding: utf-8
+"""Structural checks that need neither CKAN nor a database.
+
+These assert the things that are invisible until a visitor hits them: an
+entry point that does not resolve, a template override that silently stops
+overriding, a vocabulary term that is not a slug, a form step naming a field
+no input renders.
+
+Deliberately stdlib-only (``ast`` + ``pathlib``) so they also run in a bare
+checkout, before anyone has a CKAN environment.
+"""
+import ast
+import re
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[3]
+PKG = ROOT / 'ckanext' / 'c4w'
+
+
+def _read(*parts):
+    return (PKG.joinpath(*parts)).read_text(encoding='utf-8')
+
+
+# --------------------------------------------------------------------------- #
+# Packaging
+# --------------------------------------------------------------------------- #
+
+def test_entry_point_names_the_plugin_class():
+    source = (ROOT / 'setup.py').read_text(encoding='utf-8')
+    assert 'c4w=ckanext.c4w.plugin:C4wPlugin' in source
+    # Without this, `pip install -e .` cannot resolve sibling ckanext.*
+    # distributions and the plugin will not import.
+    assert "namespace_packages=['ckanext']" in source
+
+
+def test_namespace_package_uses_declare_namespace():
+    source = (ROOT / 'ckanext' / '__init__.py').read_text(encoding='utf-8')
+    assert 'declare_namespace' in source
+
+
+def test_plugin_implements_every_interface_it_needs():
+    tree = ast.parse(_read('plugin.py'))
+    implemented = {
+        node.args[0].attr
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and getattr(node.func, 'attr', None) == 'implements'
+        and node.args and isinstance(node.args[0], ast.Attribute)
+    }
+    assert implemented == {
+        'IConfigurer', 'IConfigurable', 'IBlueprint', 'IActions',
+        'IAuthFunctions', 'IValidators', 'ITemplateHelpers', 'IClick',
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Templates
+# --------------------------------------------------------------------------- #
+
+def test_header_override_chains_instead_of_replacing():
+    """The theme replaces core's header outright; we must extend, not replace.
+
+    ckanext-theme-ejemplo's header.html does NOT use {% ckan_extends %} -- it
+    is a full replacement that redefines header_site_navigation_tabs. Our
+    override only reaches that block by extending it, and only because c4w
+    loads after the theme in ckan.plugins.
+    """
+    header = _read('templates', 'header.html').lstrip()
+    assert header.startswith('{% ckan_extends %}')
+    assert '{{ super() }}' in header
+
+
+def test_header_uses_the_active_theme_markup():
+    """Bare <li><a>, not Bootstrap nav-item/nav-link.
+
+    The theme renders this block as plain list items. An entry using
+    nav-item/nav-link (as ckanext-csunesco's header does) renders unstyled
+    next to its neighbours.
+    """
+    # Strip Jinja comments first: this file explains the trap in prose, and
+    # the explanation names the markup it warns against.
+    markup = re.sub(r'\{#.*?#\}', '', _read('templates', 'header.html'),
+                    flags=re.DOTALL)
+    assert 'nav-link' not in markup
+    assert 'nav-item' not in markup
+    assert '<li' in markup
+
+
+def test_every_template_lives_under_the_c4w_namespace_or_is_an_override():
+    """Only deliberate overrides may sit at the template root.
+
+    A stray file at the root silently overrides a core CKAN template of the
+    same name for the WHOLE portal, not just this section.
+    """
+    root_templates = {
+        p.name for p in (PKG / 'templates').glob('*.html')
+    }
+    assert root_templates == {'header.html'}
+
+
+# --------------------------------------------------------------------------- #
+# Database
+# --------------------------------------------------------------------------- #
+
+def _table_names():
+    tree = ast.parse(_read('db.py'))
+    return [
+        node.args[0].value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and getattr(node.func, 'id', None) == 'Table'
+        and node.args and isinstance(node.args[0], ast.Constant)
+    ]
+
+
+def test_all_tables_are_namespaced():
+    """Every table we own must be prefixed, so it is obvious whose it is."""
+    names = _table_names()
+    assert names, 'no Table() definitions found in db.py'
+    assert all(n.startswith('c4w_') for n in names), names
+
+
+def test_table_count_matches_the_registry():
+    """_ALL_TABLES drives create_all and the index auto-heal.
+
+    A table defined but left out of that list is never created on a fresh
+    install and never gets its indexes on an existing one.
+    """
+    tree = ast.parse(_read('db.py'))
+    registry = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(getattr(t, 'id', None) == '_ALL_TABLES' for t in node.targets)
+    ]
+    assert len(registry) == 1
+    listed = {e.id for e in registry[0].value.elts}
+    assert len(listed) == len(_table_names())
+
+
+def test_entity_classes_cover_the_declared_entity_types():
+    """constants.ENTITY_TYPES and db.ENTITY_CLASSES must agree.
+
+    ENTITY_TYPES validates the <entity> path segment of the moderation routes;
+    ENTITY_CLASSES is what resolves it to a table. A name in one and not the
+    other is either a 404 on a real entity or a KeyError on a valid route.
+    """
+    from ckanext.c4w import constants
+
+    tree = ast.parse(_read('db.py'))
+    mapping = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(getattr(t, 'id', None) == 'ENTITY_CLASSES' for t in node.targets)
+    ]
+    assert len(mapping) == 1
+    keys = {k.value for k in mapping[0].value.keys}
+    assert keys == set(constants.ENTITY_TYPES)
+
+
+# --------------------------------------------------------------------------- #
+# Vocabularies and the project form
+# --------------------------------------------------------------------------- #
+
+SLUG_RE = re.compile(r'^[a-z0-9]+(?:-[a-z0-9]+)*$')
+
+
+def test_every_closed_vocabulary_term_is_a_slug():
+    """Terms are stored values and appear in URLs; labels carry the prose."""
+    from ckanext.c4w import constants
+
+    offenders = []
+    for name, pairs in list(constants.VOCABULARIES.items()) + \
+            list(constants.COLUMN_VOCABULARIES.items()):
+        for term, _label in pairs:
+            if not SLUG_RE.match(term):
+                offenders.append('%s:%s' % (name, term))
+    assert not offenders, offenders
+
+
+def test_terms_are_unique_within_a_vocabulary():
+    from ckanext.c4w import constants
+
+    for name, pairs in list(constants.VOCABULARIES.items()) + \
+            list(constants.COLUMN_VOCABULARIES.items()):
+        terms = [t for t, _ in pairs]
+        assert len(terms) == len(set(terms)), name
+
+
+def test_free_and_closed_vocabularies_do_not_overlap():
+    """A vocabulary is either validated against a list or it is not."""
+    from ckanext.c4w import constants
+
+    assert not (set(constants.FREE_VOCABULARIES) & set(constants.VOCABULARIES))
+
+
+def test_project_form_steps_are_numbered_and_disjoint():
+    from ckanext.c4w import constants
+
+    steps = constants.PROJECT_FORM_STEPS
+    assert [s['step'] for s in steps] == list(range(1, len(steps) + 1))
+
+    seen = [f for s in steps for f in s['fields']]
+    duplicates = sorted({f for f in seen if seen.count(f) > 1})
+    assert not duplicates, duplicates
+
+    assert all(s['key'] and s['title'] and s['fields'] for s in steps)
+
+
+def test_project_image_boxes_cover_the_form_image_fields():
+    """Each image input needs a target box, or the server cannot fit it."""
+    from ckanext.c4w import constants
+
+    fields = {f for s in constants.PROJECT_FORM_STEPS for f in s['fields']}
+    for name in constants.PROJECT_IMAGE_BOXES:
+        assert name in fields, name

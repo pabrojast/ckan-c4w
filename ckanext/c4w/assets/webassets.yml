@@ -1,0 +1,23 @@
+# Asset bundles for ckanext-c4w.
+#
+# Every bundle is separate because each is loaded by a different set of pages;
+# a single bundle would ship the cropper and the map library to every visitor
+# reading a news post.
+#
+# Third-party libraries are VENDORED, never pulled from a CDN: a public UNESCO
+# page should not make requests to third parties, and the portal has to work
+# inside networks with no route to the open internet.
+
+c4w-css:
+  output: c4w/%(version)s_c4w.css
+  contents:
+    - css/c4w.css
+
+c4w-js:
+  filters: rjsmin
+  output: c4w/%(version)s_c4w.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/c4w.js
