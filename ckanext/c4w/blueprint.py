@@ -144,10 +144,14 @@ def _register(bp):
             # same rows, so giving them a second address would split the
             # inbound links to one document across two canonical URLs.
             continue
-        if item_path != list_path:
-            bp.add_url_rule('%s/<int:legacy_id>' % item_path,
-                            '%s_legacy' % surface,
-                            _catalogue('legacy', surface), methods=['GET'])
+        # Registered for every surface, including the blog where item_path
+        # equals list_path. Without it, get_by_reference's legacy_id fallback
+        # made /blog/7 resolve 200 as a SECOND uncanonicalised address for the
+        # same post. Werkzeug prefers the int rule over <slug> for a numeric
+        # path, so this turns that duplicate into the 301 it should be.
+        bp.add_url_rule('%s/<int:legacy_id>' % item_path,
+                        '%s_legacy' % surface,
+                        _catalogue('legacy', surface), methods=['GET'])
         bp.add_url_rule('%s/<slug>' % item_path, detail_endpoint,
                         _catalogue('detail', surface), methods=['GET'],
                         strict_slashes=False)

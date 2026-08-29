@@ -46,7 +46,7 @@
 
 {% block detail_facts %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Countries'),
-     terms=platform.terms.get('country', []), vocabulary='country' %}
+     terms=h.c4w_terms(platform, 'country'), vocabulary='country' %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Contact'),
      value=platform.contact_point %}
 {% endblock %}

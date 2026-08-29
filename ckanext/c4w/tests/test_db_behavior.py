@@ -280,3 +280,57 @@ def test_ensure_indexes_is_idempotent(session):
 def test_ensure_columns_is_a_noop_while_the_whitelist_is_empty(session):
     db._ensure_columns(session.get_bind())
     assert db._AUTO_HEAL_COLUMNS == []
+
+
+# --------------------------------------------------------------------------- #
+# Term labels
+# --------------------------------------------------------------------------- #
+
+def test_dictize_carries_both_the_slug_and_the_stored_label(session):
+    """The label column was write-only until this was wired up.
+
+    For a CLOSED vocabulary a template can resolve the slug through
+    constants.py. For an OPEN one -- keyword, funding_body, author -- the label
+    recorded at import time is the only record of the string the author typed,
+    and without it the page shows a slug.
+    """
+    project = db.C4wProject(slug=u'p', name=u'P')
+    session.add(project)
+    session.commit()
+    session.add(db.C4wTermLink(
+        entity_type=u'project', entity_id=project.id, vocabulary=u'keyword',
+        term=u'water-quality', label=u'Water Quality'))
+    session.commit()
+
+    out = db.entity_dictize('project', project)
+    assert out['terms']['keyword'] == [u'water-quality']
+    assert out['term_labels']['keyword'] == [
+        {'term': u'water-quality', 'label': u'Water Quality'}]
+
+
+def test_a_link_with_no_stored_label_falls_back_to_its_term(session):
+    project = db.C4wProject(slug=u'p', name=u'P')
+    session.add(project)
+    session.commit()
+    session.add(db.C4wTermLink(
+        entity_type=u'project', entity_id=project.id,
+        vocabulary=u'keyword', term=u'rivers'))
+    session.commit()
+
+    out = db.entity_dictize('project', project)
+    assert out['term_labels']['keyword'] == [
+        {'term': u'rivers', 'label': u'rivers'}]
+
+
+def test_list_dictize_also_carries_labels(session):
+    """A card renders chips too, so the listing path needs them as well."""
+    project = db.C4wProject(slug=u'p', name=u'P')
+    session.add(project)
+    session.commit()
+    session.add(db.C4wTermLink(
+        entity_type=u'project', entity_id=project.id, vocabulary=u'topic',
+        term=u'water', label=u'Water'))
+    session.commit()
+
+    out = db.list_dictize('project', [project])
+    assert out[0]['term_labels']['topic'][0]['label'] == u'Water'

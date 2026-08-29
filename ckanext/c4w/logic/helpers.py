@@ -89,15 +89,70 @@ def c4w_option_list(vocabulary):
     Unknown or free vocabularies return an empty list -- the caller renders a
     text input for those, not a dropdown.
     """
+    # Checked in both registries: geographic_extent is many-valued on a
+    # project and single-valued on a platform, so it lives in VOCABULARIES yet
+    # is filtered as a column.
     pairs = (constants.VOCABULARIES.get(vocabulary)
              or constants.COLUMN_VOCABULARIES.get(vocabulary)
              or ())
     return [{'term': term, 'label': label} for term, label in pairs]
 
 
-def c4w_term_label(vocabulary, term):
-    """Display label for a stored term, falling back to the term itself."""
-    return constants.label_for(vocabulary, term)
+def c4w_term_label(vocabulary, term, stored=None):
+    """Display label for a stored term.
+
+    Three sources, in order: the closed vocabulary in constants.py, the label
+    recorded on the link row at import time, and finally the slug itself.
+
+    The middle one matters more than it looks. A closed vocabulary can always
+    be resolved from constants, but ``keyword``, ``funding_body`` and
+    ``author`` are open -- the stored label is the only record of the string
+    the author typed. And ``country`` needs its own path entirely, or a detail
+    page shows 'ca' while its own sidebar says 'Canada'.
+    """
+    if vocabulary == 'country':
+        return c4w_country_name(term)
+    if vocabulary == 'language':
+        return c4w_language_name(term)
+    resolved = constants.label_for(vocabulary, term)
+    if resolved != term:
+        return resolved
+    return stored or term
+
+
+def c4w_language_name(code):
+    """Language name for an ISO 639-1 code, in the active locale.
+
+    Same reasoning as c4w_country_name: Babel ships with CKAN and carries the
+    CLDR language names, so the table is not duplicated here and arrives
+    translated.
+    """
+    if not code:
+        return u''
+    code = u'%s' % code
+    try:
+        from babel import Locale
+        locale = Locale.parse(tk.request.environ.get('CKAN_LANG') or 'en')
+        return locale.languages.get(code.lower()) or code
+    except Exception:
+        return code
+
+
+def c4w_terms(entity, vocabulary):
+    """``[{'term','label'}]`` for one of an entity's vocabularies.
+
+    Templates use this instead of walking ``entity.terms`` so the label
+    recorded at import time is never lost on the way to the page.
+    """
+    if not entity:
+        return []
+    items = (entity.get('term_labels') or {}).get(vocabulary)
+    if items:
+        return [{'term': i['term'],
+                 'label': c4w_term_label(vocabulary, i['term'], i.get('label'))}
+                for i in items]
+    return [{'term': t, 'label': c4w_term_label(vocabulary, t)}
+            for t in (entity.get('terms') or {}).get(vocabulary, [])]
 
 
 def c4w_form_steps():
@@ -200,6 +255,8 @@ def get_helpers():
         'c4w_nav': c4w_nav,
         'c4w_option_list': c4w_option_list,
         'c4w_term_label': c4w_term_label,
+        'c4w_language_name': c4w_language_name,
+        'c4w_terms': c4w_terms,
         'c4w_form_steps': c4w_form_steps,
         'c4w_stats': c4w_stats,
         'c4w_country_name': c4w_country_name,

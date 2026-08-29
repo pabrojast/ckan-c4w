@@ -14,7 +14,7 @@ def c4w_stats(context, data_dict):
     tk.check_access('c4w_stats', context, data_dict)
 
     from ckan.model.meta import Session
-    from ckanext.c4w import db
+    from ckanext.c4w import constants, db
 
     db.ensure_mappers()
 
@@ -38,7 +38,8 @@ def c4w_stats(context, data_dict):
         'events': _public(db.C4wEvent),
         'posts': (
             Session.query(db.C4wPost)
-            .filter(db.C4wPost.status == u'published').count()
+            .filter(db.C4wPost.status
+                    == constants.POST_STATUS_PUBLISHED).count()
         ),
     }
 

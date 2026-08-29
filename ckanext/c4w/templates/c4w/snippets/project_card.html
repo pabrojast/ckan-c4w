@@ -19,10 +19,12 @@
     {% if project.status %}
       <span class="c4w-card__status">{{ h.c4w_term_label('status', project.status) }}</span>
     {% endif %}
-    {% set countries = project.terms.get('country', []) %}
+    {% set countries = h.c4w_terms(project, 'country') %}
     {% if countries %}
+      {# Territory NAMES, not the raw ISO slugs: the filter sidebar two columns
+         away already shows 'Italy', and 'it' beside it reads as a defect. #}
       <span class="c4w-card__countries">
-        {{ countries[:3] | map('upper') | join(', ') }}{% if countries|length > 3 %}…{% endif %}
+        {{ countries[:3] | map(attribute='label') | join(', ') }}{% if countries|length > 3 %}…{% endif %}
       </span>
     {% endif %}
   </p>
@@ -31,12 +33,10 @@
     <p class="c4w-card__excerpt">{{ project.description | striptags | truncate(180) }}</p>
   {% endif %}
 
-  {% set topics = project.terms.get('topic', []) %}
+  {% set topics = h.c4w_terms(project, 'topic') %}
   {% if topics %}
     <ul class="c4w-card__tags">
-      {% for term in topics[:4] %}
-        <li>{{ h.c4w_term_label('topic', term) }}</li>
-      {% endfor %}
+      {% for topic in topics[:4] %}<li>{{ topic.label }}</li>{% endfor %}
     </ul>
   {% endif %}
 </article>

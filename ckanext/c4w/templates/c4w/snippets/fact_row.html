@@ -2,17 +2,21 @@
   One row of a detail page's fact list. Renders nothing when the value is
   empty, so a child template never has to wrap each row in its own {% if %}.
 
-  Expects: title, and either `value` (plain) or `terms` + `vocabulary`.
+  Expects: title, and either `value` (plain) or `terms` -- a list of
+  {term, label} as produced by h.c4w_terms(entity, vocabulary). Passing the
+  resolved pairs rather than bare slugs is what keeps an OPEN vocabulary
+  (keyword, funding_body, author) showing the words the author typed, and a
+  country showing 'Canada' rather than 'ca'.
 #}
 {% if terms %}
   <div class="c4w-detail__facts-row">
     <dt>{{ title }}</dt>
     <dd>
       <ul class="c4w-taglist">
-        {% for term in terms %}
-          <li>{% if link_endpoint %}<a href="{{ h.c4w_url(link_endpoint, **{vocabulary: term}) }}">{{
-            h.c4w_term_label(vocabulary, term) }}</a>{% else %}{{
-            h.c4w_term_label(vocabulary, term) }}{% endif %}</li>
+        {% for item in terms %}
+          <li>{% if link_endpoint and vocabulary %}<a href="{{
+            h.c4w_url(link_endpoint, **{vocabulary: item.term}) }}">{{ item.label }}</a>{% else %}{{
+            item.label }}{% endif %}</li>
         {% endfor %}
       </ul>
     </dd>

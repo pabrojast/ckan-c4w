@@ -9,21 +9,25 @@
 #}
 {% macro rich(value) %}{% if value %}{{ value | safe }}{% endif %}{% endmacro %}
 
+{#
+  A fact row of vocabulary chips.
+
+  Goes through h.c4w_terms so an OPEN vocabulary (keyword, funding_body) keeps
+  the label recorded at import time, and a country renders as 'Italy' rather
+  than the stored 'it'.
+
+  Only vocabularies the listing actually facets on become links; the rest
+  render as plain chips. A chip that looks like a filter and silently returns
+  the unfiltered list is worse than no chip at all.
+#}
+{% set LINKED = ('country', 'topic', 'has_tag', 'participation_task',
+                 'water_type', 'water_data_type', 'stakeholder_type',
+                 'community_impact_type') %}
+
 {% macro terms(vocabulary, title) %}
-  {% set values = project.terms.get(vocabulary, []) %}
-  {% if values %}
-    <div class="c4w-detail__facts-row">
-      <dt>{{ title }}</dt>
-      <dd>
-        <ul class="c4w-taglist">
-          {% for term in values %}
-            <li><a href="{{ h.c4w_url('project_list', **{vocabulary: term}) }}">{{
-              h.c4w_term_label(vocabulary, term) }}</a></li>
-          {% endfor %}
-        </ul>
-      </dd>
-    </div>
-  {% endif %}
+  {% snippet 'c4w/snippets/fact_row.html', title=title,
+     terms=h.c4w_terms(project, vocabulary), vocabulary=vocabulary,
+     link_endpoint=('project_list' if vocabulary in LINKED else none) %}
 {% endmacro %}
 
 {% block c4w_content %}

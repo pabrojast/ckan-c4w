@@ -30,9 +30,14 @@
 {% endblock %}
 
 {% block detail_facts %}
-  {% snippet 'c4w/snippets/fact_row.html', title=_('Ends'), value=event.end_date %}
+  {# Sliced to a date like the start above: 12 of 13 rows carry a boilerplate
+     end TIME nobody entered, and publishing it as raw ISO 8601 next to a
+     formatted start date presents invented precision as fact. #}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Ends'),
+     value=event.end_date[:10] if event.end_date else None %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Time zone'), value=event.timezone %}
-  {% snippet 'c4w/snippets/fact_row.html', title=_('Language'), value=event.language %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Language'),
+     value=h.c4w_language_name(event.language) %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Country'), value=event.country %}
   {% if event.main_organisation %}
     <div class="c4w-detail__facts-row">

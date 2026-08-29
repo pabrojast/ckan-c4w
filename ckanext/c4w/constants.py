@@ -236,6 +236,18 @@ RESOURCE_AUDIENCES = (
 )
 
 # Event delivery mode (events/models.py EVENT_TYPE_CHOICES).
+# A blog post has no approval queue -- its author sets the state -- so this is
+# a status, not a moderation decision. Defined here because the string was
+# otherwise a bare literal in the importer, in query.py's visibility filter and
+# in _common.is_visible, with nothing keeping the three in step.
+POST_STATUSES = (
+    ('draft', 'Draft'),
+    ('published', 'Published'),
+)
+
+POST_STATUS_PUBLISHED = 'published'
+POST_STATUS_DRAFT = 'draft'
+
 EVENT_TYPES = (
     ('online', 'Online'),
     ('face-to-face', 'Face to face'),
@@ -292,6 +304,7 @@ FREE_VOCABULARIES = (
 # Kept here so the form, the schema and the tests read one definition.
 COLUMN_VOCABULARIES = {
     'status': STATUSES,
+    'post_status': POST_STATUSES,
     'difficulty_level': DIFFICULTY_LEVELS,
     'training_level': TRAINING_LEVELS,
     'org_type': ORG_TYPES,

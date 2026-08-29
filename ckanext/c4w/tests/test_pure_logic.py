@@ -188,3 +188,36 @@ def test_sanitizer_fails_closed_without_bleach(monkeypatch):
     out = sanitize.sanitize_html(u'<b>bold</b> <a href="http://x">link</a>')
     assert '<' not in out
     assert 'bold' in out and 'link' in out
+
+
+# --------------------------------------------------------------------------- #
+# Vocabulary registry consistency
+# --------------------------------------------------------------------------- #
+
+def test_geographic_extent_resolves_from_either_registry():
+    """It is many-valued on a project and single-valued on a platform.
+
+    It therefore lives in VOCABULARIES while being filtered as a native
+    column, and a lookup that consulted only COLUMN_VOCABULARIES returned an
+    empty option list -- which made the whole platform facet vanish.
+    """
+    assert constants.vocabulary_terms('geographic_extent') is not None
+    assert 'macro-regional' in constants.vocabulary_terms('geographic_extent')
+
+
+def test_post_statuses_have_one_definition():
+    """The literal 'published' used to be spelled out in three modules."""
+    assert constants.POST_STATUS_PUBLISHED == 'published'
+    assert constants.POST_STATUS_DRAFT == 'draft'
+    terms = constants.vocabulary_terms('post_status')
+    assert terms == {'draft', 'published'}
+
+
+def test_subscripts_survive_sanitisation():
+    """Project 36 is KdUINO, about the coefficient K_d.
+
+    Stripping <sub> flattens 'K<sub>d</sub>' to the meaningless 'Kd', and the
+    loss is permanent because sanitisation happens before storage.
+    """
+    assert 'sub' in sanitize.ALLOWED_TAGS
+    assert 'sup' in sanitize.ALLOWED_TAGS

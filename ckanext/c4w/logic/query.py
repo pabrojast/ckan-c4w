@@ -29,7 +29,7 @@ from sqlalchemy import func, orm
 
 from ckan.model.meta import Session
 
-from ckanext.c4w import db
+from ckanext.c4w import constants, db
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +75,8 @@ def _public_filter(query, model_cls):
     if hasattr(model_cls, 'hidden'):
         query = query.filter(model_cls.hidden.isnot(True))
     if hasattr(model_cls, 'status') and model_cls is db.C4wPost:
-        query = query.filter(model_cls.status == u'published')
+        query = query.filter(
+            model_cls.status == constants.POST_STATUS_PUBLISHED)
     return query
 
 

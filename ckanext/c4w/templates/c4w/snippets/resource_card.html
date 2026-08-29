@@ -16,10 +16,10 @@
   {% if resource.abstract %}
     <p class="c4w-card__excerpt">{{ resource.abstract | striptags | truncate(180) }}</p>
   {% endif %}
-  {% set themes = resource.terms.get('theme', []) %}
+  {% set themes = h.c4w_terms(resource, 'theme') %}
   {% if themes %}
     <ul class="c4w-card__tags">
-      {% for term in themes[:3] %}<li>{{ h.c4w_term_label('theme', term) }}</li>{% endfor %}
+      {% for theme in themes[:3] %}<li>{{ theme.label }}</li>{% endfor %}
     </ul>
   {% endif %}
 </article>

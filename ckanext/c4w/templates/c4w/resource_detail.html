@@ -52,15 +52,15 @@
 
 {% block detail_facts %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Themes'),
-     terms=resource.terms.get('theme', []), vocabulary='theme',
+     terms=h.c4w_terms(resource, 'theme'), vocabulary='theme',
      link_endpoint='resource_list' %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Audience'),
-     terms=resource.terms.get('audience', []), vocabulary='audience',
+     terms=h.c4w_terms(resource, 'audience'), vocabulary='audience',
      link_endpoint='resource_list' %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Authors'),
-     terms=resource.terms.get('author', []), vocabulary='author' %}
+     terms=h.c4w_terms(resource, 'author'), vocabulary='author' %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Keywords'),
-     terms=resource.terms.get('keyword', []), vocabulary='keyword' %}
+     terms=h.c4w_terms(resource, 'keyword'), vocabulary='keyword' %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Language'),
      value=resource.in_language %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Licence'), value=resource.license %}

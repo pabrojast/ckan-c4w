@@ -27,6 +27,12 @@ import re
 ALLOWED_TAGS = [
     'b', 'i', 'em', 'strong', 'u', 'a', 'p', 'ul', 'ol', 'li', 'br',
     'h3', 'h4', 'blockquote',
+    # sub/sup are here because the corpus needs them: project 36 is KdUINO,
+    # about the diffuse attenuation coefficient K_d, and stripping the tag
+    # flattens 'K<sub>d</sub>' into the meaningless 'Kd'. They take no
+    # attributes and open no script surface, so the restrictive list gives up
+    # nothing by keeping them.
+    'sub', 'sup',
 ]
 # Only anchors keep attributes, and only these three.
 ALLOWED_ATTRS = {'a': ['href', 'title', 'rel']}

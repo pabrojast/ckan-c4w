@@ -693,10 +693,18 @@ def entity_dictize(entity_type, obj, terms=None, relations=None):
     for key, value in extras.items():
         out.setdefault(key, value)
     if terms is None:
-        terms = terms_for(entity_type, obj.id).get(obj.id, {})
+        terms = term_labels_for(entity_type, obj.id).get(obj.id, {})
     if relations is None:
         relations = relations_for(entity_type, obj.id).get(obj.id, {})
-    out['terms'] = terms
+    # ``terms`` maps vocabulary -> [term slug]; ``term_labels`` keeps the label
+    # alongside. The label column would otherwise be write-only: for a CLOSED
+    # vocabulary a template can resolve the slug through constants.py, but for
+    # an open one (keyword, funding_body, author) the stored label is the only
+    # record of what the author actually typed -- and without it a country
+    # renders as 'ca' where the sidebar two columns away says 'Canada'.
+    out['term_labels'] = terms
+    out['terms'] = {vocabulary: [t['term'] for t in items]
+                    for vocabulary, items in terms.items()}
     out['relations'] = relations
     out['entity_type'] = entity_type
     return out
@@ -706,7 +714,7 @@ def list_dictize(entity_type, rows):
     """Dictize a page of rows with one terms query and one relations query."""
     rows = list(rows or [])
     ids = [r.id for r in rows]
-    terms = terms_for(entity_type, ids)
+    terms = term_labels_for(entity_type, ids)
     relations = relations_for(entity_type, ids)
     return [
         entity_dictize(entity_type, row,

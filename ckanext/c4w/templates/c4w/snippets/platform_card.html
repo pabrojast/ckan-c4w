@@ -12,9 +12,9 @@
       <span class="c4w-card__status">{{
         h.c4w_term_label('geographic_extent', platform.geographic_extent) }}</span>
     {% endif %}
-    {% set countries = platform.terms.get('country', []) %}
+    {% set countries = h.c4w_terms(platform, 'country') %}
     {% if countries %}
-      <span>{{ countries[:3] | map('upper') | join(', ') }}{% if countries|length > 3 %}…{% endif %}</span>
+      <span>{{ countries[:3] | map(attribute='label') | join(', ') }}{% if countries|length > 3 %}…{% endif %}</span>
     {% endif %}
   </p>
 </article>

@@ -56,7 +56,7 @@ def is_visible(entity_type, row, context):
     if hasattr(row, 'hidden') and row.hidden:
         published = False
     if hasattr(row, 'status') and entity_type == 'post':
-        published = row.status == u'published'
+        published = row.status == constants.POST_STATUS_PUBLISHED
     if published:
         return True
 
@@ -134,11 +134,18 @@ def make_facets(spec_factory, action_name, orderings=None):
                             (constants.VOCABULARIES.get(vocabulary) or ())],
             })
         for param in spec.native_filters:
+            # A vocabulary can be registered either way round: it is in
+            # COLUMN_VOCABULARIES when it is single-valued everywhere, and in
+            # VOCABULARIES when some other entity uses it many-valued.
+            # geographic_extent is exactly that -- many-valued on a project,
+            # single-valued on a platform -- and looking in only one map
+            # silently returned an empty option list for the platform facet.
+            pairs = (constants.COLUMN_VOCABULARIES.get(param)
+                     or constants.VOCABULARIES.get(param) or ())
             out.append({
                 'name': param,
                 'kind': 'column',
-                'options': [{'term': t, 'label': l} for t, l in
-                            (constants.COLUMN_VOCABULARIES.get(param) or ())],
+                'options': [{'term': t, 'label': l} for t, l in pairs],
             })
         return {
             'facets': out,

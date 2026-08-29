@@ -87,25 +87,41 @@ probe = Flask(__name__)
 for bp in blueprints:
     probe.register_blueprint(bp)
 
+# (path, expected endpoint). Asserting the ENDPOINT and not merely that
+# something matched is what catches a numeric path falling through to the slug
+# rule and quietly serving a second, uncanonicalised address for the same row.
 MUST_RESOLVE = [
-    "/citizens4water/",
-    "/citizens4water/projects", "/citizens4water/project/32",
-    "/citizens4water/organisations", "/citizens4water/organisation/6",
-    "/citizens4water/resources", "/citizens4water/resource/7",
-    "/citizens4water/training_resources",
-    "/citizens4water/platforms/", "/citizens4water/platforms",
-    "/citizens4water/platform/8",
-    "/citizens4water/events/", "/citizens4water/events",
-    "/citizens4water/blog", "/citizens4water/blog/2026/1/1/some-post",
+    ("/citizens4water/", "c4w.index"),
+    ("/citizens4water/projects", "c4w.project_list"),
+    ("/citizens4water/project/32", "c4w.project_legacy"),
+    ("/citizens4water/project/be-resilient", "c4w.project_detail"),
+    ("/citizens4water/organisations", "c4w.organisation_list"),
+    ("/citizens4water/organisation/6", "c4w.organisation_legacy"),
+    ("/citizens4water/resources", "c4w.resource_list"),
+    ("/citizens4water/resource/7", "c4w.resource_legacy"),
+    ("/citizens4water/training_resources", "c4w.training_resource_list"),
+    ("/citizens4water/platforms/", "c4w.platform_list"),
+    ("/citizens4water/platforms", "c4w.platform_list"),
+    ("/citizens4water/platform/8", "c4w.platform_legacy"),
+    ("/citizens4water/events/", "c4w.event_list"),
+    ("/citizens4water/events", "c4w.event_list"),
+    ("/citizens4water/blog", "c4w.post_list"),
+    # A numeric blog path must 301, not serve the post at a second URL.
+    ("/citizens4water/blog/7", "c4w.post_legacy"),
+    ("/citizens4water/blog/some-post", "c4w.post_detail"),
+    ("/citizens4water/blog/2026/1/1/some-post", "c4w.post_legacy_dated"),
 ]
 adapter = probe.url_map.bind("ihp-wins.unesco.org")
-unresolved = []
-for path in MUST_RESOLVE:
+route_problems = []
+for path, expected in MUST_RESOLVE:
     try:
-        adapter.match(path)
+        endpoint, _args = adapter.match(path)
     except Exception as exc:
-        unresolved.append("%s (%s)" % (path, type(exc).__name__))
-assert not unresolved, "live legacy URLs that no longer resolve: %s" % unresolved
+        route_problems.append("%s -> %s" % (path, type(exc).__name__))
+        continue
+    if endpoint != expected:
+        route_problems.append("%s -> %s (expected %s)" % (path, endpoint, expected))
+assert not route_problems, "route map problems: %s" % route_problems
 
 # --- every template parses with CKAN's Jinja environment ------------------- #
 # Catches an invalid {% snippet %}, {% asset %} or {% ckan_extends %} before a
