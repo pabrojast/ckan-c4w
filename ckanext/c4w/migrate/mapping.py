@@ -65,6 +65,33 @@ def _bool(value):
     return bool(value)
 
 
+def _parse_stamp(value):
+    """Coerce whatever the source handed us into a datetime, or None.
+
+    psycopg2 gives a datetime; a JSON export gives an ISO string. Accepting
+    both keeps the mappers usable from the fixture as well as from the live
+    database, which is what makes them testable at all.
+    """
+    if value is None or isinstance(value, datetime.datetime):
+        return value
+    if isinstance(value, datetime.date):
+        return datetime.datetime(value.year, value.month, value.day)
+    text = (u'%s' % value).strip()
+    if not text:
+        return None
+    text = text.replace(u'Z', u'+00:00')
+    try:
+        return datetime.datetime.fromisoformat(text)
+    except ValueError:
+        for fmt in ('%Y-%m-%d %H:%M:%S%z', '%Y-%m-%d %H:%M:%S',
+                    '%Y-%m-%d'):
+            try:
+                return datetime.datetime.strptime(text, fmt)
+            except ValueError:
+                continue
+    return None
+
+
 def _date(value):
     """A timestamptz read as a date in UTC.
 
@@ -73,25 +100,49 @@ def _date(value):
     moving some rows to the previous calendar day. Converting explicitly makes
     the result independent of the connection.
     """
-    if value is None:
-        return None
-    if isinstance(value, datetime.datetime):
-        if value.tzinfo is not None:
-            value = value.astimezone(datetime.timezone.utc)
-        return value.date()
-    if isinstance(value, datetime.date):
+    if isinstance(value, datetime.date) and not isinstance(
+            value, datetime.datetime):
         return value
-    return None
+    stamp = _parse_stamp(value)
+    if stamp is None:
+        return None
+    if stamp.tzinfo is not None:
+        stamp = stamp.astimezone(datetime.timezone.utc)
+    return stamp.date()
 
 
 def _naive_utc(value):
     """A timestamptz as a naive UTC datetime, for the same reason as _date."""
+    stamp = _parse_stamp(value)
+    if stamp is None:
+        return None
+    if stamp.tzinfo is not None:
+        stamp = stamp.astimezone(datetime.timezone.utc)
+    return stamp.replace(tzinfo=None)
+
+
+def _time(value):
+    """A Django TimeField as a datetime.time.
+
+    psycopg2 hands back a time object, but a JSON export gives 'HH:MM:SS' --
+    and the column is typed, so a string reaches the driver and fails there
+    rather than here. Coercing at the boundary keeps the mapper's output valid
+    whatever fed it.
+    """
     if value is None:
         return None
+    if isinstance(value, datetime.time):
+        return value
     if isinstance(value, datetime.datetime):
-        if value.tzinfo is not None:
-            value = value.astimezone(datetime.timezone.utc)
-        return value.replace(tzinfo=None)
+        return value.time()
+    text = (u'%s' % value).strip()
+    if not text:
+        return None
+    for fmt in ('%H:%M:%S.%f', '%H:%M:%S', '%H:%M'):
+        try:
+            return datetime.datetime.strptime(text, fmt).time()
+        except ValueError:
+            continue
     return None
 
 
@@ -472,7 +523,7 @@ def map_event(row, ctx=None):
         'country': normalise_text(row.get('country')),
         'start_date': _naive_utc(row.get('start_date')),
         'end_date': _naive_utc(row.get('end_date')),
-        'hour': row.get('hour'),
+        'hour': _time(row.get('hour')),
         'timezone': timezone,
         'language': language.lower() if language else None,
         'url': ensure_scheme(row.get('url')),
