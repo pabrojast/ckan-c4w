@@ -1,0 +1,15 @@
+{#
+  The facet column of a listing.
+
+  Expects: facets -- a list of {name, title, options, counts}.
+  Rendered AFTER the results in the DOM (see project_list.html) and moved
+  beside them with CSS, so a narrow viewport and a screen reader both meet the
+  content before the filters.
+#}
+<aside class="c4w-facets" aria-label="{{ _('Filters') }}">
+  {% for facet in facets %}
+    {% snippet 'c4w/snippets/facet_group.html',
+       name=facet.name, title=facet.title,
+       options=facet.options, counts=facet.counts %}
+  {% endfor %}
+</aside>

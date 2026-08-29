@@ -12,13 +12,13 @@ which surfaces to a visitor as a 500 rather than a 403. The smoke phase of
 scripts/run-ckan-tests.sh asserts both directions of that mapping.
 """
 
-from ckanext.c4w.logic.action import stats
+from ckanext.c4w.logic.action import projects, stats
 
 
 def get_actions():
     actions = {}
     # Domain modules land here as the increments arrive. The loop shape is
     # deliberate: adding a module is one import and one tuple entry.
-    for module in (stats,):
+    for module in (projects, stats):
         actions.update(module.get_actions())
     return actions

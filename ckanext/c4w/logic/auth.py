@@ -31,7 +31,42 @@ def c4w_stats(context, data_dict):
     return {'success': True}
 
 
+@tk.auth_allow_anonymous_access
+def c4w_project_show(context, data_dict):
+    """Anyone may ask; the action decides what they get.
+
+    Visibility of an unapproved or hidden project is settled in the action,
+    which raises NotFound rather than NotAuthorized -- see the module
+    docstring on the existence oracle.
+    """
+    return {'success': True}
+
+
+@tk.auth_allow_anonymous_access
+def c4w_project_list(context, data_dict):
+    return {'success': True}
+
+
+@tk.auth_allow_anonymous_access
+def c4w_project_facets(context, data_dict):
+    return {'success': True}
+
+
+@tk.auth_allow_anonymous_access
+def c4w_project_record_view(context, data_dict):
+    """Counting a page view must not require an account.
+
+    The counter is the one thing on this portal an anonymous visitor writes,
+    and it is why the listing can offer "Total Accesses" as an ordering.
+    """
+    return {'success': True}
+
+
 def get_auth_functions():
     return {
         'c4w_stats': c4w_stats,
+        'c4w_project_show': c4w_project_show,
+        'c4w_project_list': c4w_project_list,
+        'c4w_project_facets': c4w_project_facets,
+        'c4w_project_record_view': c4w_project_record_view,
     }

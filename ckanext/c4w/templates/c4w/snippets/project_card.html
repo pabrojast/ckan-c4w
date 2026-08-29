@@ -1,0 +1,42 @@
+{#
+  A project in a listing.
+
+  Expects: project -- a dictized c4w_project.
+#}
+{% set image = h.c4w_image_url(project, 'image1_url') %}
+<article class="c4w-card">
+  <a class="c4w-card__link" href="{{ h.c4w_url('project_detail', slug=project.slug) }}">
+    <div class="c4w-card__media">
+      {% if image %}
+        {# Decorative: the title right below carries the same information. #}
+        <img src="{{ image }}" alt="" loading="lazy">
+      {% endif %}
+    </div>
+    <h2 class="c4w-card__title">{{ project.name }}</h2>
+  </a>
+
+  <p class="c4w-card__meta">
+    {% if project.status %}
+      <span class="c4w-card__status">{{ h.c4w_term_label('status', project.status) }}</span>
+    {% endif %}
+    {% set countries = project.terms.get('country', []) %}
+    {% if countries %}
+      <span class="c4w-card__countries">
+        {{ countries[:3] | map('upper') | join(', ') }}{% if countries|length > 3 %}…{% endif %}
+      </span>
+    {% endif %}
+  </p>
+
+  {% if project.description %}
+    <p class="c4w-card__excerpt">{{ project.description | striptags | truncate(180) }}</p>
+  {% endif %}
+
+  {% set topics = project.terms.get('topic', []) %}
+  {% if topics %}
+    <ul class="c4w-card__tags">
+      {% for term in topics[:4] %}
+        <li>{{ h.c4w_term_label('topic', term) }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</article>

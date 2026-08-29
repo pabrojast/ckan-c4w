@@ -1,0 +1,28 @@
+{#
+  Pagination for a listing.
+
+  Expects: page, pages, and optionally `label` for the aria-label.
+  Renders nothing for a single page. Links preserve the whole query string --
+  request.args is carried through so filters survive paging.
+#}
+{% if pages > 1 %}
+  {% set endpoint = (request.endpoint or '').split('.')[-1] %}
+  {% set base = request.args.to_dict() %}
+  <nav class="c4w-pagination" aria-label="{{ label or _('Pagination') }}">
+    <ul>
+      {% if page > 1 %}
+        {% set _ = base.update({'page': page - 1}) %}
+        <li><a href="{{ h.c4w_url(endpoint, **base) }}"
+               rel="prev">{{ _('Previous') }}</a></li>
+      {% endif %}
+      <li class="c4w-pagination__status">
+        {{ _('Page {current} of {total}').format(current=page, total=pages) }}
+      </li>
+      {% if page < pages %}
+        {% set _ = base.update({'page': page + 1}) %}
+        <li><a href="{{ h.c4w_url(endpoint, **base) }}"
+               rel="next">{{ _('Next') }}</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}

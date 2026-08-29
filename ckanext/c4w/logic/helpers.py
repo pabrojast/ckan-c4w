@@ -114,6 +114,85 @@ def c4w_stats():
         return {}
 
 
+def c4w_country_name(code):
+    """Territory name for an ISO 3166-1 alpha-2 code, in the active locale.
+
+    Babel already ships with CKAN and carries the CLDR territory names, so a
+    250-entry table does not need to live in this repository -- and it comes
+    translated for free. An unknown code renders as itself rather than blank.
+    """
+    if not code:
+        return u''
+    code = u'%s' % code
+    try:
+        from babel import Locale
+        locale = Locale.parse(tk.request.environ.get('CKAN_LANG') or 'en')
+        return locale.territories.get(code.upper()) or code
+    except Exception:
+        return code
+
+
+def c4w_facet_toggle_url(name, value):
+    """The current URL with one facet value flipped on or off.
+
+    Facets are LINKS, not a checkbox form with an Apply button: a link works
+    with no JavaScript at all, needs no hidden inputs to carry the other
+    parameters, and gives every facet value its own shareable URL.
+
+    Paging is dropped on every toggle -- page 4 of the old result set is
+    almost never page 4 of the new one.
+    """
+    from flask import request
+
+    args = request.args.to_dict(flat=False)
+    current = [v for v in args.get(name, []) if v]
+    value = u'%s' % value
+    if value in current:
+        current = [v for v in current if v != value]
+    else:
+        current = current + [value]
+    if current:
+        args[name] = current
+    else:
+        args.pop(name, None)
+    args.pop('page', None)
+
+    endpoint = (request.endpoint or '').split('.')[-1]
+    flat = {}
+    for key, values in args.items():
+        flat[key] = values[0] if len(values) == 1 else values
+    return c4w_url(endpoint, **flat)
+
+
+def c4w_facet_active(name, value):
+    """Whether a facet value is currently selected."""
+    try:
+        from flask import request
+        return u'%s' % value in request.args.getlist(name)
+    except Exception:
+        return False
+
+
+def c4w_any_facet_active(names):
+    """Whether any of the given facets has a selection, for a 'clear' link."""
+    try:
+        from flask import request
+        return any(any(request.args.getlist(n)) for n in names)
+    except Exception:
+        return False
+
+
+def c4w_image_url(entity, field='image1_url'):
+    """The URL of an entity image, or None.
+
+    Returns None rather than a placeholder path so the template decides what
+    an image-less card looks like.
+    """
+    if not entity:
+        return None
+    return entity.get(field) or None
+
+
 def get_helpers():
     return {
         'c4w_version': lambda: __version__,
@@ -123,4 +202,9 @@ def get_helpers():
         'c4w_term_label': c4w_term_label,
         'c4w_form_steps': c4w_form_steps,
         'c4w_stats': c4w_stats,
+        'c4w_country_name': c4w_country_name,
+        'c4w_facet_toggle_url': c4w_facet_toggle_url,
+        'c4w_facet_active': c4w_facet_active,
+        'c4w_any_facet_active': c4w_any_facet_active,
+        'c4w_image_url': c4w_image_url,
     }

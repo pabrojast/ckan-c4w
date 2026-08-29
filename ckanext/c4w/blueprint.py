@@ -36,6 +36,26 @@ def index():
     return views_home.index()
 
 
+def project_list():
+    from ckanext.c4w.logic import views_projects
+    return views_projects.project_list()
+
+
+def project_detail(slug):
+    from ckanext.c4w.logic import views_projects
+    return views_projects.project_detail(slug)
+
+
+def project_geojson(slug):
+    from ckanext.c4w.logic import views_projects
+    return views_projects.project_geojson(slug)
+
+
+def project_legacy(legacy_id):
+    from ckanext.c4w.logic import views_projects
+    return views_projects.project_legacy(legacy_id)
+
+
 # --------------------------------------------------------------------------- #
 # Route registration
 # --------------------------------------------------------------------------- #
@@ -46,6 +66,18 @@ def _register(bp):
     Called once per blueprint so the live and preview mounts can never drift.
     """
     bp.add_url_rule('/', 'index', index, methods=['GET'])
+
+    # Projects. The int rule is registered BEFORE the slug rule: Flask's int
+    # converter is strict so they cannot actually collide, but the order makes
+    # the precedence obvious to a reader.
+    bp.add_url_rule('/projects', 'project_list', project_list,
+                    methods=['GET'])
+    bp.add_url_rule('/project/<int:legacy_id>', 'project_legacy',
+                    project_legacy, methods=['GET'])
+    bp.add_url_rule('/project/<slug>', 'project_detail', project_detail,
+                    methods=['GET'])
+    bp.add_url_rule('/project/<slug>/geojson', 'project_geojson',
+                    project_geojson, methods=['GET'])
     return bp
 
 

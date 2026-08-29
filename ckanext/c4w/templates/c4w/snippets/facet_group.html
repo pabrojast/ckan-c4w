@@ -1,0 +1,32 @@
+{#
+  One facet: a heading and a list of values with counts.
+
+  Values are LINKS, not checkboxes in a form with an Apply button. A link
+  works with no JavaScript at all, carries the other parameters without a
+  single hidden input, and gives every combination its own shareable URL.
+
+  Expects: name, title, options ([{term, label}]), counts ({term: n}).
+  Options with a zero count are hidden -- a value that would return nothing is
+  noise, and the counts already exclude this facet's own selection so an
+  active value never hides itself.
+#}
+{% set counts = counts or {} %}
+{% set visible = options | selectattr('term', 'in', counts) | list %}
+{% if visible or h.c4w_facet_active(name, '') %}
+  <div class="c4w-facet">
+    <h3 class="c4w-facet__title">{{ title }}</h3>
+    <ul class="c4w-facet__list">
+      {% for option in visible %}
+        {% set active = h.c4w_facet_active(name, option.term) %}
+        <li{% if active %} class="is-active"{% endif %}>
+          <a href="{{ h.c4w_facet_toggle_url(name, option.term) }}"
+             rel="nofollow"
+             {% if active %}aria-current="true"{% endif %}>
+            <span class="c4w-facet__label">{{ option.label }}</span>
+            <span class="c4w-facet__count">{{ counts.get(option.term) }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}

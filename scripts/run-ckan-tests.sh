@@ -95,6 +95,24 @@ for path in templates:
 unknown = sorted(used - set(helpers))
 assert not unknown, "templates call helpers that are not registered: %s" % unknown
 
+# --- every {% snippet %} path resolves to a real file ---------------------- #
+# A typo'd snippet path parses fine and is a 500 the first time a visitor
+# reaches that page.
+snippets = set()
+for path in templates:
+    body = path.read_text(encoding="utf-8")
+    snippets |= set(re.findall(r"{%-?\s*snippet\s+['\"]([^'\"]+)['\"]", body))
+missing_snippets = sorted(s for s in snippets if not (tpl_root / s).is_file())
+assert not missing_snippets, "templates reference missing snippets: %s" % missing_snippets
+
+# --- every {% extends %} of our own namespace resolves too ----------------- #
+extends = set()
+for path in templates:
+    body = path.read_text(encoding="utf-8")
+    extends |= set(re.findall(r"{%-?\s*extends\s+['\"](c4w/[^'\"]+)['\"]", body))
+missing_parents = sorted(e for e in extends if not (tpl_root / e).is_file())
+assert not missing_parents, "templates extend missing parents: %s" % missing_parents
+
 # --- the header override must chain, not replace --------------------------- #
 # The active theme replaces core's header.html outright. Our override only
 # reaches its navigation block by extending it.
@@ -102,8 +120,9 @@ header = (tpl_root / "header.html").read_text(encoding="utf-8").lstrip()
 assert header.startswith("{% ckan_extends %}"), \
     "templates/header.html must start with {% ckan_extends %}"
 
-print("PLUGIN OK  (%d actions, %d helpers, %d templates, helpers used: %d)"
-      % (len(actions), len(helpers), len(templates), len(used)))
+print("PLUGIN OK  (%d actions, %d helpers, %d templates, %d snippets, "
+      "helpers used: %d)"
+      % (len(actions), len(helpers), len(templates), len(snippets), len(used)))
 PY
 then
   echo "FAIL: plugin-load smoke check failed"
