@@ -154,14 +154,22 @@ def test_the_two_allowlists_are_separate_functions():
 
 
 def test_restrictive_list_refuses_tables_and_images():
-    assert 'table' not in sanitize.ALLOWED_TAGS
-    assert 'img' not in sanitize.ALLOWED_TAGS
-    assert 'img' not in sanitize.RICH_ALLOWED_TAGS
+    """Descriptions, abstracts and rejection reasons get the narrow list."""
+    for tag in ('table', 'img', 'iframe', 'figure'):
+        assert tag not in sanitize.ALLOWED_TAGS
 
 
-def test_rich_list_allows_tables_but_still_no_embeds():
-    assert 'table' in sanitize.RICH_ALLOWED_TAGS
-    for tag in ('iframe', 'script', 'style', 'object', 'h1', 'h2'):
+def test_rich_list_allows_tables_images_and_players_only():
+    """img and iframe are admitted; script, style, object and h1/h2 are not.
+
+    The news corpus carries 18 in-body images and 2 YouTube embeds, and
+    sanitisation runs before storage, so refusing those tags would destroy the
+    content rather than merely hide it. What keeps that safe is that the src
+    VALUE is validated -- see test_image_src_allowlist.
+    """
+    for tag in ('table', 'img', 'iframe'):
+        assert tag in sanitize.RICH_ALLOWED_TAGS
+    for tag in ('script', 'style', 'object', 'embed', 'h1', 'h2'):
         assert tag not in sanitize.RICH_ALLOWED_TAGS
 
 
@@ -221,3 +229,114 @@ def test_subscripts_survive_sanitisation():
     """
     assert 'sub' in sanitize.ALLOWED_TAGS
     assert 'sup' in sanitize.ALLOWED_TAGS
+
+
+# --------------------------------------------------------------------------- #
+# Rich-content media allowlist
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize('src,ok', [
+    (u'/uploads/c4w/photo.png', True),      # a re-hosted image
+    (u'/citizens4water/media/images/x.jpg', True),
+    (u'https://tracker.example/pixel.gif', False),
+    (u'//tracker.example/pixel.gif', False),  # protocol-relative
+    (u'data:image/png;base64,AAAA', False),
+    (u'/uploads/c4w/../../etc/passwd', False),
+    (u'', False),
+    (None, False),
+])
+def test_image_src_allowlist(src, ok):
+    """An unvalidated <img src> is a tracking pixel that fires for every reader.
+
+    So the tag is allowed but the VALUE is what decides: a site-relative path
+    (what a re-hosted image is) or an explicitly configured media host.
+    """
+    assert sanitize.image_src_ok(src) is ok
+
+
+@pytest.mark.parametrize('src,ok', [
+    (u'https://www.youtube-nocookie.com/embed/abc', True),
+    (u'https://player.vimeo.com/video/123', True),
+    (u'https://evil.example/embed/abc', False),
+    (u'//www.youtube.com/embed/abc', False),   # no scheme
+    (u'/local/embed', False),
+    (u'', False),
+])
+def test_embed_src_allowlist(src, ok):
+    assert sanitize.embed_src_ok(src) is ok
+
+
+def test_embed_defaults_put_the_no_cookie_host_first():
+    """The portal should not set a third-party cookie on someone who scrolled."""
+    assert sanitize.DEFAULT_EMBED_HOSTS[0] == 'www.youtube-nocookie.com'
+
+
+def test_images_and_embeds_are_rich_only():
+    """The restrictive list must never admit them.
+
+    It covers descriptions, abstracts and rejection reasons -- none of which
+    has any business carrying an embed.
+    """
+    for tag in ('img', 'iframe', 'figure'):
+        assert tag not in sanitize.ALLOWED_TAGS
+        assert tag in sanitize.RICH_ALLOWED_TAGS
+
+
+# --------------------------------------------------------------------------- #
+# Sanitiser end-to-end, with the real bleach
+# --------------------------------------------------------------------------- #
+
+bleach_only = pytest.mark.skipif(
+    __import__('importlib').util.find_spec('bleach') is None,
+    reason='needs the real bleach; the fail-closed path is tested separately')
+
+
+@bleach_only
+def test_a_rehosted_image_survives_but_a_third_party_one_does_not():
+    """The tag is allowed; the src decides."""
+    out = sanitize.sanitize_rich_html(
+        u'<p><img src="/uploads/c4w/a.png" alt="A">'
+        u'<img src="https://tracker.example/p.gif"></p>')
+    assert '/uploads/c4w/a.png' in out
+    assert 'tracker.example' not in out
+
+
+@bleach_only
+def test_an_allowlisted_player_survives_and_others_do_not():
+    out = sanitize.sanitize_rich_html(
+        u'<iframe src="https://www.youtube-nocookie.com/embed/x"></iframe>'
+        u'<iframe src="https://evil.example/x"></iframe>')
+    assert 'youtube-nocookie.com/embed/x' in out
+    assert 'evil.example' not in out
+
+
+@bleach_only
+def test_a_subscript_survives_the_restrictive_list():
+    """'K<sub>d</sub>' must not flatten to the meaningless 'Kd'."""
+    assert '<sub>' in sanitize.sanitize_html(u'K<sub>d</sub>')
+
+
+@bleach_only
+def test_list_structure_survives_the_restrictive_list():
+    """The fail-closed path fuses list items into one run of words.
+
+    That is acceptable as a runtime safety net and unacceptable for a one-way
+    migration, which is why the importer refuses to start without bleach.
+    """
+    out = sanitize.sanitize_html(u'<ul><li>one</li><li>two</li></ul>')
+    assert '<li>' in out
+
+
+@bleach_only
+def test_a_script_tag_leaves_nothing_behind_in_either_list():
+    for clean in (sanitize.sanitize_html, sanitize.sanitize_rich_html):
+        out = clean(u'<script>alert(1)</script><p>ok</p>')
+        assert 'alert' not in out and 'ok' in out
+
+
+@bleach_only
+def test_an_image_keeps_only_the_attributes_we_named():
+    out = sanitize.sanitize_rich_html(
+        u'<img src="/uploads/c4w/a.png" alt="A" onerror="x()" class="evil">')
+    assert 'onerror' not in out and 'class' not in out
+    assert 'alt="A"' in out

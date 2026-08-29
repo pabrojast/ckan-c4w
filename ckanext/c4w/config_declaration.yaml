@@ -35,3 +35,24 @@ groups:
           the real file signature with Pillow, so this list narrows what is
           offered rather than being the only gate.
         default: image/jpeg image/png image/webp
+
+  - annotation: Citizens4Water rich content
+    options:
+      - key: ckanext.c4w.trusted_media_hosts
+        description: |
+          Space-separated hostnames whose images may be embedded in a news
+          post body. Site-relative paths are always accepted; this list is for
+          the object store the portal uploads to when it serves absolute URLs.
+          Leave unset to accept site-relative images only. An unlisted host is
+          an unvalidated image ingress on a public page -- a tracking pixel
+          that fires for every reader.
+        default:
+        required: false
+
+      - key: ckanext.c4w.trusted_embed_hosts
+        description: |
+          Space-separated hostnames whose iframes may be embedded in a news
+          post body. Defaults to the YouTube and Vimeo players, no-cookie
+          variant first. Two migrated posts carry YouTube embeds.
+        default:
+        required: false
