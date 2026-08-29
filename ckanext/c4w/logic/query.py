@@ -80,6 +80,17 @@ def _public_filter(query, model_cls):
     return query
 
 
+def _positive_int(value, default):
+    """A positive int from an untrusted query-string value."""
+    if value in (None, u'', ''):
+        return default
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return default
+    return number if number > 0 else default
+
+
 def _as_list(value):
     """Normalise a query-string value that may arrive once or many times."""
     if value is None:
@@ -236,11 +247,18 @@ def _native_facet_counts(spec, base_query, data_dict, selected):
     return counts
 
 
-def build_listing(spec, data_dict):
+def build_listing(spec, data_dict, include_private=False):
     """Run a listing.
 
     Returns ``{'count', 'results', 'facets', 'page', 'pages', 'page_size',
     'order', 'selected'}`` -- ``results`` already dictized.
+
+    ``include_private`` is a positional argument and is deliberately NOT read
+    from ``data_dict``. It used to be, and because every listing action is
+    reachable through CKAN's public API, that made
+    ``?include_private=true`` an anonymous read of every unapproved, hidden
+    and draft row. A caller cannot grant itself this; only an action that has
+    checked authorisation may pass it.
     """
     db.ensure_mappers()
     model_cls = spec.model_cls
@@ -249,7 +267,7 @@ def build_listing(spec, data_dict):
     # filters. Both the row query and the counts derive from it, which is what
     # lets each facet leave its own selection out of its own counts.
     base = Session.query(model_cls)
-    if not data_dict.get('include_private'):
+    if not include_private:
         base = _public_filter(base, model_cls)
     base = _apply_search(base, model_cls, spec, data_dict.get('q'))
 
@@ -274,9 +292,12 @@ def build_listing(spec, data_dict):
     if order:
         query = query.order_by(*spec.orderings[order](model_cls))
 
-    page_size = min(int(data_dict.get('page_size') or spec.page_size),
-                    MAX_PAGE_SIZE)
-    page = max(1, int(data_dict.get('page') or 1))
+    # Coerced defensively: these arrive from a query string, so a
+    # non-numeric value is a 500 on a public page and page_size=0 is a
+    # ZeroDivisionError.
+    page_size = _positive_int(data_dict.get('page_size'), spec.page_size)
+    page_size = max(1, min(page_size, MAX_PAGE_SIZE))
+    page = max(1, _positive_int(data_dict.get('page'), 1))
     pages = max(1, -(-count // page_size))     # ceiling division
     page = min(page, pages)
 

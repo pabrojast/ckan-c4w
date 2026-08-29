@@ -155,6 +155,13 @@ ENTITY_QUERIES = {
 IMPORT_ORDER = ('organisation', 'project', 'platform', 'resource', 'event',
                 'post')
 
+# Media referenced from inside stored HTML rather than from a column. The
+# sanitiser keeps a site-relative <img src>, and /citizens4water/media/<path>
+# resolves it -- but only if the file was uploaded and mapped, so these paths
+# have to reach the media pass too. Six published posts embed 17 images.
+INLINE_MEDIA_RE = None      # compiled lazily in inline_media_paths
+
+
 # Media-bearing columns, per entity: column -> the c4w column it fills.
 MEDIA_COLUMNS = {
     'project': {'image1': 'image1_url', 'image2': 'image2_url',
@@ -223,7 +230,23 @@ class _Reader(object):
             'SELECT id, %s AS label FROM %s' % (column, table))}
 
     def lookups(self):
-        return {vocabulary: self.lookup(vocabulary) for vocabulary in LOOKUPS}
+        out = {vocabulary: self.lookup(vocabulary) for vocabulary in LOOKUPS}
+        out['unapproved_events'] = self.unapproved_events()
+        return out
+
+    def unapproved_events(self):
+        """Legacy ids of events Django actually hides.
+
+        Django's events view excludes on this table and never reads
+        Event.approved, so this -- not the column -- is what visibility means
+        for an event. It is empty in production, which is why all 13 are
+        served today.
+        """
+        try:
+            return {row['event_id'] for row in self.rows(
+                'SELECT event_id FROM events_unapprovedevents')}
+        except Exception:
+            return set()
 
     def entity_rows(self, entity):
         return self.rows(ENTITY_QUERIES[entity])
@@ -285,6 +308,30 @@ class _Reader(object):
         return list(self.rows(
             'SELECT id, name, email, is_active, is_staff '
             'FROM authtools_user ORDER BY id'))
+
+
+def inline_media_paths(html):
+    """Legacy media paths referenced from inside a stored HTML body.
+
+    Matches both the bare storage path and the URL the site served it at, and
+    returns the storage-relative form -- which is the key c4w_media_map uses.
+    """
+    import re
+
+    global INLINE_MEDIA_RE
+    if INLINE_MEDIA_RE is None:
+        INLINE_MEDIA_RE = re.compile(
+            r'(?:https?://[^"\'\s>]*?)?/?(?:citizens4water/)?media/'
+            r'([^"\'\s>)]+)', re.IGNORECASE)
+    if not html:
+        return []
+    out, seen = [], set()
+    for match in INLINE_MEDIA_RE.finditer(u'%s' % html):
+        path = match.group(1).strip().rstrip('\\')
+        if path and path not in seen:
+            seen.add(path)
+            out.append(path)
+    return out
 
 
 def _float(value):

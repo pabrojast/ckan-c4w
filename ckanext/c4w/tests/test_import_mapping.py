@@ -38,7 +38,9 @@ def corpus():
 
 @pytest.fixture(scope='module')
 def ctx(corpus):
-    return corpus['lookup']
+    lookup = dict(corpus['lookup'])
+    lookup['unapproved_events'] = set(lookup.get('unapproved_events') or ())
+    return lookup
 
 
 def _mapped(corpus, ctx, entity):
@@ -372,3 +374,40 @@ def test_the_publication_year_stays_an_integer(corpus, ctx):
     for out in _mapped(corpus, ctx, 'resource'):
         year = out['columns']['date_published']
         assert year is None or (isinstance(year, int) and 1900 < year < 2100)
+
+
+# --------------------------------------------------------------------------- #
+# Timestamp parsing
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize('raw', [
+    u'2026-08-12T10:55:18.08998+00:00',    # five fractional digits
+    u'2026-08-12T10:55:18.0899+00:00',     # four
+    u'2026-08-12T10:55:18.089+00:00',      # three
+    u'2026-08-12T10:55:18.089980+00:00',   # six
+    u'2026-08-12 10:55:18+00:00',
+    u'2026-08-12T10:55:18Z',
+    u'2026-08-12',
+])
+def test_every_timestamp_shape_postgres_emits_is_parsed(raw):
+    """fromisoformat accepts exactly 3 or 6 fractional digits before 3.11.
+
+    PostgreSQL emits however many it needs, and seven of the 43 projects carry
+    five -- those raised, fell through every fallback and returned None, so
+    those rows would have imported with no created or modified at all.
+    """
+    assert mapping._naive_utc(raw) is not None
+
+
+def test_an_unparseable_timestamp_is_none_not_an_exception():
+    assert mapping._naive_utc(u'not a date') is None
+    assert mapping._naive_utc(None) is None
+
+
+def test_every_row_in_the_corpus_keeps_its_timestamps(corpus, ctx):
+    """The bug above was invisible until a row was checked, not a format."""
+    for entity in ('project', 'organisation', 'platform', 'resource'):
+        for out in _mapped(corpus, ctx, entity):
+            assert out['columns']['created'] is not None, (
+                entity, out['columns']['legacy_id'])
+            assert out['columns']['modified'] is not None

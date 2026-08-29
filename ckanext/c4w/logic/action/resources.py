@@ -90,7 +90,8 @@ def _listing(training, action_name):
         # Forced, not user-supplied: the two surfaces are separate sections.
         data_dict['training'] = u'1' if training else u'0'
         return q.build_listing(
-            training_spec() if training else spec(), data_dict)
+            training_spec() if training else spec(), data_dict,
+            include_private=_common.is_sysadmin(context))
 
     listing.__name__ = str(action_name)
     return listing

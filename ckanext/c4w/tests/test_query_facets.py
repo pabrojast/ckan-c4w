@@ -95,13 +95,43 @@ def test_unapproved_and_hidden_rows_never_reach_the_public_listing(session, spec
     assert result['count'] == 1
 
 
-def test_include_private_lifts_the_visibility_filter(session, spec):
-    """The moderation panel needs to see what the public listing hides."""
+def test_include_private_is_an_argument_not_a_request_parameter(session, spec):
+    """It used to be read from data_dict, and every listing action is exposed
+    through CKAN's public API -- which made ?include_private=true an anonymous
+    read of every unapproved, hidden and draft row. A caller must not be able
+    to grant itself this; only an action that has checked authorisation may.
+    """
     _project(session, u'Public')
     _project(session, u'Pending', approved=False)
 
-    result = q.build_listing(spec, {'include_private': True})
-    assert _names(result) == [u'Pending', u'Public']
+    # What a request can say is ignored...
+    assert _names(q.build_listing(spec, {'include_private': True})) == [u'Public']
+    assert _names(q.build_listing(spec, {'include_private': 'true'})) == [u'Public']
+    # ...and only the caller's own argument lifts the filter.
+    assert _names(q.build_listing(spec, {}, include_private=True)) == [
+        u'Pending', u'Public']
+
+
+# --------------------------------------------------------------------------- #
+# Untrusted pagination input
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize('page', [u'abc', u'', u'-1', u'0', None, u'1e9'])
+def test_a_junk_page_value_does_not_500(session, spec, page):
+    """These arrive from a query string on a public page."""
+    _project(session, u'A')
+    result = q.build_listing(spec, {'page': page})
+    assert result['page'] >= 1
+    assert result['results']
+
+
+@pytest.mark.parametrize('size', [u'0', u'-1', u'abc', u''])
+def test_a_junk_page_size_does_not_500(session, spec, size):
+    """page_size=0 was a ZeroDivisionError and -1 a database error."""
+    _project(session, u'A')
+    result = q.build_listing(spec, {'page_size': size})
+    assert result['page_size'] >= 1
+    assert result['pages'] >= 1
 
 
 # --------------------------------------------------------------------------- #

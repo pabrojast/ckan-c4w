@@ -26,6 +26,7 @@ two tables instead of twenty-five.
 import datetime
 import decimal
 import logging
+import re
 import uuid
 
 import sqlalchemy as sa
@@ -554,15 +555,25 @@ def ensure_tables():
 # mapping layer can apply exactly the same rules without importing CKAN. They
 # are re-exported here because callers reach for them alongside the models.
 
+_IS_SLUG_RE = re.compile(r'^[a-z0-9]+(?:-[a-z0-9]+)*$')
+
+
 def unique_slug(model_cls, base, exclude_id=None):
     """Return ``base`` or the first free ``base-2``, ``base-3``, ... variant.
 
     A slug is assigned once and then persisted: renaming an entity does NOT
     move its URL, because a moved URL breaks every inbound link for what is
     usually a cosmetic edit.
+
+    A value that is ALREADY a valid slug is taken as given, length and all.
+    blog_post carries its own slug -- the address the site published -- and
+    the longest is 146 characters; re-slugifying truncated it at 90, mid-word,
+    and 404'd a URL that still returns 200 today.
     """
     _ensure_mappers()
-    base = slugify(base) or u'item'
+    if not (base and _IS_SLUG_RE.match(u'%s' % base)):
+        base = slugify(base)
+    base = base or u'item'
     candidate = base
     suffix = 1
     while True:
@@ -582,13 +593,21 @@ def unique_slug(model_cls, base, exclude_id=None):
 # Columns never exposed through a dictized row.
 _PRIVATE_COLUMNS = frozenset()
 
+# Real people's inboxes. The detail TEMPLATE already hides these from a
+# logged-out visitor, but the action behind it is reachable through CKAN's
+# public API, where the template's judgement never runs -- so the decision has
+# to live here, on the data, and callers opt in.
+CONTACT_COLUMNS = frozenset(('author_email', 'contact_point_email'))
 
-def _row_columns(obj):
+
+def _row_columns(obj, include_contact=False):
     """Native column values of a mapped row, as a plain dict."""
     table = sa.inspect(type(obj)).local_table
     out = {}
     for column in table.columns:
         if column.name in _PRIVATE_COLUMNS:
+            continue
+        if column.name in CONTACT_COLUMNS and not include_contact:
             continue
         value = getattr(obj, column.name, None)
         if isinstance(value, (datetime.datetime, datetime.date,
@@ -675,7 +694,8 @@ def relations_for(subject_type, subject_ids):
     return out
 
 
-def entity_dictize(entity_type, obj, terms=None, relations=None):
+def entity_dictize(entity_type, obj, terms=None, relations=None,
+                   include_contact=False):
     """Dictize one row: native columns + flattened extras + terms + relations.
 
     ``extras`` is merged at the TOP level, not nested, so a template reads
@@ -685,10 +705,14 @@ def entity_dictize(entity_type, obj, terms=None, relations=None):
 
     Pass ``terms``/``relations`` when dictizing a list, so the caller can
     fetch them once for the whole page instead of per row.
+
+    ``include_contact`` is off by default: a listing never needs an address,
+    and defaulting it on is how a page of 18 cards quietly becomes a mailing
+    list for anyone who calls the API.
     """
     if obj is None:
         return None
-    out = _row_columns(obj)
+    out = _row_columns(obj, include_contact=include_contact)
     extras = load_extras(out.pop('extras', None))
     for key, value in extras.items():
         out.setdefault(key, value)

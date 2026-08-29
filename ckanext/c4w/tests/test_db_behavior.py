@@ -334,3 +334,52 @@ def test_list_dictize_also_carries_labels(session):
 
     out = db.list_dictize('project', [project])
     assert out[0]['term_labels']['topic'][0]['label'] == u'Water'
+
+
+# --------------------------------------------------------------------------- #
+# Contact addresses
+# --------------------------------------------------------------------------- #
+
+def test_an_address_is_absent_from_a_dictized_row_by_default(session):
+    """The detail TEMPLATE hides these from a logged-out visitor, but the
+    action behind it is reachable through CKAN's public API where no template
+    runs. So the decision lives on the data and callers opt in.
+    """
+    project = db.C4wProject(slug=u'p', name=u'P',
+                            author=u'A Person',
+                            author_email=u'person@example.org')
+    session.add(project)
+    session.commit()
+
+    public = db.entity_dictize('project', project)
+    assert 'author_email' not in public
+    assert public['author'] == u'A Person'      # the name is not the address
+
+    private = db.entity_dictize('project', project, include_contact=True)
+    assert private['author_email'] == u'person@example.org'
+
+
+def test_a_listing_page_never_carries_addresses(session):
+    """A page of 18 cards must not double as a mailing list."""
+    for index in range(3):
+        session.add(db.C4wOrganisation(
+            slug=u'o%d' % index, name=u'O%d' % index,
+            contact_point_email=u'o%d@example.org' % index))
+    session.commit()
+
+    rows = db.list_dictize('organisation',
+                           session.query(db.C4wOrganisation).all())
+    assert rows
+    assert all('contact_point_email' not in row for row in rows)
+
+
+def test_a_long_published_slug_is_preserved(session):
+    """blog_post.slug is the address the site published; the longest is 146
+    characters, and slugify's 90-char cap truncated it mid-word."""
+    long_slug = u'-'.join([u'segment%d' % i for i in range(20)])
+    assert len(long_slug) > 90
+    assert db.unique_slug(db.C4wPost, long_slug) == long_slug
+
+
+def test_a_non_slug_base_is_still_slugified(session):
+    assert db.unique_slug(db.C4wPost, u'Some Title!') == u'some-title'

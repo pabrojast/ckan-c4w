@@ -80,6 +80,23 @@ def is_visible(entity_type, row, context):
     ).first() is not None
 
 
+def is_sysadmin(context):
+    """Whether the requester is a CKAN sysadmin."""
+    user = context.get('auth_user_obj')
+    return bool(user is not None and getattr(user, 'sysadmin', False))
+
+
+def is_authenticated(context):
+    """Whether there is a real logged-in user behind this request.
+
+    Gates the contact addresses. The detail template already made this
+    judgement for the page; the action has to make it again because it is
+    reachable through the API, where no template runs.
+    """
+    user = context.get('auth_user_obj')
+    return user is not None and getattr(user, 'id', None) is not None
+
+
 def make_show(entity_type, model_cls, action_name, enrich=None):
     """Build the ``c4w_<entity>_show`` action.
 
@@ -94,7 +111,8 @@ def make_show(entity_type, model_cls, action_name, enrich=None):
             model_cls, data_dict.get('id') or data_dict.get('slug'))
         if row is None or not is_visible(entity_type, row, context):
             raise tk.ObjectNotFound(tk._('Not found'))
-        out = db.entity_dictize(entity_type, row)
+        out = db.entity_dictize(entity_type, row,
+                                include_contact=is_authenticated(context))
         return enrich(out) if enrich else out
 
     show.__name__ = str(action_name)
@@ -108,7 +126,10 @@ def make_list(spec_factory, action_name):
     @tk.side_effect_free
     def listing(context, data_dict):
         tk.check_access(action_name, context, data_dict)
-        return q.build_listing(spec_factory(), data_dict or {})
+        # Only a sysadmin sees what the public filter hides, and the decision
+        # is made HERE rather than read from the request.
+        return q.build_listing(spec_factory(), data_dict or {},
+                               include_private=is_sysadmin(context))
 
     listing.__name__ = str(action_name)
     return listing

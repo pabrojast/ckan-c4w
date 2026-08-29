@@ -222,12 +222,28 @@ class Runner(object):
                                            'seen': len(rows)}
 
     def _filter_since(self, rows):
+        """Keep rows changed at or after ``--since``.
+
+        Compared as DATETIMES. Comparing the string forms looks like it works
+        and does not: str(datetime) is '2026-08-29 03:42:00+00:00' while an
+        operator types '2026-08-29T00:00:00', so the two diverge at the 'T'
+        and every row changed that day is dropped -- with the report saying
+        "seen 0", which reads like "nothing changed".
+
+        A row with no timestamp is always kept: it cannot be shown to be
+        older, and dropping it would lose data silently.
+        """
         if not self.since:
             return rows
+        cutoff = mapping._naive_utc(self.since)
+        if cutoff is None:
+            raise ValueError(
+                '--since is not a timestamp I can parse: %r' % self.since)
         kept = []
         for row in rows:
-            stamp = row.get('dateUpdated') or row.get('updated_on')
-            if stamp is None or u'%s' % stamp >= self.since:
+            stamp = mapping._naive_utc(
+                row.get('dateUpdated') or row.get('updated_on'))
+            if stamp is None or stamp >= cutoff:
                 kept.append(row)
         return kept
 
@@ -250,8 +266,20 @@ class Runner(object):
         if created:
             obj = model_cls(legacy_id=columns['legacy_id'])
 
+        media_targets = set(source.MEDIA_COLUMNS.get(entity, {}).values())
         for key, value in columns.items():
             if key == 'slug':
+                continue
+            # The mapper leaves media URLs None because the media pass fills
+            # them later. Writing that None back would erase the image on
+            # every re-run -- including the delta run at cutover, which the
+            # runbook deliberately runs without --media-root.
+            if key in media_targets and value is None:
+                continue
+            # Same for the two counters the live portal owns: total_accesses
+            # keeps counting after the import, and re-running must not reset
+            # it to whatever Django last recorded.
+            if key in ('total_accesses',) and getattr(obj, key, None):
                 continue
             if hasattr(obj, key):
                 setattr(obj, key, value)
@@ -406,6 +434,11 @@ class Runner(object):
             target = source.MEDIA_COLUMNS.get(entity, {}).get(legacy_column)
             if target:
                 self._media_jobs.append((entity, obj.id, target, path))
+        # An inline image has no column to fill: uploading it and recording
+        # the map row is the whole job, because the body still points at the
+        # legacy path and /citizens4water/media/<path> resolves it from there.
+        for path in (result.get('inline_media') or ()):
+            self._media_jobs.append((entity, obj.id, None, path))
 
     def _import_media(self, reader):
         from ckan.model.meta import Session
@@ -415,7 +448,7 @@ class Runner(object):
                                               dry_run=self.dry_run)
         for index, (entity, object_id, column, path) in enumerate(jobs, 1):
             url = importer.resolve(path)
-            if not url:
+            if not url or column is None:
                 continue
             model_cls = db.ENTITY_CLASSES[entity]
             obj = Session.query(model_cls).filter(

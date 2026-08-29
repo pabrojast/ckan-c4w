@@ -65,6 +65,14 @@ def _bool(value):
     return bool(value)
 
 
+_FRACTION_RE = re.compile(r'\.(\d{1,9})')
+
+
+def _pad_fraction(match):
+    """Normalise fractional seconds to the six digits fromisoformat wants."""
+    return u'.' + (match.group(1) + u'000000')[:6]
+
+
 def _parse_stamp(value):
     """Coerce whatever the source handed us into a datetime, or None.
 
@@ -80,11 +88,18 @@ def _parse_stamp(value):
     if not text:
         return None
     text = text.replace(u'Z', u'+00:00')
+    # fromisoformat accepts exactly 3 or 6 fractional digits before Python
+    # 3.11, and PostgreSQL emits however many it needs -- 7 of the 43 projects
+    # carry 5, e.g. '2026-08-12T10:55:18.08998+00:00'. Those raised, fell
+    # through every fallback and came back None, so those rows would have
+    # imported with no created/modified at all.
+    text = _FRACTION_RE.sub(_pad_fraction, text)
     try:
         return datetime.datetime.fromisoformat(text)
     except ValueError:
-        for fmt in ('%Y-%m-%d %H:%M:%S%z', '%Y-%m-%d %H:%M:%S',
-                    '%Y-%m-%d'):
+        for fmt in ('%Y-%m-%d %H:%M:%S.%f%z', '%Y-%m-%d %H:%M:%S%z',
+                    '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S',
+                    '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d'):
             try:
                 return datetime.datetime.strptime(text, fmt)
             except ValueError:
@@ -497,6 +512,7 @@ def parse_country_field(value):
 # --------------------------------------------------------------------------- #
 
 def map_event(row, ctx=None):
+    ctx = ctx or {}
     title = normalise_text(row.get('title'))
     if not title:
         return {'skip': True,
@@ -531,9 +547,17 @@ def map_event(row, ctx=None):
         'event_type': normalise_term(event_type) if event_type else None,
         'latitude': _coordinate(row.get('latitude')),
         'longitude': _coordinate(row.get('longitude')),
-        'approved': _bool(row.get('approved')),
-        'created': _naive_utc(row.get('start_date')),
-        'modified': _naive_utc(row.get('start_date')),
+        # NOT row['approved']. Django's events view filters on the
+        # events_unapprovedevents table and never reads this column; that
+        # table is empty, so production serves all 13. Copying the column
+        # hid "CS4Water Conference 2025", which is both public and featured.
+        'approved': row.get('id') not in (ctx or {}).get(
+            'unapproved_events', set()),
+        # start_date is the only timestamp events carry. Using it as `created`
+        # gives six future-dated rows, so the real creation time is simply
+        # unknown and left to the column default.
+        'created': None,
+        'modified': None,
     }
     extras = {}
     shadow = html_to_text(row.get('description'))
@@ -581,12 +605,13 @@ def map_post(row, ctx=None):
                 'notes': ['post %s has no title' % row.get('id')]}
 
     # blog_post already HAS a slug, and it is the address the site published.
-    # Reuse it rather than regenerating, or every inbound link breaks.
+    # Reuse it VERBATIM -- the longest is 146 characters, and slugify's 90-char
+    # cap would truncate it mid-word and 404 a URL that is live today.
     slug = normalise_text(row.get('slug'))
 
     columns = {
         'legacy_id': row.get('id'),
-        'slug': slugify(slug) if slug else None,
+        'slug': slug or None,
         'title': title,
         # The only field on the portal that gets the WIDER allowlist: an
         # editor writing news legitimately needs sub-headings and tables, and
@@ -620,6 +645,10 @@ def map_post(row, ctx=None):
         'relations': {},
         'notes': [],
         'media': {'image': _media_path(row.get('image'))},
+        # Images embedded in the body. Their src is site-relative, so the
+        # sanitiser keeps it and /citizens4water/media/<path> resolves it --
+        # but only once the file has been uploaded and mapped.
+        'inline_media': _inline_media(row.get('content')),
         'legacy_author': row.get('author_id'),
     }
 
@@ -685,6 +714,11 @@ def map_resource(row, ctx=None):
         'legacy_author': row.get('creator_id'),
         'legacy_category': row.get('category_id'),
     }
+
+
+def _inline_media(html):
+    from ckanext.c4w.migrate.source import inline_media_paths
+    return inline_media_paths(html)
 
 
 def _int(value):

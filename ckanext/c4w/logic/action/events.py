@@ -64,7 +64,8 @@ def c4w_event_list(context, data_dict):
     tk.check_access('c4w_event_list', context, data_dict)
     data_dict = dict(data_dict or {})
 
-    listing = q.build_listing(spec(), data_dict)
+    listing = q.build_listing(spec(), data_dict,
+                              include_private=_common.is_sysadmin(context))
     now = datetime.datetime.utcnow().isoformat()
     upcoming, past = [], []
     for event in listing['results']:

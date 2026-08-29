@@ -150,3 +150,26 @@ def redirect_to_post(slug):
         return tk.abort(404, tk._('Article not found'))
     return redirect(
         c4w_helpers.c4w_url('post_detail', slug=post['slug']), code=301)
+
+
+def media_redirect(filename):
+    """302 from a legacy media path to wherever the file was re-hosted.
+
+    Every inbound link to an old image -- and every <img src> still inside a
+    migrated blog body -- points at this shape. The map is also what makes the
+    easy_thumbnails derivatives resolve: the public site never served the
+    stored path, it served a thumbnail of it.
+
+    302 rather than 301: the target is an object-store URL that may be
+    re-issued, and a permanent redirect would be cached past that.
+    """
+    from ckan.model.meta import Session
+    from ckanext.c4w import db
+
+    db.ensure_mappers()
+    path = (filename or u'').strip()
+    row = (Session.query(db.C4wMediaMap)
+           .filter(db.C4wMediaMap.legacy_path == path).first())
+    if row is None or not row.new_url:
+        return tk.abort(404, tk._('File not found'))
+    return redirect(row.new_url, code=302)

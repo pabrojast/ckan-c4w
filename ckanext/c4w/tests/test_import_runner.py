@@ -46,6 +46,9 @@ class FakeReader(object):
     def lookups(self):
         merged = dict(self.corpus['lookup'])
         merged.update(self.joins['lookup_full'])
+        # Empty in production, which is why all 13 events are public there.
+        merged['unapproved_events'] = set(
+            self.corpus['lookup'].get('unapproved_events') or ())
         return merged
 
     def entity_rows(self, entity):
@@ -345,3 +348,137 @@ def test_a_missing_media_root_is_reported_not_fatal(session, corpus):
     assert report['media']['uploaded'] == 0
     assert report['media']['missing']
     assert session.query(db.C4wProject).count() == 43
+
+
+# --------------------------------------------------------------------------- #
+# Regressions found by the adversarial review
+# --------------------------------------------------------------------------- #
+
+def test_every_post_keeps_the_slug_the_site_published(session, corpus):
+    """One blog slug is 146 characters and slugify capped at 90.
+
+    The truncated form 404'd a URL that returns 200 on the live site, and
+    there was no other way in that Django ever published.
+    """
+    from ckanext.c4w.logic.action import _common
+
+    source_slugs = {row['id']: row['slug'] for row in corpus['post']}
+    _run(corpus)
+    for post in session.query(db.C4wPost):
+        assert post.slug == source_slugs[post.legacy_id], post.legacy_id
+        assert _common.get_by_reference(
+            db.C4wPost, source_slugs[post.legacy_id]) is not None
+
+
+def test_all_thirteen_events_are_public(session, corpus):
+    """Django's events view filters on the events_unapprovedevents TABLE and
+    never reads Event.approved. That table is empty, so production serves all
+    thirteen -- including "CS4Water Conference 2025", which is also one of only
+    two featured events and whose column says approved=false.
+    """
+    _run(corpus)
+    assert session.query(db.C4wEvent).filter(
+        db.C4wEvent.approved.is_(True)).count() == 13
+    conference = (session.query(db.C4wEvent)
+                  .filter(db.C4wEvent.legacy_id == 6).first())
+    assert conference is not None
+    assert conference.approved is True
+    assert conference.featured is True
+
+
+def test_events_do_not_claim_a_creation_date_they_never_had(session, corpus):
+    """start_date was being used as `created`, which dated six events into the
+    future. The real creation time is simply not recorded."""
+    _run(corpus)
+    for event in session.query(db.C4wEvent):
+        assert event.created is not None      # the column default
+        assert event.modified is not None
+
+
+def test_images_embedded_in_a_post_body_are_queued_for_upload(session, corpus):
+    """Six published posts embed 17 images.
+
+    Their src is site-relative, so the sanitiser keeps it and
+    /citizens4water/media/<path> resolves it -- but only once the file has
+    been uploaded and a map row exists. Without this they were the only media
+    the pass never saw.
+    """
+    from ckanext.c4w.migrate import mapping
+
+    inline = [path for row in corpus['post']
+              for path in mapping.map_post(row)['inline_media']]
+    assert len(inline) == 17
+
+    report = _run(corpus)
+    # No media root, so every one is reported missing rather than uploaded --
+    # what matters is that they REACHED the pass at all.
+    assert set(inline) <= set(report['media']['missing'])
+
+
+def test_a_delta_run_does_not_erase_the_images(session, corpus):
+    """The cutover delta run has no --media-root by design.
+
+    The mapper leaves image URLs None because the media pass fills them, and
+    writing that None back on every run deleted the image of every row the
+    delta touched.
+    """
+    _run(corpus)
+    project = session.query(db.C4wProject).first()
+    project.image1_url = u'/uploads/c4w/kept.png'
+    session.add(project)
+    session.commit()
+    legacy_id = project.legacy_id
+
+    _run(corpus)
+    again = (session.query(db.C4wProject)
+             .filter(db.C4wProject.legacy_id == legacy_id).first())
+    assert again.image1_url == u'/uploads/c4w/kept.png'
+
+
+def test_a_re_import_does_not_reset_the_view_counter(session, corpus):
+    """total_accesses keeps counting on the new portal after the cutover."""
+    _run(corpus)
+    project = (session.query(db.C4wProject)
+               .filter(db.C4wProject.legacy_id == 32).first())
+    project.total_accesses = 9999
+    session.add(project)
+    session.commit()
+
+    _run(corpus)
+    again = (session.query(db.C4wProject)
+             .filter(db.C4wProject.legacy_id == 32).first())
+    assert again.total_accesses == 9999
+
+
+@pytest.mark.parametrize('since,expected', [
+    ('2000-01-01T00:00:00', 43),      # everything
+    ('2000-01-01 00:00:00', 43),      # the other spelling of the same instant
+    ('2099-01-01T00:00:00', 0),       # nothing, now that every stamp parses
+])
+def test_since_compares_datetimes_not_their_string_forms(session, corpus,
+                                                         since, expected):
+    """str(datetime) is '... 03:42:00+00:00' and an operator types '...T00:00'.
+
+    Comparing the strings diverges at the 'T', so every row changed that day
+    was dropped -- and the report said "seen 0", which reads like "nothing
+    changed".
+    """
+    engine = runner_module.Runner(dsn=None, media_root=None, since=since)
+    original = db.ensure_tables
+    db.ensure_tables = lambda: None
+    try:
+        report = engine.run(reader=FakeReader(corpus), resolver=FakeResolver())
+    finally:
+        db.ensure_tables = original
+    assert report['entities']['project']['seen'] == expected
+
+
+def test_an_unparseable_since_is_refused_not_silently_ignored(session, corpus):
+    engine = runner_module.Runner(dsn=None, media_root=None, since='yesterday')
+    original = db.ensure_tables
+    db.ensure_tables = lambda: None
+    try:
+        with pytest.raises(ValueError):
+            engine.run(reader=FakeReader(corpus), resolver=FakeResolver())
+    finally:
+        db.ensure_tables = original

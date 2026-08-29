@@ -56,6 +56,11 @@ def project_legacy(legacy_id):
     return views_projects.project_legacy(legacy_id)
 
 
+def media_redirect(filename):
+    from ckanext.c4w.logic import views_catalogue
+    return views_catalogue.media_redirect(filename)
+
+
 def organisation_list():
     from ckanext.c4w.logic import views_organisations
     return views_organisations.organisation_list()
@@ -102,6 +107,11 @@ def _register(bp):
     Called once per blueprint so the live and preview mounts can never drift.
     """
     bp.add_url_rule('/', 'index', index, methods=['GET'])
+
+    # Legacy media. Load-bearing: every <img src> inside a migrated blog body
+    # still points at this shape, as does every inbound link to an old image.
+    bp.add_url_rule('/media/<path:filename>', 'media_redirect',
+                    media_redirect, methods=['GET'])
 
     # Projects. The int rule is registered BEFORE the slug rule: Flask's int
     # converter is strict so they cannot actually collide, but the order makes

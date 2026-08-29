@@ -11,6 +11,7 @@ import ckan.plugins.toolkit as tk
 
 from ckanext.c4w import constants, db
 from ckanext.c4w.logic import query as q
+from ckanext.c4w.logic.action import _common
 
 
 def _spec():
@@ -109,7 +110,7 @@ def _visible_to(project, context):
     ).first() is not None
 
 
-def _dictize_detail(project):
+def _dictize_detail(project, include_contact=False):
     """Dictize a project plus the neighbours its detail page renders.
 
     Only the detail path pays for this. The listing uses the plain dictize,
@@ -117,7 +118,8 @@ def _dictize_detail(project):
     """
     from ckan.model.meta import Session
 
-    out = db.entity_dictize('project', project)
+    out = db.entity_dictize('project', project,
+                            include_contact=include_contact)
 
     organisation_ids = list(out.get('relations', {}).get('organisation', []))
     if out.get('main_organisation_id'):
@@ -148,14 +150,16 @@ def c4w_project_show(context, data_dict):
     project = _get_project(data_dict.get('id') or data_dict.get('slug'))
     if project is None or not _visible_to(project, context):
         raise tk.ObjectNotFound(tk._('Project not found'))
-    return _dictize_detail(project)
+    return _dictize_detail(
+        project, include_contact=_common.is_authenticated(context))
 
 
 @tk.side_effect_free
 def c4w_project_list(context, data_dict):
     """The faceted /projects listing."""
     tk.check_access('c4w_project_list', context, data_dict)
-    return q.build_listing(_spec(), data_dict or {})
+    return q.build_listing(_spec(), data_dict or {},
+                           include_private=_common.is_sysadmin(context))
 
 
 @tk.side_effect_free
