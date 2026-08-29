@@ -28,6 +28,14 @@
             {% snippet 'c4w/snippets/event_card.html', event=event %}
           {% endfor %}
         </div>
+      {% elif listing.upcoming_total %}
+        {# Counted across every page, so a page of past events does not claim
+           there is nothing coming. #}
+        <p class="c4w-empty">
+          {{ ungettext('{n} upcoming event is on an earlier page.',
+                       '{n} upcoming events are on earlier pages.',
+                       listing.upcoming_total).format(n=listing.upcoming_total) }}
+        </p>
       {% else %}
         <p class="c4w-empty">{{ _('No upcoming events right now.') }}</p>
       {% endif %}

@@ -215,8 +215,38 @@ def c4w_facet_toggle_url(name, value):
     endpoint = (request.endpoint or '').split('.')[-1]
     flat = {}
     for key, values in args.items():
+        # url_for reads a leading underscore as a routing directive, so
+        # forwarding ?_scheme=x or ?_method=PUT was a 500 on every listing.
+        if key.startswith('_'):
+            continue
         flat[key] = values[0] if len(values) == 1 else values
     return c4w_url(endpoint, **flat)
+
+
+def c4w_page_url(page):
+    """The current URL with the page number changed, keeping every filter.
+
+    Built from ``to_dict(flat=False)``: the flat form keeps only the FIRST
+    value of a repeated key, so a visitor who had selected two topics would
+    have found page 2 filtered by one of them -- a different result set, with
+    nothing on the page to say so.
+
+    Undeclared keys are dropped rather than forwarded. url_for treats a
+    leading underscore as a routing directive, so ``?_scheme=x`` splatted
+    into it was a 500 on every listing.
+    """
+    from flask import request
+
+    args = {}
+    for key, values in request.args.to_dict(flat=False).items():
+        if key.startswith('_') or key == 'page':
+            continue
+        kept = [v for v in values if v]
+        if kept:
+            args[key] = kept[0] if len(kept) == 1 else kept
+    args['page'] = page
+    endpoint = (request.endpoint or '').split('.')[-1]
+    return c4w_url(endpoint, **args)
 
 
 def c4w_facet_active(name, value):
@@ -261,6 +291,7 @@ def get_helpers():
         'c4w_stats': c4w_stats,
         'c4w_country_name': c4w_country_name,
         'c4w_facet_toggle_url': c4w_facet_toggle_url,
+        'c4w_page_url': c4w_page_url,
         'c4w_facet_active': c4w_facet_active,
         'c4w_any_facet_active': c4w_any_facet_active,
         'c4w_image_url': c4w_image_url,

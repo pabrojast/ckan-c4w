@@ -77,7 +77,23 @@ def c4w_event_list(context, data_dict):
         (upcoming if end >= now else past).append(event)
     listing['upcoming'] = upcoming
     listing['past'] = past
+    # Counted over the WHOLE set, not the page. The split is presentational,
+    # so a page that happens to hold only past events must not report that
+    # there are no upcoming ones -- there are, on the page before.
+    listing['upcoming_total'] = _count_upcoming(context, data_dict)
     return listing
+
+
+def _count_upcoming(context, data_dict):
+    """How many events are still ahead, across every page."""
+    from ckan.model.meta import Session
+
+    db.ensure_mappers()
+    query = Session.query(db.C4wEvent).filter(
+        db.C4wEvent.start_date >= datetime.datetime.utcnow())
+    if not _common.is_sysadmin(context):
+        query = query.filter(db.C4wEvent.approved.is_(True))
+    return query.count()
 
 
 c4w_event_show = _common.make_show(
