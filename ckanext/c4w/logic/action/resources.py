@@ -78,7 +78,8 @@ def _enrich(out):
             rows = (Session.query(model_cls)
                     .filter(model_cls.id.in_(ids))
                     .order_by(model_cls.name.asc()).all())
-            out[key] = db.list_dictize(entity_type, rows)
+            out[key] = db.list_dictize(
+                entity_type, _common.public_only(entity_type, rows))
     return out
 
 

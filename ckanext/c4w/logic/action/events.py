@@ -41,15 +41,19 @@ def _enrich(out):
     if out.get('project_id'):
         row = (Session.query(db.C4wProject)
                .filter(db.C4wProject.id == out['project_id']).first())
-        out['project'] = db.entity_dictize('project', row) if row else None
+        # Filtered: resolving by id bypasses the listing's visibility rule,
+        # and this page is public.
+        rows = _common.public_only('project', [row] if row else [])
+        out['project'] = db.entity_dictize('project', rows[0]) if rows else None
 
     out['main_organisation'] = None
     if out.get('main_organisation_id'):
         row = (Session.query(db.C4wOrganisation)
                .filter(db.C4wOrganisation.id == out['main_organisation_id'])
                .first())
+        rows = _common.public_only('organisation', [row] if row else [])
         out['main_organisation'] = (
-            db.entity_dictize('organisation', row) if row else None)
+            db.entity_dictize('organisation', rows[0]) if rows else None)
     return out
 
 

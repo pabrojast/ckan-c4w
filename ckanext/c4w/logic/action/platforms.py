@@ -41,7 +41,8 @@ def _enrich(out):
         rows = (Session.query(db.C4wOrganisation)
                 .filter(db.C4wOrganisation.id.in_(ids))
                 .order_by(db.C4wOrganisation.name.asc()).all())
-        out['organisations'] = db.list_dictize('organisation', rows)
+        out['organisations'] = db.list_dictize(
+            'organisation', _common.public_only('organisation', rows))
     return out
 
 

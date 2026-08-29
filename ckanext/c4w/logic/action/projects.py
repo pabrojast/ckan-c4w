@@ -128,8 +128,10 @@ def _dictize_detail(project, include_contact=False):
     if organisation_ids:
         rows = (Session.query(db.C4wOrganisation)
                 .filter(db.C4wOrganisation.id.in_(organisation_ids)).all())
+        # Resolving by id bypasses the listing's visibility rule, and this is
+        # a public page.
         organisations = {row.id: db.entity_dictize('organisation', row)
-                         for row in rows}
+                         for row in _common.public_only('organisation', rows)}
     out['main_organisation'] = organisations.get(out.get('main_organisation_id'))
     out['organisations'] = [organisations[i] for i in organisation_ids
                             if i in organisations
@@ -200,7 +202,11 @@ def c4w_project_record_view(context, data_dict):
     from ckan.model.meta import Session
 
     project = _get_project(data_dict.get('id'))
-    if project is None:
+    # The same visibility rule as _show, and for the same reason: without it
+    # this is an anonymous existence oracle over exactly the projects _show
+    # hides -- a 200 means the slug exists -- and an unauthenticated write
+    # against them.
+    if project is None or not _visible_to(project, context):
         raise tk.ObjectNotFound(tk._('Project not found'))
     project.total_accesses = (project.total_accesses or 0) + 1
     Session.add(project)

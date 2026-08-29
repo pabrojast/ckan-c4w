@@ -373,3 +373,54 @@ def test_every_lookup_backed_term_is_the_slug_of_its_own_label():
                 offenders.append('%s: %r should be %r (label %r)'
                                  % (vocabulary, term, expected, label))
     assert not offenders, offenders
+
+
+# --------------------------------------------------------------------------- #
+# URL handling a browser will not agree with
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize('src', [
+    u'/\t/evil.example/x.png',
+    u'/\n/evil.example/x.png',
+    u'/\r/evil.example/x.png',
+    u'/\x00/evil.example/x.png',
+])
+def test_url_whitespace_cannot_smuggle_a_protocol_relative_image(src):
+    """A browser DELETES tab, LF and CR from a URL before resolving it.
+
+    '/<TAB>/evil.example/x.png' therefore becomes '//evil.example/x.png' --
+    protocol-relative to a third party, past a check that only read the first
+    two characters.
+    """
+    assert sanitize.image_src_ok(src) is False
+
+
+@pytest.mark.parametrize('url', [
+    u'javascript:alert(1)',
+    u'JavaScript:alert(1)',
+    u'  javascript:alert(1)  ',
+    u'java\tscript:alert(1)',      # a browser strips the tab and runs it
+    u'java\nscript:alert(1)',
+    u'data:text/html,<script>alert(1)</script>',
+    u'vbscript:msgbox(1)',
+])
+def test_a_dangerous_scheme_never_reaches_an_href(url):
+    """These values are rendered straight into an href.
+
+    A template cannot sanitise an attribute, so the refusal has to happen
+    here or it is a stored XSS on a page anyone can reach.
+    """
+    from ckanext.c4w.text import ensure_scheme
+    assert ensure_scheme(url) is None
+
+
+@pytest.mark.parametrize('url,expected', [
+    (u'https://example.org/a', u'https://example.org/a'),
+    (u'www.example.org', u'https://www.example.org'),
+    (u'mailto:someone@example.org', u'mailto:someone@example.org'),
+    (u'//cdn.example.org/a', u'https://cdn.example.org/a'),
+    (u'/relative/path', u'/relative/path'),
+])
+def test_a_safe_url_is_left_usable(url, expected):
+    from ckanext.c4w.text import ensure_scheme
+    assert ensure_scheme(url) == expected

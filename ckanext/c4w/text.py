@@ -193,18 +193,41 @@ def is_blank_html(value):
     return not html_to_text(value)
 
 
+# Schemes that may appear in a stored link. Everything else -- javascript:,
+# data:, vbscript:, file: -- is refused outright: these values are rendered
+# straight into an href, and the templates do not sanitise an attribute.
+SAFE_SCHEMES = (u'http', u'https', u'mailto', u'ftp')
+
+_SCHEME_RE = re.compile(r'^([A-Za-z][A-Za-z0-9+.-]*):')
+_URL_WHITESPACE_RE = re.compile(r'[\t\n\r\x00\x0b\x0c\u2028\u2029]')
+
+
 def ensure_scheme(url, default=u'https'):
-    """Add a scheme to a bare host so a link is not read as relative.
+    """Add a scheme to a bare host, and refuse a dangerous one.
 
     Three project URLs are stored as 'www.example.org' with no scheme; a
     browser resolves that against the current page, so the link points back
     into the portal instead of out to the project.
+
+    Returns None for a scheme that is not in SAFE_SCHEMES. These values go
+    straight into an href, and a template cannot sanitise an attribute -- so
+    'javascript:...' would be a stored XSS on a page anyone can reach.
     """
-    value = normalise_text(url)
+    # The URL-whitespace strip runs FIRST, on the raw value: normalise_text
+    # turns a tab into a SPACE, and 'java<TAB>script:x' would then read as
+    # 'java script:x' -- no longer a scheme to this parser, but a browser
+    # deletes the tab and executes it.
+    if url is None:
+        return None
+    value = normalise_text(_URL_WHITESPACE_RE.sub(u'', u'%s' % url))
     if not value:
         return None
-    if u'://' in value or value.startswith(u'mailto:'):
-        return value
+    match = _SCHEME_RE.match(value)
+    if match:
+        return value if match.group(1).lower() in SAFE_SCHEMES else None
+    if value.startswith(u'//'):
+        # Protocol-relative: keep it same-scheme rather than guessing.
+        return u'%s:%s' % (default, value)
     if value.startswith(u'/'):
         return value
     # Only add a scheme to something that actually looks like a hostname.

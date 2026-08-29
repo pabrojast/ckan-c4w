@@ -482,3 +482,63 @@ def test_an_unparseable_since_is_refused_not_silently_ignored(session, corpus):
             engine.run(reader=FakeReader(corpus), resolver=FakeResolver())
     finally:
         db.ensure_tables = original
+
+
+def test_every_keyword_on_a_public_project_is_findable(session, corpus):
+    """Django matched the project name OR any of its keywords.
+
+    Searching only the stored columns lost 21 of the 81 keywords on public
+    projects, and searching the stored HTML matched markup as content --
+    "E. coli levels" missed because the stored text is "E. coli</i> levels".
+    The search_text haystack carries the resolved plain text of every
+    long-form field plus every vocabulary label.
+    """
+    from ckanext.c4w.logic import query as q
+    from ckanext.c4w.logic.action import projects as projects_action
+
+    _run(corpus)
+    public = {row.id for row in session.query(db.C4wProject)
+              .filter(db.C4wProject.approved.is_(True),
+                      db.C4wProject.hidden.isnot(True))}
+    labels = {link.label for link in session.query(db.C4wTermLink)
+              .filter(db.C4wTermLink.vocabulary == 'keyword')
+              if link.entity_id in public and link.label}
+    assert len(labels) > 50
+
+    spec = projects_action._spec()
+    missing = [label for label in sorted(labels)
+               if q.build_listing(spec, {'q': label})['count'] == 0]
+    assert not missing, missing
+
+
+def test_a_phrase_broken_by_markup_is_still_found(session, corpus):
+    from ckanext.c4w.logic import query as q
+    from ckanext.c4w.logic.action import projects as projects_action
+
+    _run(corpus)
+    assert q.build_listing(
+        projects_action._spec(), {'q': u'E. coli levels'})['count'] >= 1
+
+
+def test_like_metacharacters_are_escaped(session, corpus):
+    """Unescaped, a visitor typing "100%" matches every row -- which reads as a
+    broken search rather than a clever one."""
+    from ckanext.c4w.logic import query as q
+    from ckanext.c4w.logic.action import projects as projects_action
+
+    _run(corpus)
+    spec = projects_action._spec()
+    total = q.build_listing(spec, {})['count']
+    assert q.build_listing(spec, {'q': u'%'})['count'] < total
+    assert q.build_listing(spec, {'q': u'_'})['count'] < total
+
+
+def test_the_haystack_is_not_served_to_a_reader(session, corpus):
+    """search_text is a haystack for the database, not content for a page."""
+    from ckanext.c4w.logic import query as q
+    from ckanext.c4w.logic.action import projects as projects_action
+
+    _run(corpus)
+    listing = q.build_listing(projects_action._spec(), {})
+    assert listing['results']
+    assert all('search_text' not in row for row in listing['results'])

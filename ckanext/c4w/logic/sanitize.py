@@ -127,6 +127,18 @@ def _trusted_embed_hosts():
     return configured or DEFAULT_EMBED_HOSTS
 
 
+# The characters a browser removes from a URL before resolving it.
+_URL_WHITESPACE = u'\t\n\r\x00\x0b\x0c\u2028\u2029'
+
+
+def _strip_url_whitespace(value):
+    """Normalise a URL the way a browser will, before judging it."""
+    text = u'%s' % (value or u'')
+    for char in _URL_WHITESPACE:
+        text = text.replace(char, u'')
+    return text.strip()
+
+
 def _host_of(url):
     try:
         from urllib.parse import urlparse
@@ -145,10 +157,14 @@ def image_src_ok(value):
     """
     if not value:
         return False
-    value = value.strip()
+    # Browsers DELETE tab, LF and CR from a URL before resolving it, so
+    # '/<TAB>/evil.example/x.png' becomes '//evil.example/x.png' -- protocol
+    # relative to a third party, past a check that only read the first two
+    # characters. Strip them the same way the browser will, then decide.
+    value = _strip_url_whitespace(value)
+    if not value:
+        return False
     if value.startswith('//') or '\\' in value:
-        # Protocol-relative and backslash-escaped forms bypass a naive prefix
-        # check while still resolving to a third party.
         return False
     if value.startswith('/'):
         return '..' not in value
@@ -160,7 +176,7 @@ def embed_src_ok(value):
     """Whether an ``<iframe src>`` may be kept: allowlisted video hosts only."""
     if not value:
         return False
-    value = value.strip()
+    value = _strip_url_whitespace(value)
     if not value.lower().startswith(('http://', 'https://')):
         return False
     return _host_of(value) in _trusted_embed_hosts()

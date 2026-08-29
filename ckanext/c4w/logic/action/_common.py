@@ -97,6 +97,17 @@ def is_authenticated(context):
     return user is not None and getattr(user, 'id', None) is not None
 
 
+def public_only(entity_type, rows):
+    """Drop rows an anonymous visitor may not see.
+
+    Used by the detail enrichments. They resolve a related row straight from
+    its id, which bypasses the listing's own visibility filter -- so without
+    this an unapproved project is republished in full on the public page of
+    any event or resource that happens to reference it.
+    """
+    return [row for row in rows if is_visible(entity_type, row, {})]
+
+
 def make_show(entity_type, model_cls, action_name, enrich=None):
     """Build the ``c4w_<entity>_show`` action.
 

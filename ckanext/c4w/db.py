@@ -161,6 +161,9 @@ c4w_project_table = Table(
     # deferred in every listing query -- it is served by /project/<slug>/geojson
     # and never embedded in a list page.
     Column('geom_geojson', types.UnicodeText),
+    # Plain-text haystack: the long-form fields with their markup and
+    # entities resolved, plus every vocabulary label. See logic/query.py.
+    Column('search_text', types.UnicodeText),
     Column('extras', types.UnicodeText, default=u'{}'),
     Column('created', types.DateTime, default=_utcnow),
     Column('modified', types.DateTime, default=_utcnow),
@@ -201,6 +204,9 @@ c4w_organisation_table = Table(
     # into this row. The action re-checks it with organization_show and
     # degrades to None when the target is gone.
     Column('ckan_org_id', types.UnicodeText),
+    # Plain-text haystack: the long-form fields with their markup and
+    # entities resolved, plus every vocabulary label. See logic/query.py.
+    Column('search_text', types.UnicodeText),
     Column('created_by', types.UnicodeText),
     Column('extras', types.UnicodeText, default=u'{}'),
     Column('created', types.DateTime, default=_utcnow),
@@ -253,6 +259,9 @@ c4w_resource_table = Table(
     Column('is_training_resource', types.Boolean, default=False),
     Column('time_required', types.Float),
     Column('conditions_of_access', types.UnicodeText),
+    # Plain-text haystack: the long-form fields with their markup and
+    # entities resolved, plus every vocabulary label. See logic/query.py.
+    Column('search_text', types.UnicodeText),
     Column('image1_url', types.UnicodeText),
     Column('image1_credit', types.UnicodeText),
     Column('image2_url', types.UnicodeText),
@@ -293,6 +302,9 @@ c4w_platform_table = Table(
     Column('logo_credit', types.UnicodeText),
     Column('profile_image_url', types.UnicodeText),
     Column('profile_image_credit', types.UnicodeText),
+    # Plain-text haystack: the long-form fields with their markup and
+    # entities resolved, plus every vocabulary label. See logic/query.py.
+    Column('search_text', types.UnicodeText),
     Column('approved', types.Boolean, default=True),
     Column('created_by', types.UnicodeText),
     Column('extras', types.UnicodeText, default=u'{}'),
@@ -327,6 +339,9 @@ c4w_event_table = Table(
     Column('longitude', types.Numeric(9, 6)),
     Column('project_id', types.UnicodeText),
     Column('main_organisation_id', types.UnicodeText),
+    # Plain-text haystack: the long-form fields with their markup and
+    # entities resolved, plus every vocabulary label. See logic/query.py.
+    Column('search_text', types.UnicodeText),
     Column('approved', types.Boolean, default=False),
     Column('created_by', types.UnicodeText),
     Column('extras', types.UnicodeText, default=u'{}'),
@@ -354,6 +369,9 @@ c4w_post_table = Table(
     Column('created_on', types.DateTime),
     Column('updated_on', types.DateTime),
     Column('sticky', types.Boolean, default=False),
+    # Plain-text haystack: the long-form fields with their markup and
+    # entities resolved, plus every vocabulary label. See logic/query.py.
+    Column('search_text', types.UnicodeText),
     # Django stores 0/1; a readable string keeps ad-hoc SQL honest.
     Column('status', types.UnicodeText, default=u'draft'),
     Column('extras', types.UnicodeText, default=u'{}'),
@@ -494,6 +512,10 @@ def ensure_mappers():
 # Tuples are (table_name, column_name, column_sql_type).
 _AUTO_HEAL_COLUMNS = []
 
+# Columns never returned by a listing, however large they are. search_text is
+# a haystack for the database, not content for a reader.
+_NEVER_DICTIZED = frozenset(('search_text',))
+
 
 def _ensure_columns(engine):
     """Add missing whitelisted columns via ALTER TABLE."""
@@ -605,7 +627,7 @@ def _row_columns(obj, include_contact=False):
     table = sa.inspect(type(obj)).local_table
     out = {}
     for column in table.columns:
-        if column.name in _PRIVATE_COLUMNS:
+        if column.name in _PRIVATE_COLUMNS or column.name in _NEVER_DICTIZED:
             continue
         if column.name in CONTACT_COLUMNS and not include_contact:
             continue

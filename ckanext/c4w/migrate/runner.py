@@ -26,7 +26,7 @@ import logging
 
 from ckanext.c4w import db
 from ckanext.c4w.migrate import mapping, media as media_module, source
-from ckanext.c4w.text import normalise_term, slugify
+from ckanext.c4w.text import html_to_text, normalise_term, slugify
 
 log = logging.getLogger(__name__)
 
@@ -211,8 +211,10 @@ class Runner(object):
             self.report['notes'].extend(result.get('notes', []))
 
             obj = self._upsert(entity, model_cls, result, resolver)
-            self._write_terms(entity, obj, result, row, term_links, lookups)
+            labels = self._write_terms(entity, obj, result, row, term_links,
+                                       lookups)
             self._write_relations(entity, obj, row, relation_links, resolver)
+            self._write_search_text(entity, obj, result, labels)
             self._stash_media(entity, obj, result)
             imported += 1
             if index % BATCH_SIZE == 0:
@@ -311,6 +313,9 @@ class Runner(object):
         Deleted and reinserted per vocabulary rather than diffed: the corpus
         is small, the unique constraint guards it, and a diff would have to be
         right about ordering too.
+
+        Returns the labels written, so the caller can build the search
+        haystack without re-reading them -- see _write_search_text.
         """
         from ckan.model.meta import Session
         from ckanext.c4w import constants
@@ -340,6 +345,7 @@ class Runner(object):
                     else vocabulary
                 wanted.setdefault(target, []).extend(pairs)
 
+        written_labels = []
         for vocabulary, pairs in wanted.items():
             declared = constants.vocabulary_terms(vocabulary)
             if declared is not None:
@@ -363,7 +369,38 @@ class Runner(object):
                     entity_type=entity, entity_id=obj.id,
                     vocabulary=vocabulary, term=term, label=label,
                     sort_order=order))
+                written_labels.append(label)
                 order += 1
+        return written_labels
+
+    def _write_search_text(self, entity, obj, result, labels=()):
+        """Build the plain-text haystack the listing search reads.
+
+        Every long-form field with its markup and entities resolved, plus
+        every vocabulary LABEL -- so a visitor searching a keyword, a funding
+        body or an author finds the row, exactly as the Django site did, and a
+        phrase that spans a tag or an &nbsp; still matches.
+        """
+        from ckan.model.meta import Session
+
+        if not hasattr(obj, 'search_text'):
+            return
+        parts = []
+        for value in (result.get('columns') or {}).values():
+            if isinstance(value, str) and len(value) > 2:
+                parts.append(value)
+        for key, value in (result.get('extras') or {}).items():
+            if isinstance(value, str) and len(value) > 2:
+                parts.append(value)
+        # Passed in rather than re-queried: CKAN's session has autoflush
+        # DISABLED, so the links written moments ago are invisible to a query
+        # until something forces a flush -- and the haystack silently came out
+        # with no vocabulary labels in it at all.
+        parts.extend(label for label in labels if label)
+
+        haystack = u' '.join(html_to_text(part) or u'' for part in parts)
+        obj.search_text = u' '.join(haystack.split())[:200000] or None
+        Session.add(obj)
 
     def _write_relations(self, entity, obj, row, relation_links, resolver):
         from ckan.model.meta import Session

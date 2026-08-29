@@ -23,6 +23,7 @@ keys index into a dict of pre-built expressions; facet names are checked
 against the spec; filter values are always bound parameters.
 """
 import logging
+import re
 
 import sqlalchemy as sa
 from sqlalchemy import func, orm
@@ -102,14 +103,36 @@ def _as_list(value):
     return [value]
 
 
+# % and _ are LIKE wildcards. Unescaped, a visitor typing "100%" matches
+# every row, and "_" matches any single character -- which reads as a broken
+# search rather than a clever one.
+_LIKE_ESCAPE_RE = re.compile(r'([%_\\])')
+
+
 def _apply_search(query, model_cls, spec, text):
-    """Case-insensitive OR across the spec's search columns."""
-    if not text or not spec.search_columns:
+    """Case-insensitive OR across the search columns and the text haystack.
+
+    ``search_text`` is what makes this match what a READER sees: it holds the
+    long-form fields with their markup and entities resolved, plus every
+    vocabulary label. Searching the stored columns alone matched markup as
+    content ("E. coli levels" missed, because the stored text is
+    "E. coli</i> levels") and lost the keyword search entirely -- Django
+    matched the name OR any keyword, and 21 of the 81 keywords on public
+    projects returned nothing here.
+    """
+    if not text:
         return query
-    pattern = u'%%%s%%' % text.strip()
+    text = u'%s' % text
+    if not text.strip():
+        return query
+    pattern = u'%%%s%%' % _LIKE_ESCAPE_RE.sub(r'\\\1', text.strip())
+
+    names = list(spec.search_columns)
+    if hasattr(model_cls, 'search_text'):
+        names.append('search_text')
     clauses = [
-        getattr(model_cls, name).ilike(pattern)
-        for name in spec.search_columns
+        getattr(model_cls, name).ilike(pattern, escape='\\')
+        for name in names
         if hasattr(model_cls, name)
     ]
     return query.filter(sa.or_(*clauses)) if clauses else query
