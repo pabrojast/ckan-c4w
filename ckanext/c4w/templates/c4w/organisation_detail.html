@@ -1,0 +1,61 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ organisation.name }} - {{ _('Citizens4Water') }}{% endblock %}
+
+{% block c4w_content %}
+  {% set logo = h.c4w_image_url(organisation, 'logo_url') %}
+  <article class="c4w-detail c4w-detail--org">
+    <header class="c4w-detail__header">
+      <p class="c4w-detail__breadcrumb">
+        <a href="{{ h.c4w_url('organisation_list') }}">{{ _('Organisations') }}</a>
+      </p>
+      {% if logo %}
+        <div class="c4w-detail__logo"><img src="{{ logo }}" alt="" loading="lazy"></div>
+      {% endif %}
+      <h1>{{ organisation.name }}</h1>
+      <p class="c4w-detail__meta">
+        {% if organisation.org_type %}
+          <span class="c4w-detail__status">{{
+            h.c4w_term_label('org_type', organisation.org_type) }}</span>
+        {% endif %}
+        {% if organisation.country %}
+          <span>{{ h.c4w_country_name(organisation.country) }}</span>
+        {% endif %}
+      </p>
+    </header>
+
+    <div class="c4w-detail__body">
+      {% if organisation.description %}
+        {# Sanitised on the way in; see logic/sanitize.py. #}
+        <section>{{ organisation.description | safe }}</section>
+      {% endif %}
+
+      <p class="c4w-detail__actions">
+        {% if organisation.url %}
+          <a class="c4w-btn" href="{{ organisation.url }}"
+             rel="noopener noreferrer nofollow" target="_blank">{{ _('Visit website') }}</a>
+        {% endif %}
+        {#
+          Present only when this directory entry is linked to an organization
+          that actually publishes on the portal. The link is not a foreign key,
+          so the action resolves it and leaves it None when the target is gone.
+        #}
+        {% if organisation.ckan_organization %}
+          <a class="c4w-btn" href="{{ h.url_for('organization.read',
+             id=organisation.ckan_organization.name) }}">{{ _('Datasets on IHP-WINS') }}</a>
+        {% endif %}
+      </p>
+
+      {% if organisation.projects %}
+        <section>
+          <h2>{{ _('Projects') }}</h2>
+          <div class="c4w-card-grid">
+            {% for project in organisation.projects %}
+              {% snippet 'c4w/snippets/project_card.html', project=project %}
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+  </article>
+{% endblock %}

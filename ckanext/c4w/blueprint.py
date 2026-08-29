@@ -56,6 +56,21 @@ def project_legacy(legacy_id):
     return views_projects.project_legacy(legacy_id)
 
 
+def organisation_list():
+    from ckanext.c4w.logic import views_organisations
+    return views_organisations.organisation_list()
+
+
+def organisation_detail(slug):
+    from ckanext.c4w.logic import views_organisations
+    return views_organisations.organisation_detail(slug)
+
+
+def organisation_legacy(legacy_id):
+    from ckanext.c4w.logic import views_organisations
+    return views_organisations.organisation_legacy(legacy_id)
+
+
 # --------------------------------------------------------------------------- #
 # Route registration
 # --------------------------------------------------------------------------- #
@@ -78,6 +93,14 @@ def _register(bp):
                     methods=['GET'])
     bp.add_url_rule('/project/<slug>/geojson', 'project_geojson',
                     project_geojson, methods=['GET'])
+
+    # Organisations.
+    bp.add_url_rule('/organisations', 'organisation_list', organisation_list,
+                    methods=['GET'])
+    bp.add_url_rule('/organisation/<int:legacy_id>', 'organisation_legacy',
+                    organisation_legacy, methods=['GET'])
+    bp.add_url_rule('/organisation/<slug>', 'organisation_detail',
+                    organisation_detail, methods=['GET'])
     return bp
 
 

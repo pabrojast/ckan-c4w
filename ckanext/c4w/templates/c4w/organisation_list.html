@@ -1,0 +1,72 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ _('Organisations') }} - {{ _('Citizens4Water') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-listing">
+    <header class="c4w-listing__header">
+      <h1>{{ _('Organisations') }}</h1>
+      <p class="c4w-listing__count">
+        {{ ungettext('{n} organisation', '{n} organisations', listing.count).format(n=listing.count) }}
+      </p>
+
+      <form class="c4w-listing__controls" method="get"
+            action="{{ h.c4w_url('organisation_list') }}">
+        <label for="c4w-q">{{ _('Search organisations') }}</label>
+        <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}"
+               placeholder="{{ _('Name or description') }}">
+
+        <label for="c4w-order">{{ _('Order by') }}</label>
+        <select id="c4w-order" name="order">
+          {% for value, label in orderings %}
+            <option value="{{ value }}"
+              {% if listing.order == value %}selected{% endif %}>{{ _(label) }}</option>
+          {% endfor %}
+        </select>
+
+        {% for name, values in params.items() %}
+          {% if name not in ('q', 'order', 'page') %}
+            {% for value in (values if values is not string else [values]) %}
+              <input type="hidden" name="{{ name }}" value="{{ value }}">
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+
+        <button type="submit">{{ _('Apply') }}</button>
+      </form>
+    </header>
+
+    <div class="c4w-listing__results">
+      {% if listing.results %}
+        <div class="c4w-card-grid">
+          {% for organisation in listing.results %}
+            {% snippet 'c4w/snippets/organisation_card.html', organisation=organisation %}
+          {% endfor %}
+        </div>
+        {% snippet 'c4w/snippets/pagination.html',
+           page=listing.page, pages=listing.pages, label=_('Organisation pages') %}
+      {% else %}
+        <p class="c4w-empty">
+          {{ _('No organisation matches these filters.') }}
+          <a href="{{ h.c4w_url('organisation_list') }}">{{ _('Clear all filters') }}</a>
+        </p>
+      {% endif %}
+    </div>
+
+    {# Country options come from the counts and are named through Babel. #}
+    {% set country_options = [] %}
+    {% for term in listing.facets.get('country', {}).keys() | sort %}
+      {% set _ = country_options.append({'term': term, 'label': h.c4w_country_name(term)}) %}
+    {% endfor %}
+
+    <aside class="c4w-facets" aria-label="{{ _('Filters') }}">
+      {% snippet 'c4w/snippets/facet_group.html', name='org_type',
+         title=_('Type'), options=h.c4w_option_list('org_type'),
+         counts=listing.facets.get('org_type', {}) %}
+
+      {% snippet 'c4w/snippets/facet_group.html', name='country',
+         title=_('Country'), options=country_options,
+         counts=listing.facets.get('country', {}) %}
+    </aside>
+  </div>
+{% endblock %}

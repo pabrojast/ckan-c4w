@@ -408,3 +408,33 @@
 }
 
 .c4w-orglist { flex-direction: column; gap: 0.2rem; }
+
+/* --- organisation variants ------------------------------------------------
+ *
+ * A logo is not a photograph: it is contained rather than cropped, on a light
+ * ground, so a wordmark is never cut in half by object-fit: cover.
+ */
+
+.c4w-card__media--logo {
+  display: grid;
+  place-items: center;
+  padding: var(--c4w-space);
+  background: #fff;
+}
+
+.c4w-card__media--logo img {
+  aspect-ratio: auto;
+  max-height: 5rem;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.c4w-card--org .c4w-card__meta a { color: inherit; }
+
+.c4w-detail__logo img {
+  max-height: 6rem;
+  max-width: 100%;
+  width: auto;
+  object-fit: contain;
+}

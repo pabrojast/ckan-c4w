@@ -63,10 +63,21 @@ def c4w_project_record_view(context, data_dict):
 
 
 def get_auth_functions():
-    return {
+    """Collect the auth functions declared here and by the entity modules.
+
+    An entity module declares its actions and its auth side by side, which is
+    the only arrangement that keeps them from drifting -- and the smoke check
+    fails the build if a single name is registered on one side only.
+    """
+    from ckanext.c4w.logic.action import organisations
+
+    functions = {
         'c4w_stats': c4w_stats,
         'c4w_project_show': c4w_project_show,
         'c4w_project_list': c4w_project_list,
         'c4w_project_facets': c4w_project_facets,
         'c4w_project_record_view': c4w_project_record_view,
     }
+    for module in (organisations,):
+        functions.update(module.get_auth_functions())
+    return functions
