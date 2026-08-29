@@ -340,3 +340,36 @@ def test_an_image_keeps_only_the_attributes_we_named():
         u'<img src="/uploads/c4w/a.png" alt="A" onerror="x()" class="evil">')
     assert 'onerror' not in out and 'class' not in out
     assert 'alt="A"' in out
+
+
+# --------------------------------------------------------------------------- #
+# The vocabulary invariant
+# --------------------------------------------------------------------------- #
+
+# Django stores a CODE rather than a label for these three, so the term is not
+# derived from the label.
+_CODE_BACKED = ('event_type', 'lead_partner_type', 'post_status')
+
+
+def test_every_lookup_backed_term_is_the_slug_of_its_own_label():
+    """The importer can only reach a term by slugifying the Django label.
+
+    A hand-abbreviated term therefore lands OUTSIDE its own vocabulary, and
+    the failure is silent: facet_group.html hides any option absent from the
+    counts, so the value simply never appears. This caught fifteen real
+    mismatches -- 'Not yet started' had been shortened to 'not-started', which
+    would have put five projects in a Status facet that could never match
+    them, and three of the four training levels had the same defect.
+    """
+    offenders = []
+    registries = (list(constants.VOCABULARIES.items())
+                  + list(constants.COLUMN_VOCABULARIES.items()))
+    for vocabulary, pairs in registries:
+        if vocabulary in _CODE_BACKED:
+            continue
+        for term, label in pairs:
+            expected = normalise_term(label)
+            if term != expected:
+                offenders.append('%s: %r should be %r (label %r)'
+                                 % (vocabulary, term, expected, label))
+    assert not offenders, offenders

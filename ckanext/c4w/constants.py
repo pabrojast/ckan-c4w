@@ -19,6 +19,16 @@ label is a display change; renaming a term is a data migration. ``label`` is
 what a visitor reads and what the importer matches the legacy Django rows
 against.
 
+INVARIANT, enforced by tests/test_pure_logic.py: for every vocabulary seeded
+from a legacy lookup table, ``term == text.normalise_term(label)``. Django
+stores the LABEL, so the importer can only arrive at the term by slugifying
+it -- and a hand-abbreviated term therefore lands outside its own vocabulary.
+That is not hypothetical: 'Not yet started' had been shortened to
+'not-started' here, which would have put five projects in a Status facet whose
+option list could never match them, and three of the four training levels had
+the same defect. EVENT_TYPES, LEAD_PARTNER_TYPES and POST_STATUSES are exempt
+because Django stores a code for those, not a label.
+
 Provenance: the terms below were extracted from the Django fixtures under
 ``citizens4water_platform-1/src/*/fixtures/*.json`` and cross-checked against
 the live facets of https://ihp-wins.unesco.org/citizens4water/. Where the two
@@ -59,7 +69,7 @@ MODERATED_ENTITY_TYPES = (
 # --------------------------------------------------------------------------- #
 
 STATUSES = (
-    ('not-started', 'Not yet started'),
+    ('not-yet-started', 'Not yet started'),
     ('active', 'Active'),
     ('periodically-active', 'Periodically active'),
     ('on-hold', 'On hold'),
@@ -96,12 +106,12 @@ DIFFICULTY_LEVELS = (
 
 PARTICIPATION_TASKS = (
     ('annotation', 'Annotation'),
-    ('audio-video-recording', 'Audio or video recording'),
-    ('classification', 'Classification or tagging'),
-    ('diy-hacking', 'DIY hacking/making'),
+    ('audio-or-video-recording', 'Audio or video recording'),
+    ('classification-or-tagging', 'Classification or tagging'),
+    ('diy-hacking-making', 'DIY hacking/making'),
     ('data-analysis', 'Data analysis'),
     ('data-entry', 'Data Entry'),
-    ('download-software', 'Download software for distributed computing'),
+    ('download-software-for-distributed-computing', 'Download software for distributed computing'),
     ('finding-entities', 'Finding entities'),
     ('geolocation', 'Geolocation'),
     ('identification', 'Identification'),
@@ -111,8 +121,8 @@ PARTICIPATION_TASKS = (
     ('photography', 'Photography'),
     ('problem-solving', 'Problem solving'),
     ('sample-analysis', 'Sample analysis'),
-    ('site-selection', 'Site selection and/or description'),
-    ('specimen-collection', 'Specimen/sample collection'),
+    ('site-selection-and-or-description', 'Site selection and/or description'),
+    ('specimen-sample-collection', 'Specimen/sample collection'),
     ('transcription', 'Transcription'),
     ('other', 'Other'),
 )
@@ -152,14 +162,14 @@ ENGAGEMENT_LEVELS = (
 )
 
 TRAINING_LEVELS = (
-    ('no-prerequisite', 'No prerequisite knowledge'),
-    ('brief-training', 'Brief training needed'),
-    ('extensive-training', 'Extensive training needed'),
+    ('no-prerequisite-knowledge', 'No prerequisite knowledge'),
+    ('brief-training-needed', 'Brief training needed'),
+    ('extensive-training-needed', 'Extensive training needed'),
     ('other', 'Other'),
 )
 
 TECHNOLOGIES_USED = (
-    ('conventional', 'Conventional methods / manual measurements'),
+    ('conventional-methods-manual-measurements', 'Conventional methods / manual measurements'),
     ('iot-sensors', 'IoT sensors'),
     ('diy-sensors', 'DIY sensors'),
     ('websites', 'Websites'),
@@ -226,12 +236,12 @@ RESOURCE_THEMES = (
 )
 
 RESOURCE_AUDIENCES = (
-    ('community-members', 'Community Members & Citizens'),
-    ('cs-project-leaders', 'CS Project Leaders & Initiators'),
+    ('community-members-citizens', 'Community Members & Citizens'),
+    ('cs-project-leaders-initiators', 'CS Project Leaders & Initiators'),
     ('csos-ngos', 'CSOs & NGOs'),
     ('educators', 'Educators'),
-    ('policy-makers', 'Policy & Decision Makers'),
-    ('researchers', 'Researchers & Academics'),
+    ('policy-decision-makers', 'Policy & Decision Makers'),
+    ('researchers-academics', 'Researchers & Academics'),
     ('all-audiences', 'ALL Audiences'),
 )
 

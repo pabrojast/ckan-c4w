@@ -108,3 +108,106 @@ def dump_extras(value):
         return u'%s' % obj
 
     return json.dumps(value or {}, default=_default, sort_keys=True)
+
+
+# --------------------------------------------------------------------------- #
+# Normalising legacy text
+# --------------------------------------------------------------------------- #
+#
+# Every rule below exists because of something measured in the production
+# corpus, not because it seemed tidy. The citations are to the field-map
+# survey in docs/migration-field-map.json.
+
+# Characters that occupy no width but survive every sanitiser and every
+# .strip(): CKEditor and Word paste them freely. A field holding only these
+# looks empty to a reader and non-empty to `if value`.
+_INVISIBLE = u'\u200b\u200c\u200d\ufeff'
+
+# Space-like characters that are not ASCII space. NBSP is the one that
+# matters: two organisation descriptions use it as an ordinary word separator,
+# so a visitor searching a phrase they can read on screen gets no results
+# because the stored bytes hold U+00A0 where they typed U+0020.
+_SPACEY = u'\u00a0\u202f\u2009\u2007'
+
+_TAG_RE = re.compile(r'<[^>]*>')
+_WS_RE = re.compile(r'[ \t]+')
+
+
+def normalise_text(value):
+    """Canonicalise a legacy free-text value.
+
+    Normalises CRLF to LF, deletes zero-width characters and maps the
+    non-breaking spaces to ordinary ones, then trims. Returns None for
+    anything that ends up empty, so a column and its "unset" state agree
+    instead of splitting between NULL and ''.
+
+    CRLF matters more than it looks: 18 of the 43 projects carry it, and once
+    it is inside a JSON extras blob it is a literal backslash-r that is
+    invisible in every inspection tool and makes a re-import produce a
+    different byte string for identical input.
+    """
+    if value is None:
+        return None
+    text = u'%s' % value
+    text = text.replace(u'\r\n', u'\n').replace(u'\r', u'\n')
+    for char in _INVISIBLE:
+        text = text.replace(char, u'')
+    for char in _SPACEY:
+        text = text.replace(char, u' ')
+    text = _WS_RE.sub(u' ', text).strip()
+    return text or None
+
+
+def html_to_text(value):
+    """Plain-text shadow of an HTML value, for searching.
+
+    The listing searches its columns with a raw ILIKE, and the stored value is
+    sanitised HTML -- so a visitor searching a phrase they can read verbatim on
+    the page gets nothing whenever a tag or an entity falls inside it.
+    'E. coli levels' misses because the stored text is 'E. coli</i> levels'.
+
+    Entities are decoded BEFORE the tags are stripped, so '&lt;' survives as a
+    literal '<' rather than becoming the start of a phantom tag.
+    """
+    if value is None:
+        return None
+    import html as _html
+
+    text = u'%s' % value
+    # A block boundary is a word boundary: without this, '<p>a</p><p>b</p>'
+    # collapses to 'ab' and neither word is findable.
+    text = re.sub(r'(?i)<(br|/p|/div|/li|/h[1-6]|/tr)\b[^>]*>', u'\n', text)
+    text = _TAG_RE.sub(u' ', text)
+    text = _html.unescape(text)
+    return normalise_text(text)
+
+
+def is_blank_html(value):
+    """Whether an HTML value carries no readable content.
+
+    A WYSIWYG editor stores '<p><br></p>' or '<p>&nbsp;</p>' for a field the
+    author opened and left alone -- eleven of the 43 projects have exactly that
+    in howToParticipate. Those are empty to a reader and truthy to `if value`,
+    which is how an empty section heading ends up on a page.
+    """
+    return not html_to_text(value)
+
+
+def ensure_scheme(url, default=u'https'):
+    """Add a scheme to a bare host so a link is not read as relative.
+
+    Three project URLs are stored as 'www.example.org' with no scheme; a
+    browser resolves that against the current page, so the link points back
+    into the portal instead of out to the project.
+    """
+    value = normalise_text(url)
+    if not value:
+        return None
+    if u'://' in value or value.startswith(u'mailto:'):
+        return value
+    if value.startswith(u'/'):
+        return value
+    # Only add a scheme to something that actually looks like a hostname.
+    if re.match(r'^[A-Za-z0-9][A-Za-z0-9.-]*\.[A-Za-z]{2,}(/|$|\?|#)', value):
+        return u'%s://%s' % (default, value)
+    return value
