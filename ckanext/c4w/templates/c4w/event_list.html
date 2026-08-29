@@ -1,0 +1,50 @@
+{% extends "c4w/base.html" %}
+
+{#
+  Events do not use the shared listing shell: the page is split into upcoming
+  and past rather than being one filtered grid, and the split is computed in
+  the action because it depends on the clock.
+#}
+
+{% block subtitle %}{{ _('Events') }} - {{ _('Citizens4Water') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-events">
+    <header>
+      <h1>{{ _('Events') }}</h1>
+      <form class="c4w-listing__controls" method="get"
+            action="{{ h.c4w_url('event_list') }}">
+        <label for="c4w-q">{{ _('Search events') }}</label>
+        <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}">
+        <button type="submit">{{ _('Apply') }}</button>
+      </form>
+    </header>
+
+    <section>
+      <h2>{{ _('Upcoming events') }}</h2>
+      {% if listing.upcoming %}
+        <div class="c4w-event-list">
+          {% for event in listing.upcoming %}
+            {% snippet 'c4w/snippets/event_card.html', event=event %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="c4w-empty">{{ _('No upcoming events right now.') }}</p>
+      {% endif %}
+    </section>
+
+    {% if listing.past %}
+      <section>
+        <h2>{{ _('Past events') }}</h2>
+        <div class="c4w-event-list c4w-event-list--past">
+          {% for event in listing.past %}
+            {% snippet 'c4w/snippets/event_card.html', event=event %}
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% snippet 'c4w/snippets/pagination.html',
+       page=listing.page, pages=listing.pages, label=_('Event pages') %}
+  </div>
+{% endblock %}

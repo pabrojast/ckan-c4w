@@ -1,0 +1,51 @@
+{% extends "c4w/detail_base.html" %}
+{% set back_endpoint = 'event_list' %}
+{% set back_label = _('Events') %}
+
+{% block subtitle %}{{ event.title }} - {{ _('Citizens4Water') }}{% endblock %}
+
+{% block detail_title %}{{ event.title }}{% endblock %}
+
+{% block detail_meta %}
+  {% if event.start_date %}
+    <time datetime="{{ event.start_date }}">{{ event.start_date[:10] }}</time>
+  {% endif %}
+  {% if event.place %}<span>{{ event.place }}</span>{% endif %}
+  {% if event.event_type %}
+    <span class="c4w-detail__status">{{
+      h.c4w_term_label('event_type', event.event_type) }}</span>
+  {% endif %}
+{% endblock %}
+
+{% block detail_body %}
+  {# Sanitised on the way in; see logic/sanitize.py. #}
+  {% if event.description %}<section>{{ event.description | safe }}</section>{% endif %}
+{% endblock %}
+
+{% block detail_actions %}
+  {% if event.url %}
+    <a class="c4w-btn" href="{{ event.url }}" rel="noopener noreferrer nofollow"
+       target="_blank">{{ _('Go to event page') }}</a>
+  {% endif %}
+{% endblock %}
+
+{% block detail_facts %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Ends'), value=event.end_date %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Time zone'), value=event.timezone %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Language'), value=event.language %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Country'), value=event.country %}
+  {% if event.main_organisation %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Organiser') }}</dt>
+      <dd><a href="{{ h.c4w_url('organisation_detail', slug=event.main_organisation.slug) }}">{{
+        event.main_organisation.name }}</a></dd>
+    </div>
+  {% endif %}
+  {% if event.project %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Project') }}</dt>
+      <dd><a href="{{ h.c4w_url('project_detail', slug=event.project.slug) }}">{{
+        event.project.name }}</a></dd>
+    </div>
+  {% endif %}
+{% endblock %}

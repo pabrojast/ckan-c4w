@@ -74,6 +74,39 @@ assert blueprints, "get_blueprint() returned nothing"
 for bp in blueprints:
     assert bp.deferred_functions, "blueprint %r registered no rules" % bp.name
 
+# --- the live legacy URLs still resolve ------------------------------------ #
+# Every path below is served RIGHT NOW by the Django site at
+# https://ihp-wins.unesco.org/citizens4water/ (verified against its urls.py).
+# A visitor, a bookmark or a search result hitting one of these after the
+# cutover must not get a 404. Trailing slashes are part of the contract:
+# Django published /events/ and /platforms/ WITH one, and Flask's default
+# strict_slashes would 404 exactly those.
+from flask import Flask
+
+probe = Flask(__name__)
+for bp in blueprints:
+    probe.register_blueprint(bp)
+
+MUST_RESOLVE = [
+    "/citizens4water/",
+    "/citizens4water/projects", "/citizens4water/project/32",
+    "/citizens4water/organisations", "/citizens4water/organisation/6",
+    "/citizens4water/resources", "/citizens4water/resource/7",
+    "/citizens4water/training_resources",
+    "/citizens4water/platforms/", "/citizens4water/platforms",
+    "/citizens4water/platform/8",
+    "/citizens4water/events/", "/citizens4water/events",
+    "/citizens4water/blog", "/citizens4water/blog/2026/1/1/some-post",
+]
+adapter = probe.url_map.bind("ihp-wins.unesco.org")
+unresolved = []
+for path in MUST_RESOLVE:
+    try:
+        adapter.match(path)
+    except Exception as exc:
+        unresolved.append("%s (%s)" % (path, type(exc).__name__))
+assert not unresolved, "live legacy URLs that no longer resolve: %s" % unresolved
+
 # --- every template parses with CKAN's Jinja environment ------------------- #
 # Catches an invalid {% snippet %}, {% asset %} or {% ckan_extends %} before a
 # visitor does.
@@ -121,8 +154,9 @@ assert header.startswith("{% ckan_extends %}"), \
     "templates/header.html must start with {% ckan_extends %}"
 
 print("PLUGIN OK  (%d actions, %d helpers, %d templates, %d snippets, "
-      "helpers used: %d)"
-      % (len(actions), len(helpers), len(templates), len(snippets), len(used)))
+      "helpers used: %d, %d legacy URLs resolve)"
+      % (len(actions), len(helpers), len(templates), len(snippets), len(used),
+         len(MUST_RESOLVE)))
 PY
 then
   echo "FAIL: plugin-load smoke check failed"

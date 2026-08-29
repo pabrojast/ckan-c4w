@@ -1,0 +1,14 @@
+{% extends "c4w/listing_base.html" %}
+{% set endpoint = 'post_list' %}
+
+{% block listing_title %}{{ _('News') }}{% endblock %}
+{% block listing_count %}{{ ungettext('{n} article', '{n} articles', listing.count).format(n=listing.count) }}{% endblock %}
+{% block listing_search_label %}{{ _('Search news') }}{% endblock %}
+
+{% block listing_cards %}
+  <div class="c4w-card-grid">
+    {% for post in listing.results %}
+      {% snippet 'c4w/snippets/post_card.html', post=post %}
+    {% endfor %}
+  </div>
+{% endblock %}

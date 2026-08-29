@@ -1,0 +1,24 @@
+{#
+  One row of a detail page's fact list. Renders nothing when the value is
+  empty, so a child template never has to wrap each row in its own {% if %}.
+
+  Expects: title, and either `value` (plain) or `terms` + `vocabulary`.
+#}
+{% if terms %}
+  <div class="c4w-detail__facts-row">
+    <dt>{{ title }}</dt>
+    <dd>
+      <ul class="c4w-taglist">
+        {% for term in terms %}
+          <li>{% if link_endpoint %}<a href="{{ h.c4w_url(link_endpoint, **{vocabulary: term}) }}">{{
+            h.c4w_term_label(vocabulary, term) }}</a>{% else %}{{
+            h.c4w_term_label(vocabulary, term) }}{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </dd>
+  </div>
+{% elif value %}
+  <div class="c4w-detail__facts-row">
+    <dt>{{ title }}</dt><dd>{{ value }}</dd>
+  </div>
+{% endif %}

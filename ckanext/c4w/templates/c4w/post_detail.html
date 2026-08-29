@@ -1,0 +1,29 @@
+{% extends "c4w/detail_base.html" %}
+{% set back_endpoint = 'post_list' %}
+{% set back_label = _('News') %}
+
+{% block subtitle %}{{ post.title }} - {{ _('Citizens4Water') }}{% endblock %}
+
+{% block detail_hero %}
+  {% set image = h.c4w_image_url(post, 'image_url') %}
+  {% if image %}
+    <div class="c4w-detail__hero"><img src="{{ image }}" alt="" loading="lazy"></div>
+  {% endif %}
+{% endblock %}
+
+{% block detail_title %}{{ post.title }}{% endblock %}
+
+{% block detail_meta %}
+  {% if post.created_on %}
+    <time datetime="{{ post.created_on }}">{{ post.created_on[:10] }}</time>
+  {% endif %}
+{% endblock %}
+
+{% block detail_body %}
+  {#
+    The post body is the only field on the portal that goes through the WIDER
+    allowlist (sanitize_rich_html): an editor writing news legitimately needs
+    sub-headings and tables. It is still sanitised on the way in.
+  #}
+  <section class="c4w-prose">{{ post.content | safe }}</section>
+{% endblock %}

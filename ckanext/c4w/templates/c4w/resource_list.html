@@ -1,0 +1,21 @@
+{% extends "c4w/listing_base.html" %}
+{% set endpoint = endpoint or 'resource_list' %}
+
+{% block listing_title %}{{ _('Resources') }}{% endblock %}
+{% block listing_count %}{{ ungettext('{n} resource', '{n} resources', listing.count).format(n=listing.count) }}{% endblock %}
+{% block listing_search_label %}{{ _('Search resources') }}{% endblock %}
+
+{% block listing_cards %}
+  <div class="c4w-card-grid">
+    {% for resource in listing.results %}
+      {% snippet 'c4w/snippets/resource_card.html', resource=resource %}
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block listing_facets %}
+  {% for name, title in [('theme', _('Theme')), ('audience', _('Audience'))] %}
+    {% snippet 'c4w/snippets/facet_group.html', name=name, title=title,
+       options=h.c4w_option_list(name), counts=listing.facets.get(name, {}) %}
+  {% endfor %}
+{% endblock %}

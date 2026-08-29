@@ -1,118 +1,29 @@
-{% extends "c4w/base.html" %}
+{% extends "c4w/listing_base.html" %}
+{% set endpoint = 'project_list' %}
 
-{% block subtitle %}{{ _('Projects') }} - {{ _('Citizens4Water') }}{% endblock %}
+{% block listing_title %}{{ _('Projects') }}{% endblock %}
+{% block listing_count %}{{ ungettext('{n} project', '{n} projects', listing.count).format(n=listing.count) }}{% endblock %}
+{% block listing_search_label %}{{ _('Search projects') }}{% endblock %}
 
-{% block c4w_content %}
-  <div class="c4w-listing">
-    <header class="c4w-listing__header">
-      <h1>{{ _('Projects') }}</h1>
-      <p class="c4w-listing__count">
-        {{ ungettext('{n} project', '{n} projects', listing.count).format(n=listing.count) }}
-      </p>
-
-      {#
-        Search and ordering are one GET form so both survive a submit without
-        JavaScript. The active facets ride along as hidden inputs -- otherwise
-        searching would silently clear every filter the visitor had set.
-      #}
-      <form class="c4w-listing__controls" method="get"
-            action="{{ h.c4w_url('project_list') }}">
-        <label for="c4w-q">{{ _('Search projects') }}</label>
-        <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}"
-               placeholder="{{ _('Name, description or aim') }}">
-
-        <label for="c4w-order">{{ _('Order by') }}</label>
-        <select id="c4w-order" name="order">
-          {% for value, label in orderings %}
-            <option value="{{ value }}"
-              {% if listing.order == value %}selected{% endif %}>{{ _(label) }}</option>
-          {% endfor %}
-        </select>
-
-        {% for name, values in params.items() %}
-          {% if name not in ('q', 'order', 'page') %}
-            {% for value in (values if values is not string else [values]) %}
-              <input type="hidden" name="{{ name }}" value="{{ value }}">
-            {% endfor %}
-          {% endif %}
-        {% endfor %}
-
-        <button type="submit">{{ _('Apply') }}</button>
-      </form>
-    </header>
-
-    {#
-      Results come BEFORE the filters in the DOM and are placed to their right
-      with CSS. On a narrow screen and in a screen reader the visitor meets the
-      projects first, not a column of filters.
-    #}
-    <div class="c4w-listing__results">
-      {% if listing.results %}
-        <div class="c4w-card-grid">
-          {% for project in listing.results %}
-            {% snippet 'c4w/snippets/project_card.html', project=project %}
-          {% endfor %}
-        </div>
-        {% snippet 'c4w/snippets/pagination.html',
-           page=listing.page, pages=listing.pages, label=_('Project pages') %}
-      {% else %}
-        <p class="c4w-empty">
-          {{ _('No project matches these filters.') }}
-          <a href="{{ h.c4w_url('project_list') }}">{{ _('Clear all filters') }}</a>
-        </p>
-      {% endif %}
-    </div>
-
-    {#
-      Country is the one facet with no fixed vocabulary -- its terms are ISO
-      codes, so the options are derived from the counts and named through
-      Babel. Every other facet reads its options from constants.py.
-    #}
-    {% set country_options = [] %}
-    {% for term in listing.facets.get('country', {}).keys() | sort %}
-      {% set _ = country_options.append({'term': term, 'label': h.c4w_country_name(term)}) %}
+{% block listing_cards %}
+  <div class="c4w-card-grid">
+    {% for project in listing.results %}
+      {% snippet 'c4w/snippets/project_card.html', project=project %}
     {% endfor %}
-
-    <aside class="c4w-facets" aria-label="{{ _('Filters') }}">
-      {% snippet 'c4w/snippets/facet_group.html', name='country',
-         title=_('Country'), options=country_options,
-         counts=listing.facets.get('country', {}) %}
-
-      {% snippet 'c4w/snippets/facet_group.html', name='status',
-         title=_('Status'), options=h.c4w_option_list('status'),
-         counts=listing.facets.get('status', {}) %}
-
-      {% snippet 'c4w/snippets/facet_group.html', name='has_tag',
-         title=_('Tags'), options=h.c4w_option_list('has_tag'),
-         counts=listing.facets.get('has_tag', {}) %}
-
-      {% snippet 'c4w/snippets/facet_group.html', name='difficulty_level',
-         title=_('Difficulty level'), options=h.c4w_option_list('difficulty_level'),
-         counts=listing.facets.get('difficulty_level', {}) %}
-
-      {% snippet 'c4w/snippets/facet_group.html', name='topic',
-         title=_('Topic'), options=h.c4w_option_list('topic'),
-         counts=listing.facets.get('topic', {}) %}
-
-      {% snippet 'c4w/snippets/facet_group.html', name='participation_task',
-         title=_('Participation task'), options=h.c4w_option_list('participation_task'),
-         counts=listing.facets.get('participation_task', {}) %}
-
-      {% snippet 'c4w/snippets/facet_group.html', name='community_impact_type',
-         title=_('Community impact type'), options=h.c4w_option_list('community_impact_type'),
-         counts=listing.facets.get('community_impact_type', {}) %}
-
-      {% snippet 'c4w/snippets/facet_group.html', name='water_type',
-         title=_('Water type'), options=h.c4w_option_list('water_type'),
-         counts=listing.facets.get('water_type', {}) %}
-
-      {% snippet 'c4w/snippets/facet_group.html', name='water_data_type',
-         title=_('Water data type'), options=h.c4w_option_list('water_data_type'),
-         counts=listing.facets.get('water_data_type', {}) %}
-
-      {% snippet 'c4w/snippets/facet_group.html', name='stakeholder_type',
-         title=_('Stakeholder type'), options=h.c4w_option_list('stakeholder_type'),
-         counts=listing.facets.get('stakeholder_type', {}) %}
-    </aside>
   </div>
+{% endblock %}
+
+{% block listing_facets %}
+  {% snippet 'c4w/snippets/country_facet.html', counts=listing.facets.get('country', {}) %}
+
+  {% for name, title in [
+      ('status', _('Status')), ('has_tag', _('Tags')),
+      ('difficulty_level', _('Difficulty level')), ('topic', _('Topic')),
+      ('participation_task', _('Participation task')),
+      ('community_impact_type', _('Community impact type')),
+      ('water_type', _('Water type')), ('water_data_type', _('Water data type')),
+      ('stakeholder_type', _('Stakeholder type'))] %}
+    {% snippet 'c4w/snippets/facet_group.html', name=name, title=title,
+       options=h.c4w_option_list(name), counts=listing.facets.get(name, {}) %}
+  {% endfor %}
 {% endblock %}

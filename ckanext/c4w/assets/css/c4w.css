@@ -438,3 +438,48 @@
   width: auto;
   object-fit: contain;
 }
+
+/* --- events ---------------------------------------------------------------
+ *
+ * Events read as a chronological list, not a grid of cards: the date is what
+ * a reader scans for, and a single column keeps the dates in one aligned run.
+ */
+
+.c4w-events section { margin-top: calc(var(--c4w-space) * 2); }
+
+.c4w-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--c4w-space);
+}
+
+.c4w-card--event { padding: var(--c4w-space); }
+
+.c4w-card--event .c4w-card__title { margin: 0.2rem 0; }
+
+.c4w-card__date {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--c4w-blue-dark);
+}
+
+.c4w-card__place { color: var(--c4w-muted); font-weight: 400; }
+
+/* Past events stay legible but recede -- opacity alone would fail contrast. */
+.c4w-event-list--past .c4w-card--event { border-style: dashed; }
+.c4w-event-list--past .c4w-card__date { color: var(--c4w-muted); }
+
+/* --- long-form prose ----------------------------------------------------- */
+
+.c4w-prose { max-width: 70ch; }
+.c4w-prose img { max-width: 100%; height: auto; }
+.c4w-prose table { width: 100%; border-collapse: collapse; }
+.c4w-prose th, .c4w-prose td {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--c4w-rule);
+  text-align: left;
+}

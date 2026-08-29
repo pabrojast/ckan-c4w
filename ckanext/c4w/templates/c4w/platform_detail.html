@@ -1,0 +1,52 @@
+{% extends "c4w/detail_base.html" %}
+{% set back_endpoint = 'platform_list' %}
+{% set back_label = _('Platforms') %}
+
+{% block subtitle %}{{ platform.name }} - {{ _('Citizens4Water') }}{% endblock %}
+
+{% block detail_hero %}
+  {% set logo = h.c4w_image_url(platform, 'logo_url') %}
+  {% if logo %}
+    <div class="c4w-detail__logo"><img src="{{ logo }}" alt="" loading="lazy"></div>
+  {% endif %}
+{% endblock %}
+
+{% block detail_title %}{{ platform.name }}{% endblock %}
+
+{% block detail_meta %}
+  {% if platform.geographic_extent %}
+    <span class="c4w-detail__status">{{
+      h.c4w_term_label('geographic_extent', platform.geographic_extent) }}</span>
+  {% endif %}
+  {% if platform.locality %}<span>{{ platform.locality }}</span>{% endif %}
+{% endblock %}
+
+{% block detail_body %}
+  {# Sanitised on the way in; see logic/sanitize.py. #}
+  {% if platform.description %}<section>{{ platform.description | safe }}</section>{% endif %}
+  {% if platform.organisations %}
+    <section>
+      <h2>{{ _('Organisations') }}</h2>
+      <ul class="c4w-orglist">
+        {% for organisation in platform.organisations %}
+          <li><a href="{{ h.c4w_url('organisation_detail', slug=organisation.slug) }}">{{
+            organisation.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+{% endblock %}
+
+{% block detail_actions %}
+  {% if platform.url %}
+    <a class="c4w-btn" href="{{ platform.url }}" rel="noopener noreferrer nofollow"
+       target="_blank">{{ _('Visit platform') }}</a>
+  {% endif %}
+{% endblock %}
+
+{% block detail_facts %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Countries'),
+     terms=platform.terms.get('country', []), vocabulary='country' %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Contact'),
+     value=platform.contact_point %}
+{% endblock %}

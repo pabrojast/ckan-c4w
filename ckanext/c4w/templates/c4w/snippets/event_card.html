@@ -1,0 +1,27 @@
+{#
+  An event in the listing.
+
+  The date leads, because that is what a reader scans this list for. Machine
+  dates go in a <time datetime> so the parsed value and the shown one cannot
+  disagree.
+#}
+<article class="c4w-card c4w-card--event">
+  <p class="c4w-card__date">
+    {% if event.start_date %}
+      <time datetime="{{ event.start_date }}">{{ event.start_date[:10] }}</time>
+    {% endif %}
+    {% if event.place %}<span class="c4w-card__place">{{ event.place }}</span>{% endif %}
+  </p>
+  <h2 class="c4w-card__title">
+    <a href="{{ h.c4w_url('event_detail', slug=event.slug) }}">{{ event.title }}</a>
+  </h2>
+  {% if event.description %}
+    <p class="c4w-card__excerpt">{{ event.description | striptags | truncate(220) }}</p>
+  {% endif %}
+  {% if event.url %}
+    <p class="c4w-card__meta">
+      <a href="{{ event.url }}" rel="noopener noreferrer nofollow"
+         target="_blank">{{ _('Go to event page') }}</a>
+    </p>
+  {% endif %}
+</article>

@@ -1,0 +1,19 @@
+{# A news post in the listing. #}
+{% set image = h.c4w_image_url(post, 'image_url') %}
+<article class="c4w-card">
+  <a class="c4w-card__link" href="{{ h.c4w_url('post_detail', slug=post.slug) }}">
+    <div class="c4w-card__media">
+      {% if image %}<img src="{{ image }}" alt="" loading="lazy">{% endif %}
+    </div>
+    <h2 class="c4w-card__title">{{ post.title }}</h2>
+  </a>
+  <p class="c4w-card__meta">
+    {% if post.created_on %}
+      <time datetime="{{ post.created_on }}">{{ post.created_on[:10] }}</time>
+    {% endif %}
+    {% if post.sticky %}<span class="c4w-card__status">{{ _('Pinned') }}</span>{% endif %}
+  </p>
+  {% if post.excerpt %}
+    <p class="c4w-card__excerpt">{{ post.excerpt | striptags | truncate(200) }}</p>
+  {% endif %}
+</article>

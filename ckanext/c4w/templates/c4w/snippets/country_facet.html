@@ -1,0 +1,16 @@
+{#
+  The country facet.
+
+  Country is the one facet with no fixed vocabulary: its terms are ISO 3166-1
+  alpha-2 codes, so the options are derived from the counts themselves and
+  named through Babel's CLDR data rather than a 250-entry table copied into
+  this repository -- which also means the names arrive translated.
+
+  Expects: counts, and optionally name (default 'country').
+#}
+{% set options = [] %}
+{% for term in (counts or {}).keys() | sort %}
+  {% set _ = options.append({'term': term, 'label': h.c4w_country_name(term)}) %}
+{% endfor %}
+{% snippet 'c4w/snippets/facet_group.html', name=name or 'country',
+   title=_('Country'), options=options, counts=counts or {} %}

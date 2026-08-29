@@ -1,0 +1,21 @@
+{% extends "c4w/listing_base.html" %}
+{% set endpoint = 'platform_list' %}
+
+{% block listing_title %}{{ _('Platforms') }}{% endblock %}
+{% block listing_count %}{{ ungettext('{n} platform', '{n} platforms', listing.count).format(n=listing.count) }}{% endblock %}
+{% block listing_search_label %}{{ _('Search platforms') }}{% endblock %}
+
+{% block listing_cards %}
+  <div class="c4w-card-grid">
+    {% for platform in listing.results %}
+      {% snippet 'c4w/snippets/platform_card.html', platform=platform %}
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block listing_facets %}
+  {% snippet 'c4w/snippets/facet_group.html', name='geographic_extent',
+     title=_('Geographic extent'), options=h.c4w_option_list('geographic_extent'),
+     counts=listing.facets.get('geographic_extent', {}) %}
+  {% snippet 'c4w/snippets/country_facet.html', counts=listing.facets.get('country', {}) %}
+{% endblock %}

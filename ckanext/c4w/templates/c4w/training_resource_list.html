@@ -1,0 +1,15 @@
+{% extends "c4w/resource_list.html" %}
+{% set endpoint = 'training_resource_list' %}
+
+{#
+  The training-resource surface shares the resource table and every filter; it
+  differs only in the forced is_training_resource predicate and in its wording.
+
+  Production currently holds ZERO training resources, and the two lookup
+  tables behind the training-only vocabularies are empty, so this section is
+  live but empty after the migration. That is faithful to production.
+#}
+
+{% block listing_title %}{{ _('Training resources') }}{% endblock %}
+{% block listing_count %}{{ ungettext('{n} training resource', '{n} training resources', listing.count).format(n=listing.count) }}{% endblock %}
+{% block listing_search_label %}{{ _('Search training resources') }}{% endblock %}

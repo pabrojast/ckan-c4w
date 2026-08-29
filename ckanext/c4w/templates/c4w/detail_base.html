@@ -1,0 +1,35 @@
+{% extends "c4w/base.html" %}
+
+{#
+  The shared skeleton for a detail page.
+
+  Every long-form field rendered through `detail_body` is stored HTML that was
+  sanitised on the way IN (logic/sanitize.py). That is why those blocks may use
+  `| safe`. Never add a `| safe` for a value that has not been through a
+  sanitiser.
+
+  A child sets `back_endpoint` and `back_label` and fills:
+    detail_hero, detail_title, detail_meta, detail_body, detail_actions,
+    detail_facts.
+#}
+
+{% block c4w_content %}
+  <article class="c4w-detail">
+    {% block detail_hero %}{% endblock %}
+
+    <header class="c4w-detail__header">
+      <p class="c4w-detail__breadcrumb">
+        <a href="{{ h.c4w_url(back_endpoint) }}">{{ back_label }}</a>
+      </p>
+      <h1>{% block detail_title %}{% endblock %}</h1>
+      <p class="c4w-detail__meta">{% block detail_meta %}{% endblock %}</p>
+    </header>
+
+    <div class="c4w-detail__body">
+      {% block detail_body %}{% endblock %}
+      <p class="c4w-detail__actions">{% block detail_actions %}{% endblock %}</p>
+    </div>
+
+    <dl class="c4w-detail__facts">{% block detail_facts %}{% endblock %}</dl>
+  </article>
+{% endblock %}

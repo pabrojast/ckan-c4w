@@ -71,6 +71,27 @@ def organisation_legacy(legacy_id):
     return views_organisations.organisation_legacy(legacy_id)
 
 
+# The remaining five surfaces share one view module; each rule binds its
+# surface name so the blueprint stays a readable map rather than a dispatcher.
+def _catalogue(fn, surface):
+    def view(**kwargs):
+        from ckanext.c4w.logic import views_catalogue
+        return getattr(views_catalogue, fn)(surface, **kwargs)
+    view.__name__ = str('%s_%s' % (surface, fn))
+    return view
+
+
+def post_legacy_dated(year, month, day, slug):
+    """301 from the Django dated blog URL to the flat one.
+
+    Django served /blog/<year>/<month>/<day>/<slug>/ and the date carried no
+    information the slug does not -- blog_post.slug is already unique. The
+    date segments are accepted and discarded.
+    """
+    from ckanext.c4w.logic import views_catalogue
+    return views_catalogue.redirect_to_post(slug)
+
+
 # --------------------------------------------------------------------------- #
 # Route registration
 # --------------------------------------------------------------------------- #
@@ -86,7 +107,7 @@ def _register(bp):
     # converter is strict so they cannot actually collide, but the order makes
     # the precedence obvious to a reader.
     bp.add_url_rule('/projects', 'project_list', project_list,
-                    methods=['GET'])
+                    methods=['GET'], strict_slashes=False)
     bp.add_url_rule('/project/<int:legacy_id>', 'project_legacy',
                     project_legacy, methods=['GET'])
     bp.add_url_rule('/project/<slug>', 'project_detail', project_detail,
@@ -96,11 +117,46 @@ def _register(bp):
 
     # Organisations.
     bp.add_url_rule('/organisations', 'organisation_list', organisation_list,
-                    methods=['GET'])
+                    methods=['GET'], strict_slashes=False)
     bp.add_url_rule('/organisation/<int:legacy_id>', 'organisation_legacy',
                     organisation_legacy, methods=['GET'])
     bp.add_url_rule('/organisation/<slug>', 'organisation_detail',
                     organisation_detail, methods=['GET'])
+
+    # Platforms, resources, training resources, events and news.
+    for surface, list_path, item_path, list_endpoint, detail_endpoint in (
+            ('platform', '/platforms', '/platform',
+             'platform_list', 'platform_detail'),
+            ('resource', '/resources', '/resource',
+             'resource_list', 'resource_detail'),
+            ('training_resource', '/training_resources', None,
+             'training_resource_list', None),
+            ('event', '/events', '/event', 'event_list', 'event_detail'),
+            ('post', '/blog', '/blog', 'post_list', 'post_detail')):
+        # Django served /events/ and /platforms/ WITH a trailing slash, and
+        # /resources and /blog without. strict_slashes=False accepts both, so
+        # no live URL 404s after the cutover.
+        bp.add_url_rule(list_path, list_endpoint,
+                        _catalogue('listing', surface), methods=['GET'],
+                        strict_slashes=False)
+        if not item_path:
+            # Training resources share the resource detail URL: they are the
+            # same rows, so giving them a second address would split the
+            # inbound links to one document across two canonical URLs.
+            continue
+        if item_path != list_path:
+            bp.add_url_rule('%s/<int:legacy_id>' % item_path,
+                            '%s_legacy' % surface,
+                            _catalogue('legacy', surface), methods=['GET'])
+        bp.add_url_rule('%s/<slug>' % item_path, detail_endpoint,
+                        _catalogue('detail', surface), methods=['GET'],
+                        strict_slashes=False)
+
+    # The dated blog permalink Django published.
+    bp.add_url_rule(
+        '/blog/<int:year>/<int:month>/<int:day>/<slug>',
+        'post_legacy_dated', post_legacy_dated, methods=['GET'],
+        strict_slashes=False)
     return bp
 
 

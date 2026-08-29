@@ -1,0 +1,80 @@
+{% extends "c4w/base.html" %}
+
+{#
+  The shared shell for every catalogue listing.
+
+  Six listings differ in their title, their cards and their facets, and in
+  nothing else -- the search-and-order form, the empty state, the pagination
+  and the grid layout are the same everywhere. Keeping one copy means a fix to
+  the no-JavaScript form behaviour lands on all six at once.
+
+  A child template sets `endpoint` and fills:
+    listing_title, listing_count, listing_search_label, listing_cards,
+    listing_facets (optional).
+  and is handed: listing, orderings, params.
+#}
+
+{% block subtitle %}{{ self.listing_title() }} - {{ _('Citizens4Water') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-listing">
+    <header class="c4w-listing__header">
+      <h1>{% block listing_title %}{% endblock %}</h1>
+      <p class="c4w-listing__count">{% block listing_count %}{% endblock %}</p>
+
+      {#
+        Search and ordering share one GET form so both survive a submit with no
+        JavaScript. The active facets ride along as hidden inputs -- without
+        them, searching would silently clear every filter the visitor had set,
+        which is the single most common way a facet UI betrays its user.
+      #}
+      <form class="c4w-listing__controls" method="get"
+            action="{{ h.c4w_url(endpoint) }}">
+        <label for="c4w-q">{% block listing_search_label %}{{ _('Search') }}{% endblock %}</label>
+        <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}">
+
+        {% if orderings %}
+          <label for="c4w-order">{{ _('Order by') }}</label>
+          <select id="c4w-order" name="order">
+            {% for value, label in orderings %}
+              <option value="{{ value }}"
+                {% if listing.order == value %}selected{% endif %}>{{ _(label) }}</option>
+            {% endfor %}
+          </select>
+        {% endif %}
+
+        {% for name, values in params.items() %}
+          {% if name not in ('q', 'order', 'page') %}
+            {% for value in (values if values is not string else [values]) %}
+              <input type="hidden" name="{{ name }}" value="{{ value }}">
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+
+        <button type="submit">{{ _('Apply') }}</button>
+      </form>
+    </header>
+
+    {#
+      Results come BEFORE the filters in source order and are moved beside them
+      with CSS. On a narrow screen and in a screen reader the visitor meets the
+      content first, not a column of filters.
+    #}
+    <div class="c4w-listing__results">
+      {% if listing.results %}
+        {% block listing_cards %}{% endblock %}
+        {% snippet 'c4w/snippets/pagination.html',
+           page=listing.page, pages=listing.pages %}
+      {% else %}
+        <p class="c4w-empty">
+          {{ _('Nothing matches these filters.') }}
+          <a href="{{ h.c4w_url(endpoint) }}">{{ _('Clear all filters') }}</a>
+        </p>
+      {% endif %}
+    </div>
+
+    <aside class="c4w-facets" aria-label="{{ _('Filters') }}">
+      {% block listing_facets %}{% endblock %}
+    </aside>
+  </div>
+{% endblock %}

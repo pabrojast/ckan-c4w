@@ -1,0 +1,72 @@
+{% extends "c4w/detail_base.html" %}
+{% set back_endpoint = 'training_resource_list' if resource.is_training_resource else 'resource_list' %}
+{% set back_label = _('Training resources') if resource.is_training_resource else _('Resources') %}
+
+{% block subtitle %}{{ resource.name }} - {{ _('Citizens4Water') }}{% endblock %}
+
+{% block detail_hero %}
+  {% set image = h.c4w_image_url(resource, 'image1_url') %}
+  {% if image %}
+    <div class="c4w-detail__hero"><img src="{{ image }}" alt="" loading="lazy"></div>
+  {% endif %}
+{% endblock %}
+
+{% block detail_title %}{{ resource.name }}{% endblock %}
+
+{% block detail_meta %}
+  {% if resource.date_published %}<span>{{ resource.date_published }}</span>{% endif %}
+  {% if resource.publisher %}<span>{{ resource.publisher }}</span>{% endif %}
+  {% if resource.category %}
+    <span class="c4w-detail__status">{{ resource.category.path or resource.category.text }}</span>
+  {% endif %}
+{% endblock %}
+
+{% block detail_body %}
+  {# Sanitised on the way in; see logic/sanitize.py. #}
+  {% if resource.abstract %}<section>{{ resource.abstract | safe }}</section>{% endif %}
+  {% if resource.cs_aspects %}
+    <section>
+      <h2>{{ _('Citizen science aspects') }}</h2>
+      {{ resource.cs_aspects | safe }}
+    </section>
+  {% endif %}
+  {% if resource.projects %}
+    <section>
+      <h2>{{ _('Related projects') }}</h2>
+      <ul class="c4w-orglist">
+        {% for project in resource.projects %}
+          <li><a href="{{ h.c4w_url('project_detail', slug=project.slug) }}">{{
+            project.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+{% endblock %}
+
+{% block detail_actions %}
+  {% if resource.url %}
+    <a class="c4w-btn" href="{{ resource.url }}" rel="noopener noreferrer nofollow"
+       target="_blank">{{ _('Open resource') }}</a>
+  {% endif %}
+{% endblock %}
+
+{% block detail_facts %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Themes'),
+     terms=resource.terms.get('theme', []), vocabulary='theme',
+     link_endpoint='resource_list' %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Audience'),
+     terms=resource.terms.get('audience', []), vocabulary='audience',
+     link_endpoint='resource_list' %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Authors'),
+     terms=resource.terms.get('author', []), vocabulary='author' %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Keywords'),
+     terms=resource.terms.get('keyword', []), vocabulary='keyword' %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Language'),
+     value=resource.in_language %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Licence'), value=resource.license %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('DOI'), value=resource.doi %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Time required'),
+     value=resource.time_required %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Conditions of access'),
+     value=resource.conditions_of_access %}
+{% endblock %}
