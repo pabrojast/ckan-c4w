@@ -48,12 +48,22 @@ Python, and produces no counts at all.
 
 ## Status
 
-Increment 1 of 8 (see the plan): package, schema, constants, brand chrome and
-the verification harness. The public surfaces, the forms, the moderation panel
-and the data migration follow.
+Built: the package and schema, the public read surfaces (projects,
+organisations, resources, training resources, platforms, events, news) with
+their facets, and the one-way importer.
 
-**The data migration is currently blocked.** The dev Citizens4Water database
-(`c4w-postgres` in namespace `ckan`) contains no Django tables at all — only
-PostGIS system tables — and the dev media volume `c4w-media-data` has been
-`Pending` since it was declared, so no images were ever stored there. The
-legacy content exists only in production.
+Still to build: the submission forms, the moderation panel, and the cutover
+redirects for the Django static pages.
+
+- [`docs/migration-runbook.md`](docs/migration-runbook.md) — the operator's
+  procedure, and what to expect from the data.
+- `docs/migration-field-map.json` — the 440-column field map the importer was
+  built from, produced by surveying the real production database and then
+  adversarially re-checking every claim.
+
+### A note on the source data
+
+The dev `c4w-postgres` volume has a damaged catalogue: the Django types exist
+but the tables do not, left by an interrupted migrate. Restore a production
+dump into a fresh database rather than trying to repair it — the runbook has
+the commands.
