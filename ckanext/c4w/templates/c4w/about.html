@@ -1,0 +1,18 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ _('About') }}{% endblock %}
+
+{% block c4w_content %}
+  <article class="c4w-page c4w-prose" id="c4w-main">
+    <h1>{{ _('About Citizens4Water') }}</h1>
+    <p>
+      {% trans %}Citizens4Water is a global inventory of citizen science initiatives for hydrology and water management. It is a distinct portal, connected to UNESCO IHP-WINS for accounts and identity.{% endtrans %}
+    </p>
+    <p>
+      {% trans %}Citizens4Water is coordinated by Scivil and financed by the Flemish Government, within UNESCO's IHP-IX programme.{% endtrans %}
+    </p>
+    <p>
+      <a href="{{ h.url_for('home.index') }}">{{ _('Open IHP-WINS') }}</a>
+    </p>
+  </article>
+{% endblock %}

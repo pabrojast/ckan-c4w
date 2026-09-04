@@ -1,0 +1,84 @@
+{#
+  C4W portal masthead. The only navigation chrome on these pages.
+
+  Nav entries come from h.c4w_nav() so an unbuilt surface is absent, never a
+  dead link. Login returns here via came_from. Register is IHP-WINS /colab.
+#}
+{% set nav = h.c4w_nav() %}
+<a class="c4w-skip" href="#c4w-main">{{ _('Skip to content') }}</a>
+<header class="c4w-header">
+  <div class="c4w-header__inner">
+    <a class="c4w-header__logo" href="{{ h.c4w_url('index') }}">
+      <img src="{{ h.url_for_static('/c4w/img/Citizens4Water_Horizontal.svg') }}"
+           alt="{{ _('Citizens4Water') }}" width="220" height="48">
+    </a>
+
+    <input type="checkbox" id="c4w-nav-toggle" class="c4w-nav-toggle">
+    <label for="c4w-nav-toggle" class="c4w-nav-toggle-btn">
+      <span class="c4w-sr-only">{{ _('Menu') }}</span>
+      <span class="c4w-nav-toggle-btn__bars" aria-hidden="true"></span>
+    </label>
+
+    <div class="c4w-header__panel">
+      {% if nav %}
+        <nav class="c4w-nav" aria-label="{{ _('Citizens4Water') }}">
+          <ul>
+            {% for item in nav %}
+              <li>
+                <a href="{{ item.url }}"
+                   class="c4w-nav__link{{ ' is-active' if item.active }}"
+                   {% if item.active %}aria-current="page"{% endif %}>{{ _(item.label) }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+      {% endif %}
+
+      <form class="c4w-search" method="get"
+            action="{{ h.c4w_url(h.c4w_search_endpoint()) }}" role="search">
+        <label class="c4w-sr-only" for="c4w-header-q">{{ _('Search the catalogue') }}</label>
+        <input id="c4w-header-q" type="search" name="q"
+               placeholder="{{ _('Search the catalogue') }}"
+               value="{{ request.args.get('q') or '' }}">
+        <button type="submit">{{ _('Search') }}</button>
+      </form>
+
+      <div class="c4w-tools">
+        <form class="c4w-lang" action="{{ h.url_for('util.internal_redirect') }}" method="post">
+          {{ h.csrf_input() }}
+          <label class="c4w-sr-only" for="c4w-lang">{{ _('Language') }}</label>
+          <select id="c4w-lang" name="url" onchange="this.form.submit()">
+            {% for locale in h.get_available_locales() %}
+              <option value="{{ h.url_for(h.current_url(), locale=locale.short_name) }}"
+                {% if locale.short_name == request.environ.CKAN_LANG %}selected{% endif %}>
+                {{ locale.short_name | upper }}
+              </option>
+            {% endfor %}
+          </select>
+        </form>
+
+        {% if c.userobj %}
+          <details class="c4w-account">
+            <summary>{{ c.userobj.display_name or c.user }}</summary>
+            <ul>
+              <li><a href="{{ h.c4w_url('account') }}">{{ _('My submissions') }}</a></li>
+              <li><a href="{{ h.c4w_url('submit') }}">{{ _('New submission') }}</a></li>
+              {% if h.c4w_is_sysadmin() %}
+                <li><a href="{{ h.c4w_url('admin_index') }}">{{ _('Admin') }}</a></li>
+              {% endif %}
+              {% if h.c4w_profile_url() %}
+                <li><a href="{{ h.c4w_profile_url() }}">{{ _('Profile') }}</a></li>
+              {% endif %}
+              <li><a href="{{ h.c4w_logout_url() }}">{{ _('Log out') }}</a></li>
+            </ul>
+          </details>
+        {% else %}
+          <a class="c4w-tools__login" href="{{ h.c4w_login_url() }}">{{ _('Log in') }}</a>
+          <a class="c4w-tools__register" href="{{ h.c4w_register_url() }}">{{ _('Register') }}</a>
+        {% endif %}
+
+        <a class="c4w-tools__ihp" href="{{ h.url_for('home.index') }}">{{ _('IHP-WINS') }}</a>
+      </div>
+    </div>
+  </div>
+</header>

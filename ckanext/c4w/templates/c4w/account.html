@@ -1,0 +1,57 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ _('My submissions') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page" id="c4w-main">
+    <header class="c4w-pagehead">
+      <h1>{{ _('My submissions') }}</h1>
+      <a class="c4w-btn" href="{{ h.c4w_url('submit') }}">{{ _('New submission') }}</a>
+    </header>
+
+    {% if groups %}
+      {% for group in groups %}
+        <section class="c4w-queue">
+          <h2>{{ _(group.entity_type | capitalize) }}</h2>
+          <table class="c4w-table">
+            <thead>
+              <tr>
+                <th>{{ _('Title') }}</th>
+                <th>{{ _('Status') }}</th>
+                <th>{{ _('Updated') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in group.rows %}
+                <tr>
+                  <td>
+                    {% set url = h.c4w_detail_url(item) %}
+                    {% if url %}
+                      <a href="{{ url }}">{{ h.c4w_entity_title(item) }}</a>
+                    {% else %}
+                      {{ h.c4w_entity_title(item) }}
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if item.approved is not none %}
+                      {% if item.approved %}{{ _('Approved') }}{% else %}{{ _('Pending') }}{% endif %}
+                    {% elif item.status %}
+                      {{ item.status }}
+                    {% endif %}
+                    {% if item.hidden %} · {{ _('Hidden') }}{% endif %}
+                  </td>
+                  <td>{% if item.modified %}{{ item.modified[:10] }}{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+      {% endfor %}
+    {% else %}
+      <p class="c4w-empty">
+        {{ _('You have not submitted anything yet.') }}
+        <a href="{{ h.c4w_url('submit') }}">{{ _('Start a submission') }}</a>
+      </p>
+    {% endif %}
+  </div>
+{% endblock %}

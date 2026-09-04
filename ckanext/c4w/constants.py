@@ -63,6 +63,76 @@ MODERATED_ENTITY_TYPES = (
     'event',
 )
 
+# Operations the moderation POST accepts. Unknown values 404 rather than
+# being interpolated into anything that touches the database.
+MODERATION_OPS = (
+    'approve',
+    'hide',
+    'feature',
+)
+
+# Not every entity grew every flag. The moderate action consults these
+# rather than probing a live row, so a URL cannot invent a column.
+ENTITY_HAS_HIDDEN = (
+    'project',
+    'resource',
+)
+ENTITY_HAS_FEATURED = (
+    'project',
+    'resource',
+    'event',
+)
+ENTITY_HAS_MODERATED = (
+    'project',
+    'resource',
+)
+
+# Detail endpoint per entity, so account and admin tables can link without
+# each template hard-coding a six-way switch.
+DETAIL_ENDPOINTS = {
+    'project': 'project_detail',
+    'organisation': 'organisation_detail',
+    'resource': 'resource_detail',
+    'platform': 'platform_detail',
+    'event': 'event_detail',
+    'post': 'post_detail',
+}
+
+# The submit chooser. Forms themselves are a later increment; this list is
+# what the chooser page and its tests read so they cannot drift.
+SUBMIT_CHOICES = (
+    ('project', u'Project',
+     u'A citizen science initiative on hydrology or water management.'),
+    ('resource', u'Resource',
+     u'A document, dataset or tool useful to practitioners.'),
+    ('organisation', u'Organisation',
+     u'An organisation working on citizen science and water.'),
+    ('event', u'Event',
+     u'An event for the citizen science and water community.'),
+    ('platform', u'Repository',
+     u'A platform or repository related to citizen science and water.'),
+)
+
+
+def moderate_error(entity_type, operation):
+    """Stable error key if the pair is illegal, otherwise None.
+
+    Kept CKAN-free so the URL contract is testable without a site: an
+    unknown entity, an unknown operation, or a flag the entity does not
+    have, must never reach SQL.
+    """
+    if entity_type not in ENTITY_TYPES:
+        return 'unknown_entity'
+    if operation not in MODERATION_OPS:
+        return 'unknown_op'
+    if operation == 'approve' and entity_type not in MODERATED_ENTITY_TYPES:
+        return 'not_moderated'
+    if operation == 'hide' and entity_type not in ENTITY_HAS_HIDDEN:
+        return 'no_hidden'
+    if operation == 'feature' and entity_type not in ENTITY_HAS_FEATURED:
+        return 'no_featured'
+    return None
+
 
 # --------------------------------------------------------------------------- #
 # Controlled vocabularies

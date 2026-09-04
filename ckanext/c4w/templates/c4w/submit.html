@@ -1,0 +1,22 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ _('New submission') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page" id="c4w-main">
+    <header class="c4w-pagehead">
+      <h1>{{ _('What do you want to submit?') }}</h1>
+    </header>
+    <p>
+      {% trans %}Choose a type. Submission forms open in a following release; until then the Citizens4Water team still reviews imported records from this portal's admin queue.{% endtrans %}
+    </p>
+    <ul class="c4w-chooser">
+      {% for key, title, hint in choices %}
+        <li>
+          <h2>{{ _(title) }}</h2>
+          <p>{{ _(hint) }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ _('Admin') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page" id="c4w-main">
+    <header class="c4w-pagehead">
+      <h1>{{ _('Moderation') }}</h1>
+    </header>
+
+    {% set pending = groups | selectattr('rows') | list %}
+    {% if pending %}
+      {% for group in groups %}
+        {% if group.rows %}
+          <section class="c4w-queue">
+            <h2>{{ _(group.entity_type | capitalize) }}
+              <span class="c4w-directory__count">{{ group.rows | length }}</span>
+            </h2>
+            <table class="c4w-table">
+              <thead>
+                <tr>
+                  <th>{{ _('Title') }}</th>
+                  <th>{{ _('Status') }}</th>
+                  <th>{{ _('Actions') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in group.rows %}
+                  <tr>
+                    <td>
+                      {% set url = h.c4w_detail_url(item) %}
+                      {% if url %}
+                        <a href="{{ url }}">{{ h.c4w_entity_title(item) }}</a>
+                      {% else %}
+                        {{ h.c4w_entity_title(item) }}
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if item.approved %}{{ _('Approved') }}{% else %}{{ _('Pending') }}{% endif %}
+                      {% if item.hidden %} · {{ _('Hidden') }}{% endif %}
+                      {% if item.featured %} · {{ _('Featured') }}{% endif %}
+                    </td>
+                    <td class="c4w-table__actions">
+                      {% if not item.approved %}
+                        <form method="post" action="{{ h.c4w_url('admin_moderate', entity=group.entity_type, item_id=item.id, operation='approve') }}">
+                          {{ h.csrf_input() }}
+                          <button type="submit" class="c4w-btn">{{ _('Approve') }}</button>
+                        </form>
+                      {% endif %}
+                      {% if group.can_hide %}
+                        <form method="post" action="{{ h.c4w_url('admin_moderate', entity=group.entity_type, item_id=item.id, operation='hide') }}">
+                          {{ h.csrf_input() }}
+                          <button type="submit" class="c4w-btn c4w-btn--quiet">
+                            {% if item.hidden %}{{ _('Unhide') }}{% else %}{{ _('Hide') }}{% endif %}
+                          </button>
+                        </form>
+                      {% endif %}
+                      {% if group.can_feature %}
+                        <form method="post" action="{{ h.c4w_url('admin_moderate', entity=group.entity_type, item_id=item.id, operation='feature') }}">
+                          {{ h.csrf_input() }}
+                          <button type="submit" class="c4w-btn c4w-btn--quiet">
+                            {% if item.featured %}{{ _('Unfeature') }}{% else %}{{ _('Feature') }}{% endif %}
+                          </button>
+                        </form>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </section>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <p class="c4w-empty">{{ _('Nothing waiting for review.') }}</p>
+    {% endif %}
+  </div>
+{% endblock %}

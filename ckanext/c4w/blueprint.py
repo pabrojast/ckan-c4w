@@ -36,6 +36,31 @@ def index():
     return views_home.index()
 
 
+def about():
+    from ckanext.c4w.logic import views_home
+    return views_home.about()
+
+
+def account():
+    from ckanext.c4w.logic import views_account
+    return views_account.account()
+
+
+def submit():
+    from ckanext.c4w.logic import views_account
+    return views_account.submit()
+
+
+def admin_index():
+    from ckanext.c4w.logic import views_admin
+    return views_admin.admin_index()
+
+
+def admin_moderate(entity, item_id, operation):
+    from ckanext.c4w.logic import views_admin
+    return views_admin.admin_moderate(entity, item_id, operation)
+
+
 def project_list():
     from ckanext.c4w.logic import views_projects
     return views_projects.project_list()
@@ -107,6 +132,17 @@ def _register(bp):
     Called once per blueprint so the live and preview mounts can never drift.
     """
     bp.add_url_rule('/', 'index', index, methods=['GET'])
+    bp.add_url_rule('/about', 'about', about, methods=['GET'],
+                    strict_slashes=False)
+    bp.add_url_rule('/account', 'account', account, methods=['GET'],
+                    strict_slashes=False)
+    bp.add_url_rule('/submit', 'submit', submit, methods=['GET'],
+                    strict_slashes=False)
+    bp.add_url_rule('/admin', 'admin_index', admin_index, methods=['GET'],
+                    strict_slashes=False)
+    bp.add_url_rule(
+        '/admin/<entity>/<item_id>/<operation>',
+        'admin_moderate', admin_moderate, methods=['POST'])
 
     # Legacy media. Load-bearing: every <img src> inside a migrated blog body
     # still points at this shape, as does every inbound link to an old image.

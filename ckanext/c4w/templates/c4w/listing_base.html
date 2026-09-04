@@ -14,10 +14,10 @@
   and is handed: listing, orderings, params.
 #}
 
-{% block subtitle %}{{ self.listing_title() }} - {{ _('Citizens4Water') }}{% endblock %}
+{% block subtitle %}{{ self.listing_title() }}{% endblock %}
 
 {% block c4w_content %}
-  <div class="c4w-listing">
+  <div class="c4w-page c4w-listing" id="c4w-main">
     <header class="c4w-listing__header">
       <h1>{% block listing_title %}{% endblock %}</h1>
       <p class="c4w-listing__count">{% block listing_count %}{% endblock %}</p>

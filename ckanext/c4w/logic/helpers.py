@@ -45,22 +45,24 @@ def c4w_url(endpoint, **kwargs):
 # registered yet, so the brand band grows on its own instead of needing a
 # template edit (and a broken link) each time.
 _NAV = (
-    ('project_list', u'Projects'),
-    ('resource_list', u'Resources'),
-    ('training_resource_list', u'Training resources'),
-    ('organisation_list', u'Organisations'),
-    ('platform_list', u'Platforms'),
-    ('event_list', u'Events'),
-    ('post_list', u'News'),
+    ('project_list', u'Projects', 'projects'),
+    ('resource_list', u'Resources', 'resources'),
+    ('training_resource_list', u'Training', 'training_resources'),
+    ('organisation_list', u'Organisations', 'organisations'),
+    ('platform_list', u'Platforms', 'platforms'),
+    ('event_list', u'Events', 'events'),
+    ('post_list', u'News', 'posts'),
 )
+
+_LISTING_ENDPOINTS = frozenset(item[0] for item in _NAV)
 
 
 def c4w_nav():
-    """Resolvable entries of the portal sub-navigation.
+    """Resolvable entries of the portal navigation.
 
-    Returns ``[{'endpoint':…, 'url':…, 'label':…, 'active': bool}]``. An entry
+    Returns ``[{'endpoint','url','label','stat','active'}]``. An entry
     whose endpoint does not exist yet is omitted rather than rendered as a
-    dead link.
+    dead link. ``stat`` is the key in ``c4w_stats()``.
     """
     current = None
     try:
@@ -69,7 +71,7 @@ def c4w_nav():
     except Exception:
         pass
     out = []
-    for endpoint, label in _NAV:
+    for endpoint, label, stat in _NAV:
         try:
             url = c4w_url(endpoint)
         except Exception:
@@ -78,9 +80,95 @@ def c4w_nav():
             'endpoint': endpoint,
             'url': url,
             'label': label,
+            'stat': stat,
             'active': bool(current and current.endswith('.' + endpoint)),
         })
     return out
+
+
+def _current_path():
+    """Path + query for came_from, without a trailing bare ``?``."""
+    try:
+        from flask import request
+        path = request.full_path or request.path or c4w_url('index')
+    except Exception:
+        return c4w_url('index')
+    if path.endswith('?'):
+        path = path[:-1]
+    return path
+
+
+def c4w_login_url():
+    """CKAN login, returning to the page the visitor is on."""
+    return tk.url_for('user.login', came_from=_current_path())
+
+
+def c4w_logout_url():
+    """CKAN logout, then back to the C4W home rather than IHP-WINS."""
+    try:
+        return tk.url_for('user.logout', came_from=c4w_url('index'))
+    except Exception:
+        return tk.url_for('user.logout')
+
+
+def c4w_register_url():
+    """IHP-WINS contributor registration, not CKAN's built-in signup."""
+    return '/colab'
+
+
+def c4w_profile_url():
+    """CKAN user page, or None when nobody is signed in."""
+    user = getattr(tk.g, 'user', None) or getattr(tk.c, 'user', None)
+    if not user:
+        return None
+    try:
+        return tk.url_for('user.read', id=user)
+    except Exception:
+        return None
+
+
+def c4w_is_sysadmin():
+    """True when the current visitor is a CKAN sysadmin."""
+    userobj = (getattr(tk.g, 'userobj', None)
+               or getattr(tk.c, 'userobj', None))
+    return bool(userobj is not None and getattr(userobj, 'sysadmin', False))
+
+
+def c4w_search_endpoint():
+    """Listing the header search should submit to.
+
+    On a catalogue listing, search that listing. Everywhere else, projects
+    -- they are the inventory the portal exists to hold.
+    """
+    try:
+        from flask import request
+        current = (request.endpoint or '').split('.')[-1]
+    except Exception:
+        current = ''
+    if current in _LISTING_ENDPOINTS:
+        return current
+    return 'project_list'
+
+
+def c4w_detail_url(entity):
+    """Public URL of a dictized entity, or None if it has no slug."""
+    if not entity:
+        return None
+    endpoint = constants.DETAIL_ENDPOINTS.get(entity.get('entity_type'))
+    slug = entity.get('slug')
+    if not endpoint or not slug:
+        return None
+    try:
+        return c4w_url(endpoint, slug=slug)
+    except Exception:
+        return None
+
+
+def c4w_entity_title(entity):
+    """Display title: events and posts use ``title``, everything else ``name``."""
+    if not entity:
+        return u''
+    return entity.get('name') or entity.get('title') or u''
 
 
 def c4w_option_list(vocabulary):
@@ -295,4 +383,12 @@ def get_helpers():
         'c4w_facet_active': c4w_facet_active,
         'c4w_any_facet_active': c4w_any_facet_active,
         'c4w_image_url': c4w_image_url,
+        'c4w_login_url': c4w_login_url,
+        'c4w_logout_url': c4w_logout_url,
+        'c4w_register_url': c4w_register_url,
+        'c4w_profile_url': c4w_profile_url,
+        'c4w_is_sysadmin': c4w_is_sysadmin,
+        'c4w_search_endpoint': c4w_search_endpoint,
+        'c4w_detail_url': c4w_detail_url,
+        'c4w_entity_title': c4w_entity_title,
     }

@@ -36,6 +36,11 @@ the navigation **silently** — no error, no log line.
 guards the `{% ckan_extends %}` itself, but nothing can guard the ordering
 from inside the extension.
 
+On `/citizens4water/*` the extension replaces the IHP-WINS header and footer
+with its own chrome (login still goes to CKAN, register to `/colab`). The
+Citizens4Water tab in the IHP-WINS masthead is only for the rest of the
+portal.
+
 ## 3. Tables
 
 Nothing to run: `IConfigurable.configure` calls `db.ensure_tables()` on

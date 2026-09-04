@@ -218,29 +218,53 @@ def test_project_image_boxes_cover_the_form_image_fields():
 
 
 # --------------------------------------------------------------------------- #
-# Section chrome (hero + pills, credits strip)
+# Portal chrome (header, footer, CSS scope)
 # --------------------------------------------------------------------------- #
 
-def test_section_hero_uses_the_nav_helper_and_aria_current():
-    """The pills must come from h.c4w_nav() -- the single nav source -- and
-    the active pill must carry aria-current for assistive tech."""
-    hero = _read('templates', 'c4w', 'snippets', 'section_hero.html')
-    assert 'h.c4w_nav()' in hero
-    assert 'aria-current' in hero
+def test_portal_header_uses_the_nav_helper_and_aria_current():
+    """The masthead must come from h.c4w_nav() -- the single nav source -- and
+    the active item must carry aria-current for assistive tech."""
+    header = _read('templates', 'c4w', 'snippets', 'portal_header.html')
+    assert 'h.c4w_nav()' in header
+    assert 'aria-current' in header
+    assert 'h.c4w_login_url()' in header
+
+
+def test_portal_base_replaces_ihp_wins_chrome():
+    """C4W pages must not render the UNESCO masthead or site footer."""
+    base = _read('templates', 'c4w', 'base.html')
+    assert 'class="c4w-portal"' in base
+    assert 'block header' in base
+    assert 'portal_header.html' in base
+    assert 'portal_footer.html' in base
+    assert 'block content' in base
 
 
 def test_credits_strip_keeps_the_contractual_attribution():
     """The funding attribution is a contractual obligation, not decoration.
     A restyle may move it; it may never drop it."""
-    strip = _read('templates', 'c4w', 'snippets', 'credits_strip.html')
-    assert 'Scivil' in strip
-    assert 'Flemish Government' in strip
-    assert 'creativecommons.org/licenses/by-sa/4.0' in strip
+    footer = _read('templates', 'c4w', 'snippets', 'portal_footer.html')
+    assert 'Scivil' in footer
+    assert 'Flemish Government' in footer
+    assert 'creativecommons.org/licenses/by-sa/4.0' in footer
+
+
+def test_moderation_payload_does_not_use_the_items_key():
+    """Jinja treats dict.items as the method, so a list named items never
+    renders. The queue and account tables must iterate ``rows``."""
+    source = _read('logic', 'action', 'moderation.py')
+    assert "'rows': items" in source
+    admin = _read('templates', 'c4w', 'admin.html')
+    account = _read('templates', 'c4w', 'account.html')
+    assert 'group.rows' in admin
+    assert 'group.rows' in account
+    assert 'group.items' not in admin
+    assert 'group.items' not in account
 
 
 def test_css_is_scoped_not_global():
-    """Every rule and every token lives under .c4w-main: nothing from this
-    section may leak into the rest of the portal."""
+    """Every token lives under html.c4w-portal: nothing from this portal may
+    leak into the rest of IHP-WINS. :root is the leak that would do it."""
     css = _read('assets', 'css', 'c4w.css')
-    assert ':root' not in css
-    assert '.c4w-main' in css
+    assert ':root' not in css  # the selector, not the word in a comment
+    assert 'html.c4w-portal' in css

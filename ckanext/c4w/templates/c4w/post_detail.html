@@ -2,7 +2,7 @@
 {% set back_endpoint = 'post_list' %}
 {% set back_label = _('News') %}
 
-{% block subtitle %}{{ post.title }} - {{ _('Citizens4Water') }}{% endblock %}
+{% block subtitle %}{{ post.title }}{% endblock %}
 
 {% block detail_hero %}
   {% set image = h.c4w_image_url(post, 'image_url') %}

@@ -1,17 +1,14 @@
 {% extends "c4w/base.html" %}
 
-{% block subtitle %}{{ organisation.name }} - {{ _('Citizens4Water') }}{% endblock %}
+{% block subtitle %}{{ organisation.name }}{% endblock %}
 
-{% block c4w_brand %}
+{% block c4w_content %}
+  <div class="c4w-page">
   {% snippet 'c4w/snippets/detail_breadcrumb.html',
      back_endpoint='organisation_list', back_label=_('Organisations'),
      title=organisation.name %}
-  {% snippet 'c4w/snippets/section_hero.html', variant='slim' %}
-{% endblock %}
-
-{% block c4w_content %}
   {% set logo = h.c4w_image_url(organisation, 'logo_url') %}
-  <article class="c4w-detail c4w-detail--org">
+  <article class="c4w-detail c4w-detail--org" id="c4w-main">
     <header class="c4w-detail__header">
       {% if logo %}
         <div class="c4w-detail__logo"><img src="{{ logo }}" alt="" loading="lazy"></div>
@@ -62,4 +59,5 @@
       {% endif %}
     </div>
   </article>
+  </div>
 {% endblock %}

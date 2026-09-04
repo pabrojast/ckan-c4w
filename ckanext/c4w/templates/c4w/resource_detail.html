@@ -2,7 +2,7 @@
 {% set back_endpoint = 'training_resource_list' if resource.is_training_resource else 'resource_list' %}
 {% set back_label = _('Training resources') if resource.is_training_resource else _('Resources') %}
 
-{% block subtitle %}{{ resource.name }} - {{ _('Citizens4Water') }}{% endblock %}
+{% block subtitle %}{{ resource.name }}{% endblock %}
 
 {% block detail_hero %}
   {% set image = h.c4w_image_url(resource, 'image1_url') %}

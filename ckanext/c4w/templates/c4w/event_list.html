@@ -6,17 +6,17 @@
   the action because it depends on the clock.
 #}
 
-{% block subtitle %}{{ _('Events') }} - {{ _('Citizens4Water') }}{% endblock %}
+{% block subtitle %}{{ _('Events') }}{% endblock %}
 
 {% block c4w_content %}
-  <div class="c4w-events">
+  <div class="c4w-page c4w-events" id="c4w-main">
     <header>
       <h1>{{ _('Events') }}</h1>
       <form class="c4w-listing__controls" method="get"
             action="{{ h.c4w_url('event_list') }}">
         <label for="c4w-q">{{ _('Search events') }}</label>
         <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}">
-        <button type="submit">{{ _('Apply') }}</button>
+        <button type="submit" class="c4w-btn">{{ _('Apply') }}</button>
       </form>
     </header>
 

@@ -221,6 +221,28 @@ def test_post_statuses_have_one_definition():
     assert terms == {'draft', 'published'}
 
 
+def test_moderate_error_rejects_unknown_pairs_before_sql():
+    """The URL contract is a closed list. Anything else is a 404, not SQL."""
+    assert constants.moderate_error('project', 'approve') is None
+    assert constants.moderate_error('project', 'hide') is None
+    assert constants.moderate_error('project', 'feature') is None
+    assert constants.moderate_error('nope', 'approve') == 'unknown_entity'
+    assert constants.moderate_error('project', 'delete') == 'unknown_op'
+    assert constants.moderate_error('post', 'approve') == 'not_moderated'
+    assert constants.moderate_error('event', 'hide') == 'no_hidden'
+    assert constants.moderate_error('organisation', 'feature') == 'no_featured'
+
+
+def test_detail_endpoints_cover_every_entity_type():
+    assert set(constants.DETAIL_ENDPOINTS) == set(constants.ENTITY_TYPES)
+
+
+def test_submit_choices_are_moderated_types():
+    keys = [key for key, _title, _hint in constants.SUBMIT_CHOICES]
+    assert set(keys) <= set(constants.MODERATED_ENTITY_TYPES)
+    assert 'project' in keys
+
+
 def test_subscripts_survive_sanitisation():
     """Project 36 is KdUINO, about the coefficient K_d.
 

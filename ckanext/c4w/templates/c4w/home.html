@@ -1,29 +1,128 @@
 {% extends "c4w/base.html" %}
 
-{% block subtitle %}{{ _('Citizens4Water') }}{% endblock %}
-
-{# The home page gets the tall hero variant; the section h1 and lead live in
-   the hero snippet, so this template renders no heading of its own. #}
-{% block c4w_brand %}
-  {% snippet 'c4w/snippets/section_hero.html', variant='home' %}
-{% endblock %}
+{% block subtitle %}{% endblock %}
 
 {% block c4w_content %}
-  {#
-    Counts come from a fail-soft helper: an empty dict renders no tiles rather
-    than an error page. The portal's front door must survive a database hiccup.
-  #}
-  {% set stats = h.c4w_stats() %}
-  {% if stats %}
-    <section class="c4w-stats" aria-label="{{ _('Citizens4Water at a glance') }}">
-      <ul>
-        {% for key, label in [('projects', _('Projects')), ('organisations', _('Organisations')), ('resources', _('Resources')), ('events', _('Events'))] %}
-          {% if stats.get(key) is not none %}
-            <li><span class="c4w-stats__value">{{ stats.get(key) }}</span>
-                <span class="c4w-stats__label">{{ label }}</span></li>
+  {% set stats = stats or {} %}
+  {% set nav = h.c4w_nav() %}
+
+  <section class="c4w-hero-field" id="c4w-main">
+    <div class="c4w-hero-field__inner">
+      <h1>{{ _('A global inventory of citizen science for freshwater') }}</h1>
+      <p>
+        {% trans %}Find projects, organisations, resources and events. Add your own. The catalogue is part of UNESCO IHP-WINS.{% endtrans %}
+      </p>
+      <form class="c4w-hero-field__search" method="get"
+            action="{{ h.c4w_url('project_list') }}" role="search">
+        <label class="c4w-sr-only" for="c4w-home-q">{{ _('Search projects') }}</label>
+        <input id="c4w-home-q" type="search" name="q"
+               placeholder="{{ _('Search projects by name, place or topic') }}">
+        <button type="submit" class="c4w-btn">{{ _('Search') }}</button>
+      </form>
+      {% if stats %}
+        <p class="c4w-hero-field__counts">
+          {% if stats.get('projects') is not none %}
+            <a href="{{ h.c4w_url('project_list') }}">{{ ungettext('{n} project', '{n} projects', stats.projects).format(n=stats.projects) }}</a>
           {% endif %}
-        {% endfor %}
-      </ul>
+          {% if stats.get('organisations') is not none %}
+            <a href="{{ h.c4w_url('organisation_list') }}">{{ ungettext('{n} organisation', '{n} organisations', stats.organisations).format(n=stats.organisations) }}</a>
+          {% endif %}
+          {% if stats.get('events') is not none %}
+            <a href="{{ h.c4w_url('event_list') }}">{{ ungettext('{n} event', '{n} events', stats.events).format(n=stats.events) }}</a>
+          {% endif %}
+        </p>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="c4w-page">
+    <section class="c4w-split" aria-label="{{ _('Catalogue') }}">
+      {% if featured_project %}
+        {% set image = h.c4w_image_url(featured_project, 'image1_url') %}
+        <article class="c4w-featured">
+          <a class="c4w-featured__link" href="{{ h.c4w_url('project_detail', slug=featured_project.slug) }}">
+            {% if image %}
+              <img src="{{ image }}" alt="" loading="lazy">
+            {% endif %}
+            <div class="c4w-featured__body">
+              <h2>{{ featured_project.name }}</h2>
+              {% if featured_project.description %}
+                <p>{{ featured_project.description | striptags | truncate(220) }}</p>
+              {% endif %}
+            </div>
+          </a>
+        </article>
+      {% endif %}
+
+      {% if nav %}
+        <nav class="c4w-directory" aria-label="{{ _('Sections') }}">
+          <ul>
+            {% for item in nav %}
+              <li>
+                <a href="{{ item.url }}">
+                  <span>{{ _(item.label) }}</span>
+                  {% if stats.get(item.stat) is not none %}
+                    <span class="c4w-directory__count">{{ stats.get(item.stat) }}</span>
+                  {% endif %}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+      {% endif %}
     </section>
-  {% endif %}
+
+    {% if latest_projects %}
+      <section class="c4w-home-section">
+        <header class="c4w-home-section__head">
+          <h2>{{ _('Latest projects') }}</h2>
+          <a href="{{ h.c4w_url('project_list') }}">{{ _('All projects') }}</a>
+        </header>
+        <div class="c4w-card-grid">
+          {% for project in latest_projects %}
+            {% snippet 'c4w/snippets/project_card.html', project=project %}
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    <div class="c4w-split c4w-split--news">
+      <section class="c4w-home-section">
+        <header class="c4w-home-section__head">
+          <h2>{{ _('News') }}</h2>
+          <a href="{{ h.c4w_url('post_list') }}">{{ _('All news') }}</a>
+        </header>
+        {% if latest_posts %}
+          <ul class="c4w-plain-list">
+            {% for post in latest_posts %}
+              <li>
+                <a href="{{ h.c4w_url('post_detail', slug=post.slug) }}">{{ post.title }}</a>
+                {% if post.created_on %}
+                  <time datetime="{{ post.created_on }}">{{ post.created_on[:10] }}</time>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="c4w-empty">{{ _('No news yet.') }}</p>
+        {% endif %}
+      </section>
+
+      <section class="c4w-home-section">
+        <header class="c4w-home-section__head">
+          <h2>{{ _('Upcoming events') }}</h2>
+          <a href="{{ h.c4w_url('event_list') }}">{{ _('All events') }}</a>
+        </header>
+        {% if upcoming_events %}
+          <div class="c4w-event-list">
+            {% for event in upcoming_events %}
+              {% snippet 'c4w/snippets/event_card.html', event=event %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="c4w-empty">{{ _('No upcoming events right now.') }}</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
 {% endblock %}

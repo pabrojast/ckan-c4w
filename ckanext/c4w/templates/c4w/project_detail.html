@@ -1,6 +1,6 @@
 {% extends "c4w/base.html" %}
 
-{% block subtitle %}{{ project.name }} - {{ _('Citizens4Water') }}{% endblock %}
+{% block subtitle %}{{ project.name }}{% endblock %}
 
 {#
   Every long-form field on this page is stored HTML that was sanitised on the
@@ -30,16 +30,13 @@
      link_endpoint=('project_list' if vocabulary in LINKED else none) %}
 {% endmacro %}
 
-{% block c4w_brand %}
+{% block c4w_content %}
+  <div class="c4w-page">
   {% snippet 'c4w/snippets/detail_breadcrumb.html',
      back_endpoint='project_list', back_label=_('Projects'),
      title=project.name %}
-  {% snippet 'c4w/snippets/section_hero.html', variant='slim' %}
-{% endblock %}
-
-{% block c4w_content %}
   {% set heading = h.c4w_image_url(project, 'image3_url') %}
-  <article class="c4w-detail">
+  <article class="c4w-detail" id="c4w-main">
     {% if heading %}
       <div class="c4w-detail__hero">
         <img src="{{ heading }}" alt="" loading="lazy">
@@ -173,4 +170,5 @@
       {% endif %}
     </dl>
   </article>
+  </div>
 {% endblock %}

@@ -1,0 +1,40 @@
+{#
+  C4W portal footer. Holds the contractual attribution (Scivil, Flanders,
+  CC BY-SA 4.0) that used to live in the credits strip, plus a way back to
+  IHP-WINS. Not the UNESCO site footer.
+#}
+<footer class="c4w-footer">
+  <div class="c4w-footer__inner">
+    <div class="c4w-footer__brand">
+      <p class="c4w-footer__about">
+        {% trans %}Citizens4Water is coordinated by Scivil and financed by the Flemish Government, within UNESCO's IHP-IX programme.{% endtrans %}
+      </p>
+      <p>
+        <a href="{{ h.url_for('home.index') }}">{{ _('Part of IHP-WINS') }}</a>
+        ·
+        <a href="{{ h.c4w_url('about') }}">{{ _('About') }}</a>
+      </p>
+    </div>
+
+    <nav class="c4w-footer__nav" aria-label="{{ _('Catalogue') }}">
+      <ul>
+        {% for item in h.c4w_nav() %}
+          <li><a href="{{ item.url }}">{{ _(item.label) }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+
+    <div class="c4w-footer__social">
+      <p>{{ _('Follow us') }}</p>
+      <ul>
+        <li><a href="https://instagram.com/citizens4water" rel="noopener noreferrer nofollow" target="_blank">Instagram</a></li>
+        <li><a href="https://www.facebook.com/people/Citizens4Water/61578103993188/" rel="noopener noreferrer nofollow" target="_blank">Facebook</a></li>
+        <li><a href="https://bsky.app/profile/citizens4water.bsky.social" rel="noopener noreferrer nofollow" target="_blank">Bluesky</a></li>
+        <li><a href="https://www.linkedin.com/company/citizens4water/" rel="noopener noreferrer nofollow" target="_blank">LinkedIn</a></li>
+      </ul>
+      <p class="c4w-footer__licence">
+        <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="license noopener noreferrer" target="_blank">CC BY-SA 4.0</a>
+      </p>
+    </div>
+  </div>
+</footer>

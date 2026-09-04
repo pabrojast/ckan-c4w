@@ -110,6 +110,10 @@ MUST_RESOLVE = [
     ("/citizens4water/blog/7", "c4w.post_legacy"),
     ("/citizens4water/blog/some-post", "c4w.post_detail"),
     ("/citizens4water/blog/2026/1/1/some-post", "c4w.post_legacy_dated"),
+    ("/citizens4water/about", "c4w.about"),
+    ("/citizens4water/account", "c4w.account"),
+    ("/citizens4water/submit", "c4w.submit"),
+    ("/citizens4water/admin", "c4w.admin_index"),
 ]
 adapter = probe.url_map.bind("ihp-wins.unesco.org")
 route_problems = []

@@ -3,10 +3,13 @@
 The **Citizens4Water** portal as a CKAN extension.
 
 Replaces the standalone Django platform served at
-`https://ihp-wins.unesco.org/citizens4water/` with a section of the IHP-WINS
-CKAN portal at the same URL: a public catalogue of citizen science initiatives
-on hydrology and water management, with the organisations, resources,
-repositories, events and news around them.
+`https://ihp-wins.unesco.org/citizens4water/` with a **distinct portal** at
+the same URL, running as a CKAN extension. It is connected to IHP-WINS for
+accounts, language and identity, but it has its own chrome — not the UNESCO
+masthead — so the visitor is not looking at two headers that say the same
+thing. The catalogue is citizen science initiatives on hydrology and water
+management, with the organisations, resources, repositories, events and news
+around them.
 
 Requires CKAN 2.10. See [INSTALL.md](INSTALL.md) — **the position of `c4w` in
 `ckan.plugins` matters.**
@@ -50,10 +53,12 @@ Python, and produces no counts at all.
 
 Built: the package and schema, the public read surfaces (projects,
 organisations, resources, training resources, platforms, events, news) with
-their facets, and the one-way importer.
+their facets, the C4W portal chrome (own header/footer, UNESCO colours),
+CKAN login/register in that chrome, a sysadmin moderation queue, “my
+submissions”, and the one-way importer.
 
-Still to build: the submission forms, the moderation panel, and the cutover
-redirects for the Django static pages.
+Still to build: the submission forms (the `/submit` chooser is in place),
+and the cutover redirects for the remaining Django static pages.
 
 - [`docs/migration-runbook.md`](docs/migration-runbook.md) — the operator's
   procedure, and what to expect from the data.

@@ -1,38 +1,58 @@
 {% extends "page.html" %}
 
 {#
-  Base template for the Citizens4Water section.
+  Citizens4Water portal chrome.
 
-  Child templates fill `c4w_content`. The section's identity lives INSIDE the
-  portal chrome -- a gradient hero with the logo and the section pills above
-  the content, a compact credits strip below it -- rather than as a second
-  header/footer: the visitor stays recognisably on IHP-WINS, the masthead is
-  the only menu bar, and the section switcher reads as in-page navigation
-  (same pattern as the Water Family pages).
-
-  The section has no CKAN sidebar, so the WHOLE `secondary` block is emptied.
-  Emptying only its contents leaves core's <aside class="col-sm-3"> in place,
-  which pushes the content off centre. `primary` is overridden rather than
-  `primary_content` so the row takes the full width.
+  Extends CKAN's page.html for scripts, flash and i18n, but replaces the
+  IHP-WINS header, footer and .container wrapper. The visitor is on a
+  distinct portal that shares CKAN users, not a section of IHP-WINS.
 #}
+
+{% block htmltag %}
+{% set lang = h.lang() %}
+<html lang="{{ lang }}" class="c4w-portal">
+{% endblock %}
 
 {% block styles %}
   {{ super() }}
   {% asset 'c4w/c4w-css' %}
 {% endblock %}
 
-{% block secondary %}{% endblock %}
+{% block scripts %}
+  {{ super() }}
+  {% asset 'c4w/c4w-js' %}
+{% endblock %}
 
-{% block primary %}
-  <main class="primary col-sm-12 c4w-main" role="main">
-    {% block c4w_brand %}
-      {% snippet 'c4w/snippets/section_hero.html' %}
+{% block title %}
+  {%- if self.subtitle()|trim -%}
+    {{ self.subtitle()|trim }} · {{ _('Citizens4Water') }}
+  {%- else -%}
+    {{ _('Citizens4Water') }}
+  {%- endif -%}
+{% endblock %}
+
+{% block skip %}{% endblock %}
+
+{% block header %}
+  {% snippet 'c4w/snippets/portal_header.html' %}
+{% endblock %}
+
+{% block footer %}
+  {% snippet 'c4w/snippets/portal_footer.html' %}
+{% endblock %}
+
+{% block content %}
+  <div class="c4w-shell">
+    {% block flash %}
+      {% set flashes = h.flash.pop_messages() | list %}
+      {% if flashes %}
+        <div class="c4w-flash" role="status">
+          {% for message in flashes %}
+            <div class="c4w-flash__item {{ message.category }}">{{ h.literal(message) }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
     {% endblock %}
-
     {% block c4w_content %}{% endblock %}
-
-    {% block c4w_brand_footer %}
-      {% snippet 'c4w/snippets/credits_strip.html' %}
-    {% endblock %}
-  </main>
+  </div>
 {% endblock %}

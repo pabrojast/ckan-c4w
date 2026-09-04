@@ -2,7 +2,7 @@
 {% set back_endpoint = 'platform_list' %}
 {% set back_label = _('Platforms') %}
 
-{% block subtitle %}{{ platform.name }} - {{ _('Citizens4Water') }}{% endblock %}
+{% block subtitle %}{{ platform.name }}{% endblock %}
 
 {% block detail_hero %}
   {% set logo = h.c4w_image_url(platform, 'logo_url') %}
