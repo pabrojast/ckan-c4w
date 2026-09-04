@@ -67,11 +67,14 @@
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* !important mirrors theme_ejemplo.css:978 `p { color:#212529 !important;
+ * font-size:1.125rem !important }` -- a bare selector that steamrolls every
+ * paragraph on the site; same for the other paragraph rules below. */
 .c4w-hero__lead {
   margin: 0 auto;
   max-width: 60ch;
-  font-size: 1.15rem;
-  color: #fff;
+  font-size: 1.15rem !important;
+  color: #fff !important;
   opacity: 0.94;
 }
 
@@ -277,6 +280,8 @@
 .c4w-credits__about {
   margin: 0;
   max-width: 65ch;
+  font-size: 0.85rem !important;
+  color: var(--c4w-muted) !important;
 }
 
 .c4w-credits__links {
@@ -301,7 +306,10 @@
   font-weight: 600;
 }
 
-.c4w-credits__licence { margin: 0; }
+.c4w-credits__licence {
+  margin: 0;
+  font-size: 0.85rem !important;
+}
 
 @media (max-width: 40rem) {
   .c4w-credits { flex-direction: column; align-items: flex-start; }
@@ -336,7 +344,7 @@
 .c4w-listing__header h1 { margin-top: 0; }
 
 .c4w-listing__count {
-  color: var(--c4w-muted);
+  color: var(--c4w-muted) !important;
   margin-top: -0.5rem;
 }
 
@@ -473,8 +481,8 @@
 .c4w-card__meta,
 .c4w-card__excerpt {
   margin: 0.35rem var(--c4w-space) 0;
-  font-size: 0.85rem;
-  color: var(--c4w-muted);
+  font-size: 0.85rem !important;
+  color: var(--c4w-muted) !important;
 }
 
 .c4w-card__meta { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -549,7 +557,7 @@
   border: 1px dashed rgba(0, 114, 188, 0.35);
   border-radius: 16px;
   text-align: center;
-  color: var(--c4w-muted);
+  color: var(--c4w-muted) !important;
 }
 
 /* --- detail --------------------------------------------------------------- */
@@ -565,7 +573,7 @@
   box-shadow: var(--c4w-shadow);
 }
 
-.c4w-detail__credit { font-size: 0.8rem; color: var(--c4w-muted); }
+.c4w-detail__credit { font-size: 0.8rem !important; color: var(--c4w-muted) !important; }
 
 .c4w-detail__header h1 { margin: 0.3rem 0; }
 
@@ -573,8 +581,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--c4w-space);
-  color: var(--c4w-muted);
-  font-size: 0.9rem;
+  color: var(--c4w-muted) !important;
+  font-size: 0.9rem !important;
 }
 
 .c4w-detail__status {
@@ -692,16 +700,16 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.85rem !important;
   font-weight: 600;
-  color: var(--c4w-blue-dark);
+  color: var(--c4w-blue-dark) !important;
 }
 
 .c4w-card__place { color: var(--c4w-muted); font-weight: 400; }
 
 /* Past events stay legible but recede -- opacity alone would fail contrast. */
 .c4w-event-list--past .c4w-card--event { border-style: dashed; }
-.c4w-event-list--past .c4w-card__date { color: var(--c4w-muted); }
+.c4w-event-list--past .c4w-card__date { color: var(--c4w-muted) !important; }
 
 /* --- long-form prose ----------------------------------------------------- */
 
