@@ -354,7 +354,8 @@ def _step_columns(dataset, step):
         'columns': columns,
         'column_names': [c['name'] for c in columns],
         'file': proposal.get('file'),
-        'date_formats': ['auto'] + list(dates.CANDIDATE_FORMATS),
+        'date_format_options': [(u'auto', tk._(u'auto (detect)'))] + [
+            (fmt, fmt) for fmt in dates.CANDIDATE_FORMATS],
         'country_kinds': (('', tk._('Not given')),
                           ('iso2', tk._('2-letter code (CL)')),
                           ('iso3', tk._('3-letter code (CHL)')),

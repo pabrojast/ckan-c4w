@@ -5,7 +5,7 @@
   the spec from the posted names (views_submit_data._mapping_from_form).
 
   Handed: spec (the current mapping), columns (the sniffed columns),
-  column_names, file, date_formats, country_kinds, stored.
+  column_names, file, date_format_options, country_kinds, stored.
 #}
 
 {% macro col_select(name, label, value, hint=None, required=false, allow_empty=true) %}
@@ -56,7 +56,7 @@
       <h2>{{ _('Time') }}</h2>
       <div class="c4w-mapping__grid">
         {{ col_select('date__column', _('Date column'), spec.date.column, required=true) }}
-        {{ form.select('date__format', _('Date format'), date_formats | map('string') | zip(date_formats) | list, spec.date.format or 'auto', errors,
+        {{ form.select('date__format', _('Date format'), date_format_options, spec.date.format or 'auto', errors,
              hint=_('"auto" tries the common formats; pick one if days and months are ambiguous.')) }}
         {{ form.radios('date__grain', _('Aggregate the dashboard by'), h.c4w_option_list('grain'), spec.date.grain or 'year', errors, required=true,
              hint=_('Values of one site inside a period are summarised by their median.')) }}

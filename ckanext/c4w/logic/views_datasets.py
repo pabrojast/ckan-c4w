@@ -89,11 +89,9 @@ def dataset_embed(slug):
     dataset = _show(slug)
     body = tk.render('c4w/dataset_embed.html',
                      extra_vars=_dashboard_vars(dataset))
-    response = Response(body, mimetype='text/html')
-    # Meant to be framed by other sites; the portal itself sets nothing
-    # stricter, and the page carries no session-bound action.
-    response.headers['X-Frame-Options'] = 'ALLOWALL'
-    return response
+    # Meant to be framed by other sites: no X-Frame-Options is set (the
+    # portal sets none either) and the page carries no session-bound action.
+    return Response(body, mimetype='text/html')
 
 
 def dataset_bundle(slug, name):

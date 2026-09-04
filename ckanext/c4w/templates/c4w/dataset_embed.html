@@ -12,6 +12,7 @@
   <meta name="robots" content="noindex">
   <title>{{ dataset.title }} · Citizens4Water</title>
   {% asset 'c4w/c4w-css' %}
+  {{ h.render_assets('style') }}
   <link rel="stylesheet" href="{{ h.c4w_dashboard_asset('c4w-dashboard.css') }}">
   <style>
     html.c4w-embed, html.c4w-embed body { background: var(--c4w-white, #fff); min-height: 100%; }

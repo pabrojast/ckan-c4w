@@ -1536,6 +1536,63 @@ html.c4w-portal :is(a, button, input, select, summary):focus-visible {
 .c4w-choice p { margin: 0; color: var(--c4w-muted) !important; font-size: 0.92rem !important; }
 .c4w-choice .c4w-btn { align-self: flex-start; margin-top: 0.4rem; }
 
+/* --- data catalogue ------------------------------------------------------ */
+
+.c4w-card__media--dataset {
+  display: grid;
+  place-items: center;
+  min-height: 5.5rem;
+  background: linear-gradient(135deg, var(--c4w-deep), var(--c4w-blue));
+}
+
+.c4w-card__glyph {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: var(--c4w-white);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.c4w-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+  margin: 0 0 0.5rem !important;
+  color: var(--c4w-muted) !important;
+  font-size: 0.82rem !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.c4w-facet--cta { margin: 0 0 1rem !important; }
+.c4w-facet--cta .c4w-btn { display: block; text-align: center; }
+
+.c4w-page--wide { max-width: none; }
+
+.c4w-pagehead--dashboard { margin-bottom: 0.8rem; }
+.c4w-pagehead--dashboard h1 { font-size: 1.5rem; }
+.c4w-pagehead--dashboard .c4w-listing__count { margin: 0.2rem 0 0; }
+
+.c4w-detail__actions--top { margin-top: 0 !important; margin-bottom: 1.4rem; }
+.c4w-detail__actions--top .c4w-note { display: inline-block; margin: 0; }
+
+.c4w-embed-code {
+  overflow-x: auto;
+  padding: 0.75rem 0.9rem;
+  background: var(--c4w-ice);
+  border: 1px solid var(--c4w-rule);
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.c4w-sample-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html.c4w-portal * { transition: none !important; }
 }
