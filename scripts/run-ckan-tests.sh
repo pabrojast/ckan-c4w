@@ -166,12 +166,11 @@ for path in templates:
 missing_parents = sorted(e for e in extends if not (tpl_root / e).is_file())
 assert not missing_parents, "templates extend missing parents: %s" % missing_parents
 
-# --- the header override must chain, not replace --------------------------- #
-# The active theme replaces core's header.html outright. Our override only
-# reaches its navigation block by extending it.
-header = (tpl_root / "header.html").read_text(encoding="utf-8").lstrip()
-assert header.startswith("{% ckan_extends %}"), \
-    "templates/header.html must start with {% ckan_extends %}"
+# --- no IHP-WINS masthead override ---------------------------------------- #
+# A root-level header.html would inject a Citizens4Water tab into the
+# UNESCO nav. C4W is a distinct portal; that tab is not wanted.
+assert not (tpl_root / "header.html").exists(), \
+    "templates/header.html must not exist (it would override the IHP-WINS nav)"
 
 print("PLUGIN OK  (%d actions, %d helpers, %d templates, %d snippets, "
       "helpers used: %d, %d legacy URLs resolve)"

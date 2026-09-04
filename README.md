@@ -11,8 +11,8 @@ thing. The catalogue is citizen science initiatives on hydrology and water
 management, with the organisations, resources, repositories, events and news
 around them.
 
-Requires CKAN 2.10. See [INSTALL.md](INSTALL.md) — **the position of `c4w` in
-`ckan.plugins` matters.**
+Requires CKAN 2.10. See [INSTALL.md](INSTALL.md). The portal is at
+`/citizens4water/` and does not add a tab to the IHP-WINS masthead.
 
 ## Why an extension
 

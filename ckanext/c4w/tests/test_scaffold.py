@@ -59,33 +59,11 @@ def test_plugin_implements_every_interface_it_needs():
 # Templates
 # --------------------------------------------------------------------------- #
 
-def test_header_override_chains_instead_of_replacing():
-    """The theme replaces core's header outright; we must extend, not replace.
-
-    ckanext-theme-ejemplo's header.html does NOT use {% ckan_extends %} -- it
-    is a full replacement that redefines header_site_navigation_tabs. Our
-    override only reaches that block by extending it, and only because c4w
-    loads after the theme in ckan.plugins.
+def test_no_ihp_wins_header_override():
+    """C4W is its own portal. It must not inject a tab into the IHP-WINS
+    masthead -- a root-level header.html would do that for the WHOLE site.
     """
-    header = _read('templates', 'header.html').lstrip()
-    assert header.startswith('{% ckan_extends %}')
-    assert '{{ super() }}' in header
-
-
-def test_header_uses_the_active_theme_markup():
-    """Bare <li><a>, not Bootstrap nav-item/nav-link.
-
-    The theme renders this block as plain list items. An entry using
-    nav-item/nav-link (as ckanext-csunesco's header does) renders unstyled
-    next to its neighbours.
-    """
-    # Strip Jinja comments first: this file explains the trap in prose, and
-    # the explanation names the markup it warns against.
-    markup = re.sub(r'\{#.*?#\}', '', _read('templates', 'header.html'),
-                    flags=re.DOTALL)
-    assert 'nav-link' not in markup
-    assert 'nav-item' not in markup
-    assert '<li' in markup
+    assert not (PKG / 'templates' / 'header.html').exists()
 
 
 def test_every_template_lives_under_the_c4w_namespace_or_is_an_override():
@@ -97,7 +75,7 @@ def test_every_template_lives_under_the_c4w_namespace_or_is_an_override():
     root_templates = {
         p.name for p in (PKG / 'templates').glob('*.html')
     }
-    assert root_templates == {'header.html'}
+    assert root_templates == set()
 
 
 # --------------------------------------------------------------------------- #

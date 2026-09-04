@@ -14,32 +14,16 @@ In the portal image, add it next to the other extensions:
 RUN pip install -e git+https://github.com/pabrojast/ckanext-c4w#egg=ckanext-c4w
 ```
 
-## 2. Enable it — ORDER MATTERS
+## 2. Enable it
 
 ```ini
 ckan.plugins = ... cstoolbox chartjs chartscha terriassistant csunesco c4w security
 ```
 
-**`c4w` must come after `theme_ejemplo`.** This is not a preference.
-
-CKAN resolves a template by walking plugin template directories in load order,
-and `{% ckan_extends %}` extends the *next* definition along that path.
-`ckanext-theme-ejemplo/templates/header.html` does **not** use
-`{% ckan_extends %}` — it replaces core's header outright and defines
-`header_site_navigation_tabs` itself. Our `templates/header.html` only reaches
-that block by extending the theme's copy, which requires `c4w` to be loaded
-after it.
-
-Put `c4w` before `theme_ejemplo` and the Citizens4Water tab disappears from
-the navigation **silently** — no error, no log line.
-`tests/test_scaffold.py::test_header_override_chains_instead_of_replacing`
-guards the `{% ckan_extends %}` itself, but nothing can guard the ordering
-from inside the extension.
-
-On `/citizens4water/*` the extension replaces the IHP-WINS header and footer
-with its own chrome (login still goes to CKAN, register to `/colab`). The
-Citizens4Water tab in the IHP-WINS masthead is only for the rest of the
-portal.
+`c4w` after `theme_ejemplo` is the usual order. The extension does **not**
+override the IHP-WINS masthead: there is no Citizens4Water tab in the UNESCO
+nav. The portal lives at `/citizens4water/` with its own chrome (login still
+goes to CKAN, register to `/colab`).
 
 ## 3. Tables
 
