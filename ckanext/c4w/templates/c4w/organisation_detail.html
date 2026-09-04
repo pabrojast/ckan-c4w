@@ -2,13 +2,17 @@
 
 {% block subtitle %}{{ organisation.name }} - {{ _('Citizens4Water') }}{% endblock %}
 
+{% block c4w_brand %}
+  {% snippet 'c4w/snippets/detail_breadcrumb.html',
+     back_endpoint='organisation_list', back_label=_('Organisations'),
+     title=organisation.name %}
+  {% snippet 'c4w/snippets/section_hero.html', variant='slim' %}
+{% endblock %}
+
 {% block c4w_content %}
   {% set logo = h.c4w_image_url(organisation, 'logo_url') %}
   <article class="c4w-detail c4w-detail--org">
     <header class="c4w-detail__header">
-      <p class="c4w-detail__breadcrumb">
-        <a href="{{ h.c4w_url('organisation_list') }}">{{ _('Organisations') }}</a>
-      </p>
       {% if logo %}
         <div class="c4w-detail__logo"><img src="{{ logo }}" alt="" loading="lazy"></div>
       {% endif %}

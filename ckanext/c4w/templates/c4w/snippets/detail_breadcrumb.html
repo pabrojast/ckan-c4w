@@ -1,0 +1,18 @@
+{#
+  Theme-style breadcrumb for detail pages:
+  Home -> Citizens4Water -> {back_label} -> {title}.
+
+  Namespaced under c4w/ on purpose. A root-level snippets/breadcrumb_home.html
+  would shadow ckanext-pages' file of the same name for the WHOLE site,
+  because c4w loads last in ckan.plugins.
+
+  Params: back_endpoint, back_label, title (plain text).
+#}
+<div class="toolbar c4w-toolbar" role="navigation" aria-label="{{ _('Breadcrumb') }}">
+  <ol class="breadcrumb">
+    <li><a href="{{ h.url_for('home.index') }}">{{ _('Home') }}</a></li>
+    <li><a href="{{ h.c4w_url('index') }}">{{ _('Citizens4Water') }}</a></li>
+    <li><a href="{{ h.c4w_url(back_endpoint) }}">{{ back_label }}</a></li>
+    <li class="active">{{ title }}</li>
+  </ol>
+</div>

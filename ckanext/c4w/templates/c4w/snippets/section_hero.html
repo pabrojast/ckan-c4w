@@ -1,0 +1,63 @@
+{#
+  Citizens4Water section hero: gradient band with the logo, plus the section
+  pills underneath. Replaces the old brand band, whose second full-width nav
+  read as a duplicate of the portal masthead.
+
+  variant:
+    'home'    -- tall hero with the section h1 and lead (the home page's only
+                 h1 lives HERE, so the compact variants carry no heading and
+                 heading order stays valid on listing pages).
+    'compact' -- short band, logo only, pills below. The default.
+    'slim'    -- one-row strip for detail pages: logo and pills share the row.
+
+  The logo sits in a white chip on purpose: the SVG is dark ink + cyan on
+  transparent and is illegible directly on the blue gradient.
+
+  The pills come from h.c4w_nav(), which omits any entry whose endpoint is not
+  registered yet. That is what lets this snippet be written once while the
+  surfaces land one increment at a time -- an unbuilt section is absent,
+  never a dead link.
+#}
+{% set variant = variant or 'compact' %}
+{% set nav = h.c4w_nav() %}
+
+{% macro pills(extra_class='') %}
+  {% if nav %}
+    <nav class="c4w-pills{{ extra_class }}" aria-label="{{ _('Citizens4Water sections') }}">
+      <ul>
+        {% for item in nav %}
+          <li>
+            <a class="c4w-pill{{ ' is-active' if item.active }}" href="{{ item.url }}"
+               {% if item.active %}aria-current="page"{% endif %}>{{ _(item.label) }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  {% endif %}
+{% endmacro %}
+
+{% if variant == 'slim' %}
+  <div class="c4w-hero c4w-hero--slim">
+    <a class="c4w-hero__logo" href="{{ h.c4w_url('index') }}">
+      <img src="{{ h.url_for_static('/c4w/img/Citizens4Water_Horizontal.svg') }}"
+           alt="{{ _('Citizens4Water') }}" width="256" height="112">
+    </a>
+    {{ pills(' c4w-pills--slim') }}
+  </div>
+{% else %}
+  <div class="c4w-hero c4w-hero--{{ variant }}">
+    <div class="c4w-hero__content">
+      <a class="c4w-hero__logo" href="{{ h.c4w_url('index') }}">
+        <img src="{{ h.url_for_static('/c4w/img/Citizens4Water_Horizontal.svg') }}"
+             alt="{{ _('Citizens4Water') }}" width="256" height="112">
+      </a>
+      {% if variant == 'home' %}
+        <h1>{{ _('Citizens4Water') }}</h1>
+        <p class="c4w-hero__lead">
+          {% trans %}A hub for citizen science initiatives on hydrology and water management: find projects, organisations, resources, repositories and events, and add your own.{% endtrans %}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+  {{ pills() }}
+{% endif %}

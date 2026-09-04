@@ -2,14 +2,13 @@
 
 {% block subtitle %}{{ _('Citizens4Water') }}{% endblock %}
 
-{% block c4w_content %}
-  <section class="c4w-hero">
-    <h1>{{ _('Citizens4Water') }}</h1>
-    <p class="c4w-hero__lead">
-      {% trans %}A hub for citizen science initiatives on hydrology and water management: find projects, organisations, resources, repositories and events, and add your own.{% endtrans %}
-    </p>
-  </section>
+{# The home page gets the tall hero variant; the section h1 and lead live in
+   the hero snippet, so this template renders no heading of its own. #}
+{% block c4w_brand %}
+  {% snippet 'c4w/snippets/section_hero.html', variant='home' %}
+{% endblock %}
 
+{% block c4w_content %}
   {#
     Counts come from a fail-soft helper: an empty dict renders no tiles rather
     than an error page. The portal's front door must survive a database hiccup.

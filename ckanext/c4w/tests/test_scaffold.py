@@ -215,3 +215,32 @@ def test_project_image_boxes_cover_the_form_image_fields():
     fields = {f for s in constants.PROJECT_FORM_STEPS for f in s['fields']}
     for name in constants.PROJECT_IMAGE_BOXES:
         assert name in fields, name
+
+
+# --------------------------------------------------------------------------- #
+# Section chrome (hero + pills, credits strip)
+# --------------------------------------------------------------------------- #
+
+def test_section_hero_uses_the_nav_helper_and_aria_current():
+    """The pills must come from h.c4w_nav() -- the single nav source -- and
+    the active pill must carry aria-current for assistive tech."""
+    hero = _read('templates', 'c4w', 'snippets', 'section_hero.html')
+    assert 'h.c4w_nav()' in hero
+    assert 'aria-current' in hero
+
+
+def test_credits_strip_keeps_the_contractual_attribution():
+    """The funding attribution is a contractual obligation, not decoration.
+    A restyle may move it; it may never drop it."""
+    strip = _read('templates', 'c4w', 'snippets', 'credits_strip.html')
+    assert 'Scivil' in strip
+    assert 'Flemish Government' in strip
+    assert 'creativecommons.org/licenses/by-sa/4.0' in strip
+
+
+def test_css_is_scoped_not_global():
+    """Every rule and every token lives under .c4w-main: nothing from this
+    section may leak into the rest of the portal."""
+    css = _read('assets', 'css', 'c4w.css')
+    assert ':root' not in css
+    assert '.c4w-main' in css

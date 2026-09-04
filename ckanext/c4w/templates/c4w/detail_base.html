@@ -11,16 +11,24 @@
   A child sets `back_endpoint` and `back_label` and fills:
     detail_hero, detail_title, detail_meta, detail_body, detail_actions,
     detail_facts.
+
+  The section chrome on a detail page is a theme-style breadcrumb plus the
+  slim hero strip -- not the full hero: the visitor already chose a section,
+  so the strip only has to say "still Citizens4Water" and offer the switcher.
 #}
+
+{% block c4w_brand %}
+  {% snippet 'c4w/snippets/detail_breadcrumb.html',
+     back_endpoint=back_endpoint, back_label=back_label,
+     title=self.detail_title() | trim %}
+  {% snippet 'c4w/snippets/section_hero.html', variant='slim' %}
+{% endblock %}
 
 {% block c4w_content %}
   <article class="c4w-detail">
     {% block detail_hero %}{% endblock %}
 
     <header class="c4w-detail__header">
-      <p class="c4w-detail__breadcrumb">
-        <a href="{{ h.c4w_url(back_endpoint) }}">{{ back_label }}</a>
-      </p>
       <h1>{% block detail_title %}{% endblock %}</h1>
       <p class="c4w-detail__meta">{% block detail_meta %}{% endblock %}</p>
     </header>
