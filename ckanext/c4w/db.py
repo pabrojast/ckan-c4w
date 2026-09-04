@@ -399,6 +399,177 @@ c4w_media_map_table = Table(
 )
 
 
+# --------------------------------------------------------------------------- #
+# Uploaded datasets and their dashboards
+# --------------------------------------------------------------------------- #
+
+# One uploaded table of measurements. The raw file(s) live in the object
+# store (c4w_dataset_file); the dashboard reads a precomputed bundle
+# (c4w_dashboard_bundle). The metadata columns follow the same rule as every
+# other table here -- native when filtered, ordered or written back by the
+# pipeline, extras otherwise -- and are named so they map onto the fields of
+# schemingdcat's unesco/dataset.yaml without a translation table.
+c4w_dataset_table = Table(
+    'c4w_dataset', metadata,
+    Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
+    # Never populated: kept so _common.get_by_reference works unchanged.
+    Column('legacy_id', types.Integer),
+    Column('slug', types.UnicodeText, nullable=False),
+    Column('title', types.UnicodeText, nullable=False),
+    Column('description', types.UnicodeText),
+    Column('layout', types.UnicodeText),
+    Column('grain', types.UnicodeText),
+    Column('language', types.UnicodeText),
+    Column('license_id', types.UnicodeText),
+    Column('frequency', types.UnicodeText),
+    Column('temporal_start', types.Date),
+    Column('temporal_end', types.Date),
+    Column('bbox_west', types.Numeric(9, 6)),
+    Column('bbox_south', types.Numeric(9, 6)),
+    Column('bbox_east', types.Numeric(9, 6)),
+    Column('bbox_north', types.Numeric(9, 6)),
+    Column('contact_name', types.UnicodeText),
+    Column('contact_email', types.UnicodeText),
+    Column('author', types.UnicodeText),
+    Column('author_email', types.UnicodeText),
+    Column('publisher', types.UnicodeText),
+    Column('organisation_id', types.UnicodeText),
+    Column('project_id', types.UnicodeText),
+    Column('source_url', types.UnicodeText),
+    Column('doi', types.UnicodeText),
+    Column('citation', types.UnicodeText),
+    Column('provenance', types.UnicodeText),
+    # Pipeline state. See constants.PROCESSING_STATUSES.
+    Column('processing_status', types.UnicodeText, default=u'draft'),
+    Column('processing_error', types.UnicodeText),
+    Column('processed_at', types.DateTime),
+    # The bundle generation the dashboard serves. Bumped only when a run
+    # succeeds, so a failed re-run leaves the previous dashboard in place.
+    Column('bundle_generation', types.Integer, default=0),
+    Column('record_count', types.Integer),
+    Column('site_count', types.Integer),
+    Column('parameter_count', types.Integer),
+    # The column-mapping spec, JSON. Owner-only in the dictized row.
+    Column('mapping_json', types.UnicodeText),
+    Column('wizard_step', types.Integer, default=1),
+    Column('submitted_at', types.DateTime),
+    Column('approved', types.Boolean, default=False),
+    Column('moderated', types.Boolean, default=False),
+    Column('hidden', types.Boolean, default=False),
+    Column('featured', types.Boolean, default=False),
+    Column('total_accesses', types.Integer, default=0),
+    Column('total_downloads', types.Integer, default=0),
+    Column('created_by', types.UnicodeText),
+    Column('search_text', types.UnicodeText),
+    Column('extras', types.UnicodeText, default=u'{}'),
+    Column('created', types.DateTime, default=_utcnow),
+    Column('modified', types.DateTime, default=_utcnow),
+    Index('ix_c4w_dataset_legacy', 'legacy_id', unique=True),
+    Index('ix_c4w_dataset_slug', 'slug', unique=True),
+    Index('ix_c4w_dataset_created_by', 'created_by'),
+    Index('ix_c4w_dataset_organisation', 'organisation_id'),
+    Index('ix_c4w_dataset_project', 'project_id'),
+    Index('ix_c4w_dataset_status', 'processing_status'),
+    Index('ix_c4w_dataset_grain', 'grain'),
+    Index('ix_c4w_dataset_featured', 'featured'),
+    Index('ix_c4w_dataset_created', 'created'),
+    Index('ix_c4w_dataset_public_modified', 'approved', 'hidden', 'modified'),
+)
+
+# A file in the object store belonging to a dataset: the measurement table(s)
+# the pipeline reads (kind='data') or a protocol / field sheet
+# (kind='attachment'). ``sniff_json`` caches what the sniffer learned from
+# the first 256 KB so the mapping page never re-reads the blob.
+c4w_dataset_file_table = Table(
+    'c4w_dataset_file', metadata,
+    Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
+    Column('dataset_id', types.UnicodeText, nullable=False),
+    Column('kind', types.UnicodeText, nullable=False, default=u'data'),
+    Column('original_name', types.UnicodeText),
+    Column('stored_name', types.UnicodeText),
+    Column('url', types.UnicodeText),
+    Column('content_type', types.UnicodeText),
+    Column('size_bytes', types.BigInteger),
+    Column('sha256', types.UnicodeText),
+    Column('format', types.UnicodeText),
+    Column('encoding', types.UnicodeText),
+    Column('delimiter', types.UnicodeText),
+    Column('quotechar', types.UnicodeText),
+    Column('has_header', types.Boolean),
+    Column('row_estimate', types.Integer),
+    Column('sniff_json', types.UnicodeText),
+    Column('sort_order', types.Integer, default=0),
+    Column('uploaded_by', types.UnicodeText),
+    Column('created', types.DateTime, default=_utcnow),
+    Index('ix_c4w_dataset_file_dataset', 'dataset_id', 'kind', 'created'),
+    Index('ix_c4w_dataset_file_sha', 'sha256'),
+)
+
+# The precomputed dashboard bundle, one row per file, gzip-compressed.
+#
+# Stored in the database rather than the object store so the route that
+# serves it is same-origin (no CORS configuration on the bucket), is
+# visibility-checked like every other read, and is deleted with the dataset.
+# ``generation`` lets a re-run write a complete new bundle before the
+# dataset row is flipped to it, so a reader never sees a half-written one.
+c4w_dashboard_bundle_table = Table(
+    'c4w_dashboard_bundle', metadata,
+    Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
+    Column('dataset_id', types.UnicodeText, nullable=False),
+    Column('generation', types.Integer, nullable=False, default=1),
+    Column('name', types.UnicodeText, nullable=False),
+    Column('content_type', types.UnicodeText, default=u'application/json'),
+    Column('etag', types.UnicodeText),
+    Column('raw_size', types.Integer),
+    Column('gz_size', types.Integer),
+    Column('body', types.LargeBinary),
+    Column('created', types.DateTime, default=_utcnow),
+    Index('ix_c4w_dashboard_bundle_dataset', 'dataset_id', 'generation'),
+    UniqueConstraint('dataset_id', 'generation', 'name',
+                     name='uq_c4w_dashboard_bundle'),
+)
+
+# The portal-side profile of a CKAN user who registered through the C4W
+# forms. The CKAN ``user`` row holds the credentials; this holds what the
+# registration form asked beyond them, the e-mail verification state and,
+# for a project manager, the pending organisation request and its decision.
+#
+# ``verification_token_hash`` is the sha256 of the token that was e-mailed,
+# never the token itself: a database read must not be enough to activate an
+# account.
+c4w_user_profile_table = Table(
+    'c4w_user_profile', metadata,
+    Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
+    Column('user_id', types.UnicodeText, nullable=False),
+    Column('profile_type', types.UnicodeText, nullable=False,
+           default=u'citizen'),
+    Column('country', types.UnicodeText),
+    Column('organisation_text', types.UnicodeText),
+    Column('terms_accepted_at', types.DateTime),
+    Column('email_verified', types.Boolean, default=False),
+    Column('verification_token_hash', types.UnicodeText),
+    Column('token_created', types.DateTime),
+    Column('verified_at', types.DateTime),
+    Column('org_choice', types.UnicodeText),
+    Column('ckan_org_id', types.UnicodeText),
+    Column('org_name_requested', types.UnicodeText),
+    Column('org_type', types.UnicodeText),
+    Column('org_url', types.UnicodeText),
+    Column('job_title', types.UnicodeText),
+    Column('c4w_organisation_id', types.UnicodeText),
+    Column('manager_decision', types.UnicodeText),
+    Column('manager_reviewed_by', types.UnicodeText),
+    Column('manager_reviewed_at', types.DateTime),
+    Column('manager_note', types.UnicodeText),
+    Column('created', types.DateTime, default=_utcnow),
+    Column('modified', types.DateTime, default=_utcnow),
+    Index('ix_c4w_user_profile_user', 'user_id', unique=True),
+    Index('ix_c4w_user_profile_token', 'verification_token_hash'),
+    Index('ix_c4w_user_profile_queue', 'profile_type', 'email_verified',
+          'manager_decision'),
+)
+
+
 _ALL_TABLES = [
     c4w_term_link_table,
     c4w_relation_table,
@@ -410,6 +581,10 @@ _ALL_TABLES = [
     c4w_event_table,
     c4w_post_table,
     c4w_media_map_table,
+    c4w_dataset_table,
+    c4w_dataset_file_table,
+    c4w_dashboard_bundle_table,
+    c4w_user_profile_table,
 ]
 
 
@@ -457,6 +632,22 @@ class C4wMediaMap(DomainObject):
     pass
 
 
+class C4wDataset(DomainObject):
+    pass
+
+
+class C4wDatasetFile(DomainObject):
+    pass
+
+
+class C4wDashboardBundle(DomainObject):
+    pass
+
+
+class C4wUserProfile(DomainObject):
+    pass
+
+
 # Entity type name -> mapped class. The single place that resolves the
 # ``<entity>`` path segment of the moderation routes to a table, so no other
 # module needs its own if-chain.
@@ -467,6 +658,7 @@ ENTITY_CLASSES = {
     'platform': C4wPlatform,
     'event': C4wEvent,
     'post': C4wPost,
+    'dataset': C4wDataset,
 }
 
 
@@ -488,6 +680,10 @@ def _ensure_mappers():
     mapper(C4wEvent, c4w_event_table)
     mapper(C4wPost, c4w_post_table)
     mapper(C4wMediaMap, c4w_media_map_table)
+    mapper(C4wDataset, c4w_dataset_table)
+    mapper(C4wDatasetFile, c4w_dataset_file_table)
+    mapper(C4wDashboardBundle, c4w_dashboard_bundle_table)
+    mapper(C4wUserProfile, c4w_user_profile_table)
     _mapped = True
 
 
@@ -619,10 +815,16 @@ _PRIVATE_COLUMNS = frozenset()
 # logged-out visitor, but the action behind it is reachable through CKAN's
 # public API, where the template's judgement never runs -- so the decision has
 # to live here, on the data, and callers opt in.
-CONTACT_COLUMNS = frozenset(('author_email', 'contact_point_email'))
+CONTACT_COLUMNS = frozenset(('author_email', 'contact_point_email',
+                             'contact_email'))
+
+# Columns only the row's owner (or a reviewer) may read. The mapping spec
+# names the uploader's raw column headers and the processing error may quote
+# a line of the file; neither belongs in a public listing or the public API.
+OWNER_ONLY_COLUMNS = frozenset(('mapping_json', 'processing_error'))
 
 
-def _row_columns(obj, include_contact=False):
+def _row_columns(obj, include_contact=False, include_private=False):
     """Native column values of a mapped row, as a plain dict."""
     table = sa.inspect(type(obj)).local_table
     out = {}
@@ -630,6 +832,8 @@ def _row_columns(obj, include_contact=False):
         if column.name in _PRIVATE_COLUMNS or column.name in _NEVER_DICTIZED:
             continue
         if column.name in CONTACT_COLUMNS and not include_contact:
+            continue
+        if column.name in OWNER_ONLY_COLUMNS and not include_private:
             continue
         value = getattr(obj, column.name, None)
         if isinstance(value, (datetime.datetime, datetime.date,
@@ -717,7 +921,7 @@ def relations_for(subject_type, subject_ids):
 
 
 def entity_dictize(entity_type, obj, terms=None, relations=None,
-                   include_contact=False):
+                   include_contact=False, include_private=False):
     """Dictize one row: native columns + flattened extras + terms + relations.
 
     ``extras`` is merged at the TOP level, not nested, so a template reads
@@ -730,11 +934,13 @@ def entity_dictize(entity_type, obj, terms=None, relations=None,
 
     ``include_contact`` is off by default: a listing never needs an address,
     and defaulting it on is how a page of 18 cards quietly becomes a mailing
-    list for anyone who calls the API.
+    list for anyone who calls the API. ``include_private`` likewise gates the
+    owner-only columns (see OWNER_ONLY_COLUMNS).
     """
     if obj is None:
         return None
-    out = _row_columns(obj, include_contact=include_contact)
+    out = _row_columns(obj, include_contact=include_contact,
+                       include_private=include_private)
     extras = load_extras(out.pop('extras', None))
     for key, value in extras.items():
         out.setdefault(key, value)

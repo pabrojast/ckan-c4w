@@ -1,0 +1,33 @@
+{#
+  The step indicator of a multi-step form.
+
+  steps      - constants.DATASET_FORM_STEPS (via h.c4w_dataset_form_steps())
+  current    - the step number being shown
+  reachable  - the highest step the visitor may open by link (a draft that
+               has no file yet cannot jump to the mapping step)
+  step_url   - a callable-free base: the template builds
+               h.c4w_url('submit_data_step', dataset_id=..., step=n)
+  dataset_id - id of the draft (None before the first save)
+
+  An <ol> of links, not a script: it works with no JavaScript and reads as
+  a numbered list to assistive tech. aria-current marks the open step.
+#}
+<ol class="c4w-wizard__steps" aria-label="{{ _('Steps') }}">
+  {% for step in steps %}
+    {% set n = step.step %}
+    {% set state = 'is-current' if n == current else ('is-done' if n < current else '') %}
+    <li class="c4w-wizard__step {{ state }}"{% if n == current %} aria-current="step"{% endif %}>
+      {% if dataset_id and n <= reachable and n != current %}
+        <a href="{{ h.c4w_url('submit_data_step', dataset_id=dataset_id, step=n) }}">
+          <span class="c4w-wizard__num">{{ n }}</span>
+          <span class="c4w-wizard__title">{{ _(step.title) }}</span>
+        </a>
+      {% else %}
+        <span>
+          <span class="c4w-wizard__num">{{ n }}</span>
+          <span class="c4w-wizard__title">{{ _(step.title) }}</span>
+        </span>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ol>

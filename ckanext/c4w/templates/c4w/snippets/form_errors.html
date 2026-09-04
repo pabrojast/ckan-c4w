@@ -1,0 +1,25 @@
+{#
+  Error summary at the top of a form.
+
+  errors  - {field: [message, ...]} from logic/forms.py::errors_for_template
+  labels  - optional {field: label} so the summary reads "Title: Missing
+            value" rather than "title: Missing value"
+
+  Rendered as a list of anchors into the fields so a keyboard user can jump
+  straight to the first problem. role=alert makes a screen reader read it
+  as soon as the page loads.
+#}
+{% set labels = labels or {} %}
+{% if errors %}
+  <div class="c4w-form-errors" role="alert" tabindex="-1" id="c4w-form-errors">
+    <h2 class="c4w-form-errors__title">{{ _('Please check the form') }}</h2>
+    <ul>
+      {% for name, messages in errors.items() %}
+        <li>
+          <a href="#c4w-field-{{ name }}">{{ labels.get(name) or name | replace('_', ' ') | capitalize }}</a>:
+          {{ messages | join(' ') }}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}

@@ -50,6 +50,7 @@ ENTITY_TYPES = (
     'platform',
     'event',
     'post',
+    'dataset',
 )
 
 # Entities that go through the approve/reject moderation queue. ``post`` is
@@ -61,6 +62,7 @@ MODERATED_ENTITY_TYPES = (
     'resource',
     'platform',
     'event',
+    'dataset',
 )
 
 # Operations the moderation POST accepts. Unknown values 404 rather than
@@ -69,6 +71,8 @@ MODERATION_OPS = (
     'approve',
     'hide',
     'feature',
+    # Re-run the processing pipeline. Only a dataset has one.
+    'process',
 )
 
 # Not every entity grew every flag. The moderate action consults these
@@ -76,15 +80,22 @@ MODERATION_OPS = (
 ENTITY_HAS_HIDDEN = (
     'project',
     'resource',
+    'dataset',
 )
 ENTITY_HAS_FEATURED = (
     'project',
     'resource',
     'event',
+    'dataset',
 )
 ENTITY_HAS_MODERATED = (
     'project',
     'resource',
+    'dataset',
+)
+# Entities with a processing pipeline a reviewer may re-run.
+ENTITY_HAS_PROCESS = (
+    'dataset',
 )
 
 # Detail endpoint per entity, so account and admin tables can link without
@@ -96,11 +107,16 @@ DETAIL_ENDPOINTS = {
     'platform': 'platform_detail',
     'event': 'event_detail',
     'post': 'post_detail',
+    'dataset': 'dataset_detail',
 }
 
-# The submit chooser. Forms themselves are a later increment; this list is
-# what the chooser page and its tests read so they cannot drift.
+# The submit chooser. This list is what the chooser page and its tests read
+# so they cannot drift. An entry with a route in SUBMIT_ENDPOINTS renders as
+# a link; the others are announced as coming later.
 SUBMIT_CHOICES = (
+    ('dataset', u'Data',
+     u'A table of water measurements (CSV) that becomes an interactive '
+     u'dashboard with a map and charts.'),
     ('project', u'Project',
      u'A citizen science initiative on hydrology or water management.'),
     ('resource', u'Resource',
@@ -112,6 +128,11 @@ SUBMIT_CHOICES = (
     ('platform', u'Repository',
      u'A platform or repository related to citizen science and water.'),
 )
+
+# Chooser key -> blueprint endpoint of its first form step.
+SUBMIT_ENDPOINTS = {
+    'dataset': 'submit_data_start',
+}
 
 
 def moderate_error(entity_type, operation):
@@ -131,6 +152,8 @@ def moderate_error(entity_type, operation):
         return 'no_hidden'
     if operation == 'feature' and entity_type not in ENTITY_HAS_FEATURED:
         return 'no_featured'
+    if operation == 'process' and entity_type not in ENTITY_HAS_PROCESS:
+        return 'no_process'
     return None
 
 
@@ -346,6 +369,154 @@ LEAD_PARTNER_TYPES = (
 
 
 # --------------------------------------------------------------------------- #
+# Datasets (uploaded observation tables)
+# --------------------------------------------------------------------------- #
+
+# How the rows of an uploaded table are laid out. ``long`` is one measurement
+# per row with a parameter-code column (GEMStat); ``wide`` is one sample per
+# row with a column per parameter (FreshWater Watch).
+DATASET_LAYOUTS = (
+    ('long', 'One measurement per row (parameter, value, unit columns)'),
+    ('wide', 'One sample per row (a column per parameter)'),
+)
+
+# The temporal grain the dashboard aggregates to. A period key is an integer
+# of the shape yyyy, yyyymm or yyyymmdd -- see data/dates.py.
+DATASET_GRAINS = (
+    ('year', 'Year'),
+    ('month', 'Month'),
+    ('day', 'Day'),
+)
+
+# Lifecycle of the processing pipeline, in order. ``queued`` is the state a
+# large file rests in until an operator (or a background worker) picks it up.
+PROCESSING_STATUSES = (
+    ('draft', 'Draft'),
+    ('uploaded', 'File uploaded'),
+    ('mapped', 'Columns mapped'),
+    ('queued', 'Queued for processing'),
+    ('processing', 'Processing'),
+    ('ready', 'Ready'),
+    ('failed', 'Processing failed'),
+)
+
+# Update frequency. The terms are the DCAT-AP / EU frequency authority codes
+# in lowercase, so a later export to the IHP-WINS catalogue is a table
+# lookup (FREQUENCY_EU_URIS) rather than a guess.
+DATASET_FREQUENCIES = (
+    ('cont', 'Continuous'),
+    ('daily', 'Daily'),
+    ('weekly', 'Weekly'),
+    ('biweekly', 'Every two weeks'),
+    ('monthly', 'Monthly'),
+    ('quarterly', 'Quarterly'),
+    ('annual', 'Annual'),
+    ('irreg', 'Irregular'),
+    ('never', 'Once, not updated'),
+    ('unknown', 'Unknown'),
+)
+
+FREQUENCY_EU_URIS = {
+    term: 'http://publications.europa.eu/resource/authority/frequency/%s'
+    % term.upper()
+    for term, _label in DATASET_FREQUENCIES
+}
+
+# Languages offered for the dataset metadata (ISO 639-1). Names are resolved
+# through Babel in the helper, so only the codes live here.
+DATASET_LANGUAGES = ('en', 'es', 'fr', 'ar', 'pt', 'de', 'it', 'nl', 'ru',
+                     'zh')
+
+# Licences offered in the wizard, as CKAN licence ids. The form reads the
+# labels from CKAN's ``license_list`` so a site that renames one keeps its
+# name; this tuple only fixes WHICH ids the portal accepts, so a bare
+# ``other-closed`` cannot be smuggled onto a public dataset.
+DATASET_LICENSES = (
+    'cc-by',
+    'cc-by-sa',
+    'cc-zero',
+    'odc-by',
+    'odc-odbl',
+    'odc-pddl',
+    'other-open',
+)
+DATASET_DEFAULT_LICENSE = 'cc-by'
+
+# The five stages of the data wizard. Same shape and same contract as
+# PROJECT_FORM_STEPS: the indicator, the "which stage holds the first error"
+# jump and the scaffold test all read this one definition.
+#
+# ``files`` and ``columns`` are handled by dedicated views (multipart upload
+# and the mapping table) rather than a navl schema, so their field tuples
+# name the inputs those pages render, not schema keys.
+DATASET_FORM_STEPS = (
+    {'step': 1, 'key': 'basics',
+     'title': u'About the data',
+     'hint': u'What was measured, where it belongs, and how to find it.',
+     'fields': ('title', 'description', 'keywords', 'topic', 'water_type',
+                'water_data_type', 'language', 'project_id',
+                'organisation_id')},
+    {'step': 2, 'key': 'files',
+     'title': u'Files',
+     'hint': u'The table of measurements, and any protocol or field sheet '
+             u'that explains it.',
+     'fields': ('data_file', 'attachments', 'file_note')},
+    {'step': 3, 'key': 'columns',
+     'title': u'Columns',
+     'hint': u'Tell the dashboard which columns hold the site, the position, '
+             u'the date and the measured values.',
+     'fields': ('layout', 'grain', 'mapping_json', 'unit_note')},
+    {'step': 4, 'key': 'details',
+     'title': u'Coverage, method and licence',
+     'hint': u'When and where the data was collected, how, and under which '
+             u'terms it may be reused.',
+     'fields': ('license_id', 'frequency', 'temporal_start', 'temporal_end',
+                'country', 'geographic_extent', 'source_url', 'doi',
+                'citation', 'provenance', 'methodology', 'technology_used',
+                'data_quality_note', 'related_urls')},
+    {'step': 5, 'key': 'contact_review',
+     'title': u'Contact and review',
+     'hint': u'Who to ask about the data, who made it, and a last look '
+             u'before it goes to the reviewers.',
+     'fields': ('contact_name', 'contact_email', 'contact_url', 'author',
+                'author_email', 'publisher', 'attribution_text',
+                'terms_accepted', 'licence_confirm')},
+)
+
+# Dataset fields that live in the JSON ``extras`` column. Kept next to the
+# form steps so the schema and the storage cannot drift.
+DATASET_EXTRA_FIELDS = (
+    'geographic_extent',
+    'methodology',
+    'data_quality_note',
+    'related_urls',
+    'file_note',
+    'unit_note',
+    'contact_url',
+    'attribution_text',
+    'terms_accepted_at',
+)
+
+# Vocabularies a dataset carries as term links, and whether each is closed.
+DATASET_TERM_VOCABULARIES = (
+    'keyword',
+    'country',
+    'topic',
+    'water_type',
+    'water_data_type',
+    'technology_used',
+)
+
+DATASET_ORDERINGS = (
+    ('modified', 'Most Recent Updated'),
+    ('title', 'A-Z'),
+    ('created', 'Most Recent Created'),
+    ('accesses', 'Total Accesses'),
+    ('featured', 'Featured'),
+)
+
+
+# --------------------------------------------------------------------------- #
 # The vocabulary registry
 # --------------------------------------------------------------------------- #
 
@@ -390,6 +561,10 @@ COLUMN_VOCABULARIES = {
     'org_type': ORG_TYPES,
     'event_type': EVENT_TYPES,
     'lead_partner_type': LEAD_PARTNER_TYPES,
+    'layout': DATASET_LAYOUTS,
+    'grain': DATASET_GRAINS,
+    'processing_status': PROCESSING_STATUSES,
+    'frequency': DATASET_FREQUENCIES,
 }
 
 

@@ -1,0 +1,174 @@
+{#
+  Form field macros for every C4W form.
+
+  Each macro renders one labelled control with its hint and its error list,
+  wired with aria-describedby / aria-invalid so a screen reader announces the
+  hint and the error with the control. ``errors`` is the dict produced by
+  logic/forms.py::errors_for_template -- {field: [message, ...]}.
+
+  Usage:
+    {% import 'c4w/macros/form.html' as form %}
+    {{ form.input('title', _('Title'), data.title, errors, required=true) }}
+#}
+
+{% macro _describe(name, hint, errors) -%}
+  {%- set ids = [] -%}
+  {%- if hint %}{% do ids.append('c4w-f-' ~ name ~ '-hint') %}{% endif -%}
+  {%- if errors and errors.get(name) %}{% do ids.append('c4w-f-' ~ name ~ '-error') %}{% endif -%}
+  {%- if ids %} aria-describedby="{{ ids | join(' ') }}"{% endif -%}
+  {%- if errors and errors.get(name) %} aria-invalid="true"{% endif -%}
+{%- endmacro %}
+
+{% macro _label(name, label, required, for_id=None) -%}
+  <label class="c4w-field__label" for="{{ for_id or ('c4w-f-' ~ name) }}">
+    {{ label }}{% if required %} <span class="c4w-field__required" aria-hidden="true">*</span><span class="c4w-sr-only"> ({{ _('required') }})</span>{% endif %}
+  </label>
+{%- endmacro %}
+
+{% macro _hint(name, hint) -%}
+  {% if hint %}<p class="c4w-field__hint" id="c4w-f-{{ name }}-hint">{{ hint }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro _error(name, errors) -%}
+  {% if errors and errors.get(name) %}
+    <p class="c4w-field__error" id="c4w-f-{{ name }}-error" role="alert">
+      {{ errors.get(name) | join(' ') }}
+    </p>
+  {% endif %}
+{%- endmacro %}
+
+{% macro _wrap_class(name, errors, extra='') -%}
+  c4w-field{% if errors and errors.get(name) %} is-invalid{% endif %}{% if extra %} {{ extra }}{% endif %}
+{%- endmacro %}
+
+{% macro input(name, label, value='', errors={}, type='text', hint=None, required=false, placeholder='', attrs={}, autocomplete=None, maxlength=None) %}
+  <div class="{{ _wrap_class(name, errors) }}" id="c4w-field-{{ name }}">
+    {{ _label(name, label, required) }}
+    {{ _hint(name, hint) }}
+    <input class="c4w-input" type="{{ type }}" id="c4w-f-{{ name }}" name="{{ name }}"
+           value="{{ value if value is not none else '' }}"
+           {% if required %}required{% endif %}
+           {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+           {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+           {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
+           {% for k, v in attrs.items() %}{{ k }}="{{ v }}" {% endfor %}
+           {{ _describe(name, hint, errors) }}>
+    {{ _error(name, errors) }}
+  </div>
+{% endmacro %}
+
+{% macro textarea(name, label, value='', errors={}, hint=None, required=false, rows=5, placeholder='', maxlength=None) %}
+  <div class="{{ _wrap_class(name, errors) }}" id="c4w-field-{{ name }}">
+    {{ _label(name, label, required) }}
+    {{ _hint(name, hint) }}
+    <textarea class="c4w-input c4w-textarea" id="c4w-f-{{ name }}" name="{{ name }}" rows="{{ rows }}"
+              {% if required %}required{% endif %}
+              {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+              {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
+              {{ _describe(name, hint, errors) }}>{{ value if value is not none else '' }}</textarea>
+    {{ _error(name, errors) }}
+  </div>
+{% endmacro %}
+
+{#
+  ``options`` is a list of {'term','label'} dicts (as h.c4w_option_list
+  returns) or of (value, label) pairs.
+#}
+{% macro _opt_pairs(options) -%}
+  {%- for option in options -%}
+    {%- if option is mapping -%}
+      {{ caller(option.term if option.term is defined else option.value, option.label) }}
+    {%- else -%}
+      {{ caller(option[0], option[1]) }}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endmacro %}
+
+{% macro select(name, label, options, value='', errors={}, hint=None, required=false, empty_label=None) %}
+  <div class="{{ _wrap_class(name, errors) }}" id="c4w-field-{{ name }}">
+    {{ _label(name, label, required) }}
+    {{ _hint(name, hint) }}
+    <select class="c4w-input c4w-select" id="c4w-f-{{ name }}" name="{{ name }}"
+            {% if required %}required{% endif %} {{ _describe(name, hint, errors) }}>
+      {% if empty_label is not none %}<option value="">{{ empty_label }}</option>{% endif %}
+      {% call(v, l) _opt_pairs(options) %}
+        <option value="{{ v }}" {% if (value|string) == (v|string) %}selected{% endif %}>{{ l }}</option>
+      {% endcall %}
+    </select>
+    {{ _error(name, errors) }}
+  </div>
+{% endmacro %}
+
+{# A checkbox group. ``values`` is the list of selected terms. #}
+{% macro checkboxes(name, label, options, values=[], errors={}, hint=None, required=false, columns=2) %}
+  {% set values = values or [] %}
+  <fieldset class="{{ _wrap_class(name, errors, 'c4w-field--group') }}" id="c4w-field-{{ name }}" {{ _describe(name, hint, errors) }}>
+    <legend class="c4w-field__label">
+      {{ label }}{% if required %} <span class="c4w-field__required" aria-hidden="true">*</span><span class="c4w-sr-only"> ({{ _('required') }})</span>{% endif %}
+    </legend>
+    {{ _hint(name, hint) }}
+    <div class="c4w-checks c4w-checks--{{ columns }}">
+      {% call(v, l) _opt_pairs(options) %}
+        <label class="c4w-check">
+          <input type="checkbox" name="{{ name }}" value="{{ v }}"
+                 {% if (v|string) in (values | map('string') | list) %}checked{% endif %}>
+          <span>{{ l }}</span>
+        </label>
+      {% endcall %}
+    </div>
+    {{ _error(name, errors) }}
+  </fieldset>
+{% endmacro %}
+
+{% macro radios(name, label, options, value='', errors={}, hint=None, required=false) %}
+  <fieldset class="{{ _wrap_class(name, errors, 'c4w-field--group') }}" id="c4w-field-{{ name }}" {{ _describe(name, hint, errors) }}>
+    <legend class="c4w-field__label">
+      {{ label }}{% if required %} <span class="c4w-field__required" aria-hidden="true">*</span>{% endif %}
+    </legend>
+    {{ _hint(name, hint) }}
+    <div class="c4w-checks c4w-checks--1">
+      {% call(v, l) _opt_pairs(options) %}
+        <label class="c4w-check">
+          <input type="radio" name="{{ name }}" value="{{ v }}" {% if (value|string) == (v|string) %}checked{% endif %}>
+          <span>{{ l }}</span>
+        </label>
+      {% endcall %}
+    </div>
+    {{ _error(name, errors) }}
+  </fieldset>
+{% endmacro %}
+
+{% macro checkbox(name, label, checked=false, errors={}, hint=None, required=false) %}
+  <div class="{{ _wrap_class(name, errors, 'c4w-field--check') }}" id="c4w-field-{{ name }}">
+    <label class="c4w-check">
+      <input type="checkbox" id="c4w-f-{{ name }}" name="{{ name }}" value="true"
+             {% if checked %}checked{% endif %} {% if required %}required{% endif %}
+             {{ _describe(name, hint, errors) }}>
+      <span>{{ label }}{% if required %} <span class="c4w-field__required" aria-hidden="true">*</span>{% endif %}</span>
+    </label>
+    {{ _hint(name, hint) }}
+    {{ _error(name, errors) }}
+  </div>
+{% endmacro %}
+
+{% macro file(name, label, errors={}, hint=None, required=false, accept=None, multiple=false) %}
+  <div class="{{ _wrap_class(name, errors, 'c4w-field--file') }}" id="c4w-field-{{ name }}">
+    {{ _label(name, label, required) }}
+    {{ _hint(name, hint) }}
+    <input class="c4w-input c4w-file" type="file" id="c4w-f-{{ name }}" name="{{ name }}"
+           {% if accept %}accept="{{ accept }}"{% endif %}
+           {% if multiple %}multiple{% endif %}
+           {% if required %}required{% endif %}
+           {{ _describe(name, hint, errors) }}>
+    {{ _error(name, errors) }}
+  </div>
+{% endmacro %}
+
+{% macro date(name, label, value='', errors={}, hint=None, required=false) %}
+  {{ input(name, label, value, errors, type='date', hint=hint, required=required) }}
+{% endmacro %}
+
+{# Two controls on one row (e.g. start / end dates). #}
+{% macro row() %}
+  <div class="c4w-form__row">{{ caller() }}</div>
+{% endmacro %}

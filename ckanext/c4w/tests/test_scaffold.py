@@ -260,3 +260,125 @@ def test_css_is_scoped_not_global():
     css = _read('assets', 'css', 'c4w.css')
     assert ':root' not in css  # the selector, not the word in a comment
     assert 'html.c4w-portal' in css
+
+
+# --------------------------------------------------------------------------- #
+# Datasets: the data wizard and the processing package
+# --------------------------------------------------------------------------- #
+
+def test_dataset_form_steps_are_numbered_and_disjoint():
+    from ckanext.c4w import constants
+
+    steps = constants.DATASET_FORM_STEPS
+    assert [s['step'] for s in steps] == list(range(1, len(steps) + 1))
+    seen = [f for s in steps for f in s['fields']]
+    duplicates = sorted({f for f in seen if seen.count(f) > 1})
+    assert not duplicates, duplicates
+    assert all(s['key'] and s['title'] and s['fields'] for s in steps)
+
+
+def test_dataset_extra_fields_are_form_fields():
+    """An extras key nobody can type is dead storage."""
+    from ckanext.c4w import constants
+
+    fields = {f for s in constants.DATASET_FORM_STEPS for f in s['fields']}
+    for name in constants.DATASET_EXTRA_FIELDS:
+        if name == 'terms_accepted_at':
+            continue   # derived from the terms_accepted checkbox
+        assert name in fields, name
+
+
+def test_dataset_is_a_moderated_entity_with_a_pipeline():
+    from ckanext.c4w import constants
+
+    assert 'dataset' in constants.MODERATED_ENTITY_TYPES
+    assert 'dataset' in constants.ENTITY_HAS_HIDDEN
+    assert 'dataset' in constants.ENTITY_HAS_FEATURED
+    assert constants.ENTITY_HAS_PROCESS == ('dataset',)
+    assert constants.moderate_error('dataset', 'process') is None
+    assert constants.moderate_error('project', 'process') == 'no_process'
+    assert constants.DETAIL_ENDPOINTS['dataset'] == 'dataset_detail'
+
+
+def test_moderation_reads_the_entity_class_registry():
+    """A hand-written model map in moderation.py is how a new entity silently
+    disappears from the account page and the reviewer's queue."""
+    source = _read('logic', 'action', 'moderation.py')
+    assert 'dict(db.ENTITY_CLASSES)' in source
+
+
+def test_submit_chooser_links_every_open_choice():
+    from ckanext.c4w import constants
+
+    keys = {k for k, _t, _h in constants.SUBMIT_CHOICES}
+    assert set(constants.SUBMIT_ENDPOINTS) <= keys
+    assert 'dataset' in constants.SUBMIT_ENDPOINTS
+    template = _read('templates', 'c4w', 'submit.html')
+    assert 'endpoints.get' in template
+
+
+def test_data_package_imports_no_ckan():
+    """ckanext/c4w/data/ is the CKAN-free boundary: it must run in a bare
+    checkout and in a CLI with no site. jobs.py is the one bridge."""
+    package = PKG / 'data'
+    if not package.is_dir():
+        pytest.skip('data package not present yet')
+    offenders = []
+    for path in sorted(package.glob('*.py')):
+        if path.name == 'jobs.py':
+            continue
+        tree = ast.parse(path.read_text(encoding='utf-8'))
+        for node in ast.walk(tree):
+            names = []
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                names = [node.module]
+            for name in names:
+                if name == 'ckan' or name.startswith('ckan.') \
+                        or name.startswith('ckanext.c4w.logic') \
+                        or name == 'ckanext.c4w.db':
+                    offenders.append('%s: %s' % (path.name, name))
+    assert not offenders, offenders
+
+
+# --------------------------------------------------------------------------- #
+# Form infrastructure
+# --------------------------------------------------------------------------- #
+
+def test_every_navl_wizard_field_has_a_schema_rule():
+    """Steps 1, 3, 4 and 5 are navl-validated; a field declared in the step
+    but absent from schema.py would be silently dropped by navl."""
+    from ckanext.c4w import constants
+
+    source = _read('logic', 'schema.py')
+    for step in constants.DATASET_FORM_STEPS:
+        if step['key'] in ('files',):
+            continue
+        for field in step['fields']:
+            if field == 'mapping_json':
+                continue   # validated by data/mapping.py, not navl
+            assert "'%s'" % field in source, field
+
+
+def test_uploads_module_exists_as_setup_py_promises():
+    assert (PKG / 'logic' / 'uploads.py').is_file()
+
+
+def test_form_macros_and_snippets_exist():
+    assert (PKG / 'templates' / 'c4w' / 'macros' / 'form.html').is_file()
+    assert (PKG / 'templates' / 'c4w' / 'snippets'
+            / 'form_errors.html').is_file()
+    assert (PKG / 'templates' / 'c4w' / 'snippets'
+            / 'wizard_steps.html').is_file()
+
+
+def test_config_declaration_covers_the_processing_options():
+    text = (PKG / 'config_declaration.yaml').read_text(encoding='utf-8')
+    for key in ('ckanext.c4w.data_max_upload_mb',
+                'ckanext.c4w.data_inline_max_mb',
+                'ckanext.c4w.async_processing',
+                'ckanext.c4w.basemap_style',
+                'ckanext.c4w.verification_ttl_hours',
+                'ckan.upload.c4w_data.types'):
+        assert key in text, key

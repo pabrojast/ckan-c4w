@@ -370,7 +370,10 @@ def test_an_image_keeps_only_the_attributes_we_named():
 
 # Django stores a CODE rather than a label for these three, so the term is not
 # derived from the label.
-_CODE_BACKED = ('event_type', 'lead_partner_type', 'post_status')
+# The dataset vocabularies are code-backed too: nothing is imported into
+# them from Django, and their terms are DCAT/EU codes or pipeline states.
+_CODE_BACKED = ('event_type', 'lead_partner_type', 'post_status',
+                'layout', 'grain', 'processing_status', 'frequency')
 
 
 def test_every_lookup_backed_term_is_the_slug_of_its_own_label():

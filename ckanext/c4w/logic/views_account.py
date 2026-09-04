@@ -26,5 +26,6 @@ def submit():
         return bounced
     return tk.render('c4w/submit.html', extra_vars={
         'choices': constants.SUBMIT_CHOICES,
+        'endpoints': constants.SUBMIT_ENDPOINTS,
         'user': user,
     })

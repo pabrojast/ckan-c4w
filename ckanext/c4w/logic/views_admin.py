@@ -6,7 +6,7 @@ import ckan.plugins.toolkit as tk
 
 from ckanext.c4w import constants
 from ckanext.c4w.logic import helpers as c4w_helpers
-from ckanext.c4w.logic.access import require_sysadmin
+from ckanext.c4w.logic.access import require_sysadmin, safe_next
 
 
 def admin_index():
@@ -38,7 +38,5 @@ def admin_moderate(entity, item_id, operation):
         return tk.abort(403, tk._('Not authorized'))
     # Stay on the queue, not the public detail: a hide/unapprove would 404
     # the visitor if we sent them there.
-    target = request.form.get('next') or c4w_helpers.c4w_url('admin_index')
-    if not (target.startswith('/') and not target.startswith('//')):
-        target = c4w_helpers.c4w_url('admin_index')
-    return redirect(target)
+    return redirect(safe_next(request.form.get('next'),
+                              c4w_helpers.c4w_url('admin_index')))

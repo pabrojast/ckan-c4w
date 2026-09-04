@@ -16,16 +16,14 @@ log = logging.getLogger(__name__)
 
 
 def _models():
-    """entity_type -> mapped class. Built after mappers exist."""
+    """entity_type -> mapped class. Built after mappers exist.
+
+    Read from ``db.ENTITY_CLASSES`` rather than spelled out again: a new
+    entity registered there appears in the account page and the reviewer's
+    queue without a second edit here.
+    """
     db.ensure_mappers()
-    return {
-        'project': db.C4wProject,
-        'organisation': db.C4wOrganisation,
-        'resource': db.C4wResource,
-        'platform': db.C4wPlatform,
-        'event': db.C4wEvent,
-        'post': db.C4wPost,
-    }
+    return dict(db.ENTITY_CLASSES)
 
 
 def _title(row):
@@ -81,7 +79,7 @@ def c4w_my_submissions(context, data_dict):
             continue
         items = []
         for row in rows:
-            item = db.entity_dictize(entity_type, row)
+            item = db.entity_dictize(entity_type, row, include_private=True)
             item['title'] = _title(row)
             items.append(item)
         # 'rows', never 'items': Jinja treats dict.items as the method.
@@ -110,7 +108,7 @@ def c4w_moderation_list(context, data_dict):
                 .all())
         items = []
         for row in rows:
-            item = db.entity_dictize(entity_type, row)
+            item = db.entity_dictize(entity_type, row, include_private=True)
             item['title'] = _title(row)
             items.append(item)
         out.append({
@@ -118,6 +116,7 @@ def c4w_moderation_list(context, data_dict):
             'rows': items,
             'can_hide': entity_type in constants.ENTITY_HAS_HIDDEN,
             'can_feature': entity_type in constants.ENTITY_HAS_FEATURED,
+            'can_process': entity_type in constants.ENTITY_HAS_PROCESS,
         })
     return {'groups': out}
 
@@ -155,6 +154,15 @@ def c4w_entity_moderate(context, data_dict):
         row.hidden = not bool(row.hidden)
     elif operation == 'feature':
         row.featured = not bool(row.featured)
+    elif operation == 'process':
+        # Re-run the pipeline. Imported lazily: the data package is only
+        # needed by the one entity that has a pipeline.
+        from ckanext.c4w.data import jobs
+        Session.add(row)
+        Session.commit()
+        jobs.dispatch(row.id, force=True)
+        row = _common.get_by_reference(_models()[entity_type], row.id)
+        return db.entity_dictize(entity_type, row, include_private=True)
 
     if hasattr(row, 'modified'):
         row.modified = db._utcnow()

@@ -22,6 +22,126 @@ groups:
         default:
         required: false
 
+  - annotation: Citizens4Water data uploads and processing
+    options:
+      - key: ckan.upload.c4w_data.types
+        description: |
+          Upload families accepted for data files and attachments. The
+          module verifies the bytes itself; this only widens CKAN's own
+          uploader when it is the one in use.
+        default: text application
+
+      - key: ckan.upload.c4w_data.mimetypes
+        description: MIME types CKAN's own uploader accepts for data files.
+        default: text/csv text/tab-separated-values text/plain application/pdf
+
+      - key: ckanext.c4w.data_max_upload_mb
+        description: Largest data file (CSV/TSV) a visitor may upload, in MB.
+        default: 256
+        type: int
+
+      - key: ckanext.c4w.attachment_max_upload_mb
+        description: Largest protocol / field-sheet attachment, in MB.
+        default: 25
+        type: int
+
+      - key: ckanext.c4w.data_inline_max_mb
+        description: |
+          Data files up to this size (sum of a dataset's files) are
+          processed inside the web request. Larger ones are queued for a
+          background job or the `ckan c4w process-pending` command.
+        default: 20
+        type: int
+
+      - key: ckanext.c4w.async_processing
+        description: |
+          Enqueue large files as CKAN background jobs (needs a
+          `ckan jobs worker`). Off by default: without a worker the job
+          would wait forever, whereas a queued dataset is visible to an
+          operator.
+        default: false
+        type: bool
+
+      - key: ckanext.c4w.job_timeout
+        description: Seconds a background processing job may run.
+        default: 3600
+        type: int
+
+      - key: ckanext.c4w.data_max_rows
+        description: Rows the pipeline accepts per dataset before failing.
+        default: 10000000
+        type: int
+
+      - key: ckanext.c4w.data_max_sites
+        description: Distinct sites the pipeline accepts per dataset.
+        default: 200000
+        type: int
+
+      - key: ckanext.c4w.data_max_parameters
+        description: Distinct parameters the pipeline accepts per dataset.
+        default: 300
+        type: int
+
+      - key: ckanext.c4w.bundle_min_records
+        description: |
+          A parameter with fewer aggregated records than this is left out of
+          the dashboard.
+        default: 20
+        type: int
+
+      - key: ckanext.c4w.bundle_min_distinct
+        description: |
+          A parameter with fewer distinct values than this is left out of
+          the dashboard (a constant cannot be coloured).
+        default: 5
+        type: int
+
+      - key: ckanext.c4w.bundle_max_blob_mb
+        description: Largest single bundle file the database will hold, MB.
+        default: 25
+        type: int
+
+      - key: ckanext.c4w.data_fetch_hosts
+        description: |
+          Extra hostnames the pipeline may download stored files from, space
+          separated. The site host and the configured object store are
+          always allowed.
+        default:
+        required: false
+
+      - key: ckanext.c4w.basemap_style
+        description: MapLibre style URL for the dashboard basemap.
+        default: https://tiles.openfreemap.org/styles/positron
+
+  - annotation: Citizens4Water registration and login
+    options:
+      - key: ckanext.c4w.verification_ttl_hours
+        description: Hours an e-mail verification link stays valid.
+        default: 48
+        type: int
+
+      - key: ckanext.c4w.rate_limit_enabled
+        description: Rate-limit the public POST forms per client address.
+        default: true
+        type: bool
+
+      - key: ckanext.c4w.rate_limit_max
+        description: Attempts allowed per form per client in one window.
+        default: 10
+        type: int
+
+      - key: ckanext.c4w.rate_limit_window
+        description: Length of the rate-limit window, in seconds.
+        default: 300
+        type: int
+
+      - key: ckanext.c4w.moderation_notify_email
+        description: |
+          Address to notify when a dataset is submitted for review or a
+          project manager verifies their e-mail. Unset to send nothing.
+        default:
+        required: false
+
   - annotation: Citizens4Water media uploads
     options:
       - key: ckan.upload.c4w.types

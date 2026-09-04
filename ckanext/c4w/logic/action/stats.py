@@ -36,6 +36,7 @@ def c4w_stats(context, data_dict):
         'training_resources': _public(db.C4wResource, training=True),
         'platforms': _public(db.C4wPlatform),
         'events': _public(db.C4wEvent),
+        'datasets': _public(db.C4wDataset),
         'posts': (
             Session.query(db.C4wPost)
             .filter(db.C4wPost.status

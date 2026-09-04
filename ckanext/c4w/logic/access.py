@@ -30,8 +30,27 @@ def current_userobj():
     return user
 
 
+def safe_next(target, default=None):
+    """A local redirect target, or ``default``.
+
+    Only a path that starts with a single ``/`` is honoured: ``//evil`` is a
+    protocol-relative URL to a browser, and an absolute URL would turn every
+    form on the portal into an open redirect.
+    """
+    default = default or c4w_helpers.c4w_url('index')
+    if not target:
+        return default
+    target = u'%s' % target
+    if not target.startswith('/') or target.startswith('//') \
+            or target.startswith('/\\'):
+        return default
+    if any(ch in target for ch in ('\r', '\n', '\x00')):
+        return default
+    return target
+
+
 def require_user():
-    """Redirect to CKAN login, or return the user object.
+    """Redirect to the C4W login, or return the user object.
 
     ``came_from`` is the page they asked for, so after signing in they land
     back inside C4W rather than on the IHP-WINS home.
@@ -42,7 +61,7 @@ def require_user():
     came_from = request.full_path or request.path or c4w_helpers.c4w_url('index')
     if came_from.endswith('?'):
         came_from = came_from[:-1]
-    return None, redirect(tk.url_for('user.login', came_from=came_from))
+    return None, redirect(c4w_helpers.c4w_login_url(came_from))
 
 
 def require_sysadmin():

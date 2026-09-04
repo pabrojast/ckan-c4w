@@ -43,25 +43,16 @@ def get_by_reference(model_cls, reference):
     return Session.query(model_cls).filter(model_cls.id == reference).first()
 
 
-def is_visible(entity_type, row, context):
-    """Whether the requester may see a row the public listing would hide.
+def can_edit(entity_type, row, context):
+    """Whether the requester owns or edits a row: sysadmin, creator, author
+    or a user carrying an ``editor`` relation to it.
 
-    Kept in one place because the answer has to match ``_public_filter`` in
-    logic/query.py exactly -- a detail page that shows what its own listing
-    filters out is how unapproved content leaks.
+    This is the write-side rule. ``is_visible`` reuses it for the rows the
+    public filter hides, so "may see what is not public" and "may change"
+    are one decision, not two.
     """
-    published = True
-    if hasattr(row, 'approved'):
-        published = bool(row.approved)
-    if hasattr(row, 'hidden') and row.hidden:
-        published = False
-    if hasattr(row, 'status') and entity_type == 'post':
-        published = row.status == constants.POST_STATUS_PUBLISHED
-    if published:
-        return True
-
     user = context.get('auth_user_obj')
-    if user is None:
+    if user is None or not getattr(user, 'id', None):
         return False
     if getattr(user, 'sysadmin', False):
         return True
@@ -78,6 +69,25 @@ def is_visible(entity_type, row, context):
         db.C4wRelation.object_type == u'user',
         db.C4wRelation.object_id == user.id,
     ).first() is not None
+
+
+def is_visible(entity_type, row, context):
+    """Whether the requester may see a row the public listing would hide.
+
+    Kept in one place because the answer has to match ``_public_filter`` in
+    logic/query.py exactly -- a detail page that shows what its own listing
+    filters out is how unapproved content leaks.
+    """
+    published = True
+    if hasattr(row, 'approved'):
+        published = bool(row.approved)
+    if hasattr(row, 'hidden') and row.hidden:
+        published = False
+    if hasattr(row, 'status') and entity_type == 'post':
+        published = row.status == constants.POST_STATUS_PUBLISHED
+    if published:
+        return True
+    return can_edit(entity_type, row, context)
 
 
 def is_sysadmin(context):

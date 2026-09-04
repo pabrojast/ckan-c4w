@@ -46,6 +46,7 @@ def c4w_url(endpoint, **kwargs):
 # template edit (and a broken link) each time.
 _NAV = (
     ('project_list', u'Projects', 'projects'),
+    ('dataset_list', u'Data', 'datasets'),
     ('resource_list', u'Resources', 'resources'),
     ('training_resource_list', u'Training', 'training_resources'),
     ('organisation_list', u'Organisations', 'organisations'),
@@ -98,9 +99,17 @@ def _current_path():
     return path
 
 
-def c4w_login_url():
-    """CKAN login, returning to the page the visitor is on."""
-    return tk.url_for('user.login', came_from=_current_path())
+def c4w_login_url(came_from=None):
+    """The portal's own login page, returning to the page the visitor is on.
+
+    Falls back to CKAN's login while the C4W route is not registered, so a
+    half-deployed increment still lets people sign in.
+    """
+    came_from = came_from or _current_path()
+    try:
+        return c4w_url('login', came_from=came_from)
+    except Exception:
+        return tk.url_for('user.login', came_from=came_from)
 
 
 def c4w_logout_url():
@@ -112,8 +121,11 @@ def c4w_logout_url():
 
 
 def c4w_register_url():
-    """IHP-WINS contributor registration, not CKAN's built-in signup."""
-    return '/colab'
+    """The portal's own registration chooser, not CKAN's built-in signup."""
+    try:
+        return c4w_url('register_choose')
+    except Exception:
+        return '/colab'
 
 
 def c4w_profile_url():
@@ -248,6 +260,11 @@ def c4w_form_steps():
     return constants.PROJECT_FORM_STEPS
 
 
+def c4w_dataset_form_steps():
+    """The five stages of the data wizard, from the single definition."""
+    return constants.DATASET_FORM_STEPS
+
+
 def c4w_stats():
     """Headline counts for the home page. Fail-soft: ``{}`` on any error."""
     try:
@@ -376,6 +393,7 @@ def get_helpers():
         'c4w_language_name': c4w_language_name,
         'c4w_terms': c4w_terms,
         'c4w_form_steps': c4w_form_steps,
+        'c4w_dataset_form_steps': c4w_dataset_form_steps,
         'c4w_stats': c4w_stats,
         'c4w_country_name': c4w_country_name,
         'c4w_facet_toggle_url': c4w_facet_toggle_url,
