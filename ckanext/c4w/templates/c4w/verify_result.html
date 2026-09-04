@@ -1,0 +1,26 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ _('E-mail confirmation') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-auth" id="c4w-main">
+    {% if state == 'ok' %}
+      <h1>{{ _('Your account is active') }}</h1>
+      <p class="c4w-auth__lede">{{ _('Thank you for confirming your e-mail. You can sign in and share your data.') }}</p>
+      <p><a class="c4w-btn" href="{{ h.c4w_url('login') }}">{{ _('Sign in') }}</a></p>
+    {% elif state == 'manager_pending' %}
+      <h1>{{ _('E-mail confirmed') }}</h1>
+      <p class="c4w-auth__lede">{% trans %}Your project manager request is now with the Citizens4Water team. You will receive an e-mail with their decision; until then the account cannot sign in.{% endtrans %}</p>
+      <p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('index') }}">{{ _('Back to Citizens4Water') }}</a></p>
+    {% elif state == 'expired' %}
+      <h1>{{ _('This link has expired') }}</h1>
+      <p class="c4w-auth__lede">{{ _('Confirmation links work for two days. Ask for a new one below.') }}</p>
+      <p><a class="c4w-btn" href="{{ h.c4w_url('verify_resend') }}">{{ _('Send a new link') }}</a></p>
+    {% else %}
+      <h1>{{ _('This link is not valid') }}</h1>
+      <p class="c4w-auth__lede">{{ _('It may have been used already, or copied incompletely. If your account is not active yet, ask for a new link.') }}</p>
+      <p><a class="c4w-btn" href="{{ h.c4w_url('verify_resend') }}">{{ _('Send a new link') }}</a>
+         <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('login') }}">{{ _('Sign in') }}</a></p>
+    {% endif %}
+  </div>
+{% endblock %}

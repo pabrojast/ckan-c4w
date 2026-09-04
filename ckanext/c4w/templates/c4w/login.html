@@ -1,0 +1,32 @@
+{% extends "c4w/base.html" %}
+
+{% import 'c4w/macros/form.html' as form %}
+
+{% block subtitle %}{{ _('Sign in') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-auth" id="c4w-main">
+    <h1>{{ _('Sign in') }}</h1>
+    <p class="c4w-auth__lede">{{ _('With your IHP-WINS account.') }}</p>
+
+    {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
+
+    <form class="c4w-form" method="post" action="{{ h.c4w_url('login') }}" novalidate>
+      {{ h.csrf_input() }}
+      <input type="hidden" name="came_from" value="{{ came_from }}">
+      {{ form.input('login', _('Username or e-mail'), data.login, errors, required=true, autocomplete='username') }}
+      {{ form.input('password', _('Password'), '', errors, required=true, type='password', autocomplete='current-password') }}
+      {{ form.checkbox('remember', _('Keep me signed in on this device'), data.remember, errors) }}
+      <div class="c4w-form__actions">
+        <span class="c4w-form__spacer"></span>
+        <button type="submit" class="c4w-btn">{{ _('Sign in') }}</button>
+      </div>
+    </form>
+
+    <p class="c4w-auth__links">
+      <a href="{{ h.c4w_register_url() }}">{{ _('Create an account') }}</a>
+      <a href="{{ h.url_for('user.request_reset') }}">{{ _('Forgot your password?') }}</a>
+      <a href="{{ h.c4w_url('verify_resend') }}">{{ _('Resend the confirmation e-mail') }}</a>
+    </p>
+  </div>
+{% endblock %}

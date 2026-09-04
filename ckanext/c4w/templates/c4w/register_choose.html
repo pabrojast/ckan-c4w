@@ -1,0 +1,31 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ _('Register') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-auth c4w-auth--wide" id="c4w-main">
+    <h1>{{ _('Join Citizens4Water') }}</h1>
+    <p class="c4w-auth__lede">
+      {% trans %}One account works across IHP-WINS. Choose how you take part.{% endtrans %}
+    </p>
+    {% if user %}
+      <p class="c4w-note">{{ _('You are already signed in.') }} <a href="{{ h.c4w_url('account') }}">{{ _('My submissions') }}</a></p>
+    {% endif %}
+    <div class="c4w-choice-grid">
+      <a class="c4w-choice" href="{{ h.c4w_url('register_citizen') }}">
+        <h2>{{ _('Citizen scientist') }}</h2>
+        <p>{% trans %}You measure, observe or sample water and want to share your data. Your account is active as soon as you confirm your e-mail.{% endtrans %}</p>
+        <span class="c4w-btn">{{ _('Register as a citizen scientist') }}</span>
+      </a>
+      <a class="c4w-choice" href="{{ h.c4w_url('register_manager') }}">
+        <h2>{{ _('Project manager') }}</h2>
+        <p>{% trans %}You coordinate a monitoring project on behalf of an organisation. After you confirm your e-mail the Citizens4Water team reviews the request and links you to your organisation.{% endtrans %}</p>
+        <span class="c4w-btn c4w-btn--quiet">{{ _('Register as a project manager') }}</span>
+      </a>
+    </div>
+    <p class="c4w-auth__links">
+      <a href="{{ h.c4w_login_url() }}">{{ _('Already have an account? Sign in') }}</a>
+      <a href="{{ h.c4w_url('verify_resend') }}">{{ _('Resend the confirmation e-mail') }}</a>
+    </p>
+  </div>
+{% endblock %}

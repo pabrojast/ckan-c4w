@@ -8,6 +8,57 @@
       <h1>{{ _('Moderation') }}</h1>
     </header>
 
+    {% if managers %}
+      <section class="c4w-queue">
+        <h2>{{ _('Account requests') }}
+          <span class="c4w-directory__count">{{ managers | length }}</span>
+        </h2>
+        <p class="c4w-form__lede">{{ _('Project managers who confirmed their e-mail and wait for an organisation link.') }}</p>
+        <table class="c4w-table">
+          <thead>
+            <tr>
+              <th>{{ _('Person') }}</th>
+              <th>{{ _('Organisation') }}</th>
+              <th>{{ _('Requested') }}</th>
+              <th>{{ _('Actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in managers %}
+              <tr>
+                <td>
+                  <strong>{{ req.fullname or req.name }}</strong><br>
+                  <span class="c4w-files__meta">{{ req.email }}{% if req.job_title %} · {{ req.job_title }}{% endif %}{% if req.country %} · {{ h.c4w_country_name(req.country) }}{% endif %}</span>
+                </td>
+                <td>
+                  {% if req.org_choice == 'new' %}
+                    <span class="c4w-badge c4w-badge--pending">{{ _('New') }}</span> {{ req.org_name_requested }}
+                    {% if req.org_type %}<br><span class="c4w-files__meta">{{ h.c4w_term_label('org_type', req.org_type) }}</span>{% endif %}
+                    {% if req.org_url %}<br><a href="{{ req.org_url }}" rel="noopener noreferrer nofollow">{{ req.org_url }}</a>{% endif %}
+                  {% else %}
+                    {{ req.organisation_title or req.ckan_org_id }}
+                    <br><span class="c4w-files__meta">{{ _('will become editor') }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ (req.created or '')[:10] }}</td>
+                <td class="c4w-table__actions">
+                  <form method="post" action="{{ h.c4w_url('admin_manager', user_id=req.user_id, operation='approve') }}">
+                    {{ h.csrf_input() }}
+                    <button type="submit" class="c4w-btn">{{ _('Approve') }}</button>
+                  </form>
+                  <form method="post" action="{{ h.c4w_url('admin_manager', user_id=req.user_id, operation='reject') }}">
+                    {{ h.csrf_input() }}
+                    <input class="c4w-input" type="text" name="note" placeholder="{{ _('Reason (sent to the person)') }}" aria-label="{{ _('Reason') }}">
+                    <button type="submit" class="c4w-btn c4w-btn--danger">{{ _('Reject') }}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    {% endif %}
+
     {% set pending = groups | selectattr('rows') | list %}
     {% if pending %}
       {% for group in groups %}
@@ -34,11 +85,20 @@
                       {% else %}
                         {{ h.c4w_entity_title(item) }}
                       {% endif %}
+                      {% if group.entity_type == 'dataset' %}
+                        <br><span class="c4w-files__meta">
+                          {% if item.submitted_at %}{{ _('submitted') }} {{ item.submitted_at[:10] }}{% else %}{{ _('draft, not submitted') }}{% endif %}
+                          {% if item.record_count %} · {{ h.c4w_number(item.record_count) }} {{ _('records') }}{% endif %}
+                          {% if item.processing_status == 'ready' %} · <a href="{{ h.c4w_url('dataset_dashboard', slug=item.slug) }}">{{ _('preview dashboard') }}</a>{% endif %}
+                        </span>
+                        {% if item.processing_error %}<br><span class="c4w-field__error">{{ item.processing_error }}</span>{% endif %}
+                      {% endif %}
                     </td>
                     <td>
-                      {% if item.approved %}{{ _('Approved') }}{% else %}{{ _('Pending') }}{% endif %}
-                      {% if item.hidden %} · {{ _('Hidden') }}{% endif %}
-                      {% if item.featured %} · {{ _('Featured') }}{% endif %}
+                      {% if item.approved %}<span class="c4w-badge c4w-badge--approved">{{ _('Approved') }}</span>{% else %}<span class="c4w-badge c4w-badge--pending">{{ _('Pending') }}</span>{% endif %}
+                      {% if item.hidden %}<span class="c4w-badge c4w-badge--hidden">{{ _('Hidden') }}</span>{% endif %}
+                      {% if item.featured %}<span class="c4w-badge c4w-badge--featured">{{ _('Featured') }}</span>{% endif %}
+                      {% if group.entity_type == 'dataset' %}{{ h.c4w_status_badge(item.processing_status) }}{% endif %}
                     </td>
                     <td class="c4w-table__actions">
                       {% if not item.approved %}
@@ -61,6 +121,12 @@
                           <button type="submit" class="c4w-btn c4w-btn--quiet">
                             {% if item.featured %}{{ _('Unfeature') }}{% else %}{{ _('Feature') }}{% endif %}
                           </button>
+                        </form>
+                      {% endif %}
+                      {% if group.can_process and item.mapping_json %}
+                        <form method="post" action="{{ h.c4w_url('admin_moderate', entity=group.entity_type, item_id=item.id, operation='process') }}">
+                          {{ h.csrf_input() }}
+                          <button type="submit" class="c4w-btn c4w-btn--quiet">{{ _('Process') }}</button>
                         </form>
                       {% endif %}
                     </td>

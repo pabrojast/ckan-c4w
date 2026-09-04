@@ -382,3 +382,85 @@ def test_config_declaration_covers_the_processing_options():
                 'ckanext.c4w.verification_ttl_hours',
                 'ckan.upload.c4w_data.types'):
         assert key in text, key
+
+
+# --------------------------------------------------------------------------- #
+# Registration, login and the action/auth registries
+# --------------------------------------------------------------------------- #
+
+def _registry_names(module_path, function_name):
+    """Every ``c4w_*`` action name mentioned inside ``function_name``.
+
+    Works for a literal dict and for the ``public_read_auth(...)`` + loop
+    shape alike, because both spell the names out as string constants.
+    """
+    tree = ast.parse(_read(*module_path))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == function_name:
+            return {sub.value for sub in ast.walk(node)
+                    if isinstance(sub, ast.Constant)
+                    and isinstance(sub.value, str)
+                    and sub.value.startswith('c4w_')}
+    return set()
+
+
+@pytest.mark.parametrize('module', ['datasets', 'registration', 'moderation'])
+def test_each_write_module_registers_actions_and_auth_in_lockstep(module):
+    """The docker smoke check asserts the bijection across the whole plugin;
+    this catches a drift inside one module before the container runs."""
+    actions = _registry_names(('logic', 'action', module + '.py'),
+                              'get_actions')
+    auth = _registry_names(('logic', 'action', module + '.py'),
+                           'get_auth_functions')
+    assert actions, module
+    assert actions == auth, (sorted(actions ^ auth))
+
+
+def test_action_and_auth_aggregators_import_the_same_modules():
+    actions = _read('logic', 'actions.py')
+    auth = _read('logic', 'auth.py')
+    for name in ('datasets', 'registration', 'moderation', 'events'):
+        assert name in actions, name
+        assert name in auth, name
+
+
+def test_portal_chrome_points_at_the_c4w_login_and_register_pages():
+    header = _read('templates', 'c4w', 'snippets', 'portal_header.html')
+    assert 'h.c4w_register_url()' in header
+    helpers = _read('logic', 'helpers.py')
+    assert "c4w_url('login'" in helpers
+    assert "c4w_url('register_choose')" in helpers
+    assert "'/colab'" in helpers    # the fallback while the route is absent
+
+
+def test_login_and_registration_templates_exist_under_c4w():
+    for name in ('login.html', 'register.html', 'register_choose.html',
+                 'verify_result.html', 'verify_resend.html'):
+        assert (PKG / 'templates' / 'c4w' / name).is_file(), name
+    # No override of CKAN's own user templates: the theme wins precedence.
+    assert not (PKG / 'templates' / 'user').exists()
+
+
+def test_verify_resend_is_registered_before_the_token_rule():
+    source = _read('blueprint.py')
+    assert source.index("'/verify/resend'") < source.index("'/verify/<token>'")
+
+
+def test_registration_stores_only_a_token_hash():
+    source = _read('logic', 'action', 'registration.py')
+    assert 'verification_token_hash=_hash(token)' in source
+    assert 'GENERIC_ERROR' in source
+
+
+def test_dashboard_build_is_committed():
+    """The template references the built assets; a checkout without them
+    renders a dashboard page with no dashboard."""
+    build = PKG / 'public' / 'c4w' / 'dashboard'
+    for name in ('c4w-dashboard.js', 'c4w-dashboard.css',
+                 'c4w-dashboard-worker.js', 'BUILD.json'):
+        assert (build / name).is_file(), name
+    css = (build / 'c4w-dashboard.css').read_text(encoding='utf-8')
+    assert ':root' not in css
+    assert '.c4w-dash' in css
+    template = _read('templates', 'c4w', 'dataset_dashboard.html')
+    assert "h.c4w_dashboard_asset('c4w-dashboard.js')" in template

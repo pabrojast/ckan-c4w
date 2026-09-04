@@ -34,6 +34,10 @@ disappears inside CKAN, which already lives at that address.
 | `text.py` | Slugs and JSON extras. Also CKAN-free — the migration mapper depends on it. |
 | `logic/action/*` | Business logic. `logic/actions.py` aggregates it. |
 | `logic/views_*` | Orchestration between a request and the actions. |
+| `logic/checks.py`, `validators.py`, `schema.py`, `forms.py` | The form infrastructure: CKAN-free value rules, their navl wrappers, per-form schemas, form parsing. |
+| `logic/uploads.py` | Byte-verified CSV/TSV and attachment uploads through CKAN's uploader (Azure Blob on IHP-WINS). |
+| `data/*` | The processing pipeline: sniff a table, map its columns, aggregate, build the dashboard bundle. **Imports no CKAN** except `data/jobs.py`. |
+| `dashboard/` | The dashboard front end (Vite + TypeScript, Chart.js + MapLibre). Built into `public/c4w/dashboard/`, which is committed. |
 | `migrate/*` | One-time import from the legacy Django database. |
 
 Two decisions are worth knowing before reading further.
@@ -49,16 +53,54 @@ project listing has eleven faceted vocabularies *with counts* plus ~100
 countries; filtering that from a JSON column means scanning and filtering in
 Python, and produces no counts at all.
 
+## The data flow
+
+Registered people share tables of water measurements; each becomes a
+catalogue entry with an interactive dashboard (map, trend, distribution,
+comparison) built from a precomputed bundle.
+
+```
+/register → /verify/<token> → /login            (portal chrome, not CKAN's)
+/submit/data → 1 about → 2 files → 3 columns → 4 coverage & method → 5 contact & review
+             → processing (inline ≤ 20 MB, else queued) → /admin (approve)
+/data, /data/<slug>, /data/<slug>/dashboard, /data/<slug>/embed
+```
+
+- **Registration** has two profiles, as in ckanext-csunesco: a *citizen
+  scientist* is active once the e-mailed link is opened; a *project manager*
+  is reviewed by a sysadmin after that and, on approval, becomes editor of an
+  existing IHP-WINS organisation or admin of a new one. Errors are generic
+  on purpose (no account enumeration), tokens are stored hashed, the public
+  forms are rate-limited.
+- **Files** go to the object store through CKAN's uploader; only CSV/TSV is
+  accepted for data (bytes are inspected, not names). Several files with the
+  same header may belong to one dataset.
+- **The column mapping** is proposed from the first 256 KB of the file and
+  confirmed in the wizard: site id, latitude, longitude, date, either a
+  parameter/value/unit triple (long layout) or one column per parameter
+  (wide layout), up to three categorical filters, a time grain.
+- **Processing** streams the file into per-parameter spools, aggregates by
+  site and period (median), computes percentile colour breaks and writes
+  `meta.json`, `sites.json`, `p/<i>.json` as gzip blobs in the database. The
+  dashboard fetches them same-origin from `/data/<slug>/bundle/…`.
+- **Metadata** follows the fields of schemingdcat's `unesco/dataset.yaml`
+  (title, description, keywords, licence, temporal extent, bounding box,
+  contact, provenance, frequency, DOI, citation, source) so a later export
+  to the IHP-WINS catalogue is a mapping, not a redesign.
+
 ## Status
 
 Built: the package and schema, the public read surfaces (projects,
 organisations, resources, training resources, platforms, events, news) with
 their facets, the C4W portal chrome (own header/footer, UNESCO colours),
-CKAN login/register in that chrome, a sysadmin moderation queue, “my
-submissions”, and the one-way importer.
+registration / verification / login in that chrome, the data wizard with
+its processing pipeline and dashboards, a sysadmin moderation queue with
+manager approval, “my submissions”, and the one-way importer.
 
-Still to build: the submission forms (the `/submit` chooser is in place),
-and the cutover redirects for the remaining Django static pages.
+Still to build: the submission forms for projects, organisations, events,
+platforms and resources (the `/submit` chooser announces them), a
+background worker on the cluster for large files, and the cutover redirects
+for the remaining Django static pages.
 
 - [`docs/migration-runbook.md`](docs/migration-runbook.md) — the operator's
   procedure, and what to expect from the data.

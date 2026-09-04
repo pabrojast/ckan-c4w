@@ -1,0 +1,136 @@
+{% extends "c4w/base.html" %}
+
+{% import 'c4w/macros/form.html' as form %}
+
+{#
+  The registration form, for both profiles.
+
+  kind                 'citizen' | 'manager'
+  data, errors         echo values and {field: [messages]}
+  pending_verification True after a successful POST: the page becomes the
+                       "check your inbox" panel, the visitor is NOT logged in
+  recaptcha_publickey  set only when reCAPTCHA v3 is enforced server-side
+#}
+
+{% set is_manager = kind == 'manager' %}
+
+{% block subtitle %}{{ _('Register as a project manager') if is_manager else _('Register as a citizen scientist') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-auth c4w-auth--wide" id="c4w-main">
+    {% if pending_verification %}
+      <h1>{{ _('Check your inbox') }}</h1>
+      <p class="c4w-auth__lede">
+        {% if mail_sent %}
+          {{ _('We sent a confirmation link to') }} <strong>{{ data.email }}</strong>.
+          {{ _('Open it to activate your account. The link works for two days.') }}
+        {% else %}
+          {{ _('Your account was created but the confirmation e-mail could not be sent right now.') }}
+        {% endif %}
+      </p>
+      {% if is_manager %}
+        <p class="c4w-note">{% trans %}Because you asked for a project manager account, the Citizens4Water team will review your request once your e-mail is confirmed and let you know by e-mail.{% endtrans %}</p>
+      {% endif %}
+      <p class="c4w-auth__links">
+        <a href="{{ h.c4w_url('verify_resend', email=data.email) }}">{{ _('Send the link again') }}</a>
+        <a href="{{ h.c4w_url('index') }}">{{ _('Back to Citizens4Water') }}</a>
+      </p>
+    {% else %}
+      <h1>{{ self.subtitle() }}</h1>
+      <p class="c4w-auth__lede">
+        {% if is_manager %}
+          {% trans %}For people who coordinate a monitoring project on behalf of an organisation. The request is reviewed by the Citizens4Water team.{% endtrans %}
+        {% else %}
+          {% trans %}For anyone who measures, observes or samples water. Your account is active as soon as you confirm your e-mail.{% endtrans %}
+        {% endif %}
+        <a href="{{ h.c4w_url('register_choose') }}">{{ _('Not you? Choose the other profile.') }}</a>
+      </p>
+
+      {% if errors.get('message') %}
+        <div class="c4w-form-errors" role="alert"><p>{{ errors.get('message') | join(' ') }}</p></div>
+      {% else %}
+        {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
+      {% endif %}
+
+      <form class="c4w-form" method="post" novalidate id="c4w-register-form"
+            action="{{ h.c4w_url('register_manager' if is_manager else 'register_citizen') }}">
+        {{ h.csrf_input() }}
+
+        <div class="c4w-form__section">
+          <h2>{{ _('About you') }}</h2>
+          {{ form.input('fullname', _('Full name'), data.fullname, errors, required=true, autocomplete='name', maxlength=200) }}
+          {{ form.input('email', _('E-mail'), data.email, errors, required=true, type='email', autocomplete='email',
+               hint=_('We send the confirmation link here. Never shown publicly.')) }}
+          {{ form.input('username', _('Username'), data.username, errors, autocomplete='username',
+               hint=_('Optional. Letters, numbers and dashes. We suggest one from your name if you leave it empty.')) }}
+          {% call form.row() %}
+            {{ form.input('password', _('Password'), '', errors, required=true, type='password', autocomplete='new-password', hint=_('At least 8 characters.')) }}
+            {{ form.input('password_confirm', _('Repeat the password'), '', errors, required=true, type='password', autocomplete='new-password') }}
+          {% endcall %}
+          {{ form.select('country', _('Country'), country_options, data.country or '', errors, empty_label=_('Choose…'),
+               hint=_('Where you mostly take part. Used for the portal\'s statistics only.')) }}
+          {% if not is_manager %}
+            {{ form.input('organisation_text', _('Group or organisation'), data.organisation_text, errors,
+                 hint=_('Optional: the school, association or project you measure with.')) }}
+          {% endif %}
+        </div>
+
+        {% if is_manager %}
+          <div class="c4w-form__section">
+            <h2>{{ _('Your organisation') }}</h2>
+            {{ form.radios('org_choice', _('The organisation is'), [('existing', _('already on IHP-WINS')), ('new', _('new to IHP-WINS'))], data.org_choice or 'existing', errors, required=true) }}
+            {{ form.select('ckan_org_id', _('Existing organisation'), organisation_options, data.ckan_org_id or '', errors, empty_label=_('Choose…'),
+                 hint=_('You will be made an editor of it once approved.')) }}
+            {{ form.input('org_name_requested', _('New organisation name'), data.org_name_requested, errors,
+                 hint=_('Only if the organisation is not listed above. You will be its first administrator.')) }}
+            {% call form.row() %}
+              {{ form.select('org_type', _('Organisation type'), org_type_options, data.org_type or '', errors, empty_label=_('Choose…')) }}
+              {{ form.input('org_url', _('Organisation website'), data.org_url, errors, type='url', placeholder='https://') }}
+            {% endcall %}
+            {{ form.input('job_title', _('Your role there'), data.job_title, errors, placeholder=_('e.g. monitoring coordinator')) }}
+            {{ form.checkbox('responsibilities', _('I confirm I am authorised to represent this organisation and to publish its data.'), data.responsibilities, errors, required=true) }}
+          </div>
+        {% endif %}
+
+        <div class="c4w-form__section">
+          <h2>{{ _('Terms') }}</h2>
+          {{ form.checkbox('terms', _('I accept the terms of use of IHP-WINS and the publication of what I submit under the licence I choose for it.'), data.terms, errors, required=true) }}
+        </div>
+
+        {% if recaptcha_publickey %}
+          <input type="hidden" name="recaptcha_response" id="c4w-recaptcha-response">
+        {% endif %}
+
+        <div class="c4w-form__actions">
+          <span class="c4w-form__spacer"></span>
+          <button type="submit" class="c4w-btn" id="c4w-register-submit">{{ _('Create my account') }}</button>
+        </div>
+      </form>
+
+      <p class="c4w-auth__links">
+        <a href="{{ h.c4w_login_url() }}">{{ _('Already registered? Sign in') }}</a>
+      </p>
+
+      {% if recaptcha_publickey %}
+        <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_publickey }}"></script>
+        <script>
+          (function () {
+            var form = document.getElementById('c4w-register-form');
+            var field = document.getElementById('c4w-recaptcha-response');
+            if (!form || !field || !window.grecaptcha) { return; }
+            form.addEventListener('submit', function (event) {
+              if (field.value) { return; }
+              event.preventDefault();
+              grecaptcha.ready(function () {
+                grecaptcha.execute('{{ recaptcha_publickey }}', {action: 'register'}).then(function (token) {
+                  field.value = token;
+                  form.submit();
+                });
+              });
+            });
+          })();
+        </script>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endblock %}

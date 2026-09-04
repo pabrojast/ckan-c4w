@@ -1,0 +1,24 @@
+{% extends "c4w/base.html" %}
+
+{% import 'c4w/macros/form.html' as form %}
+
+{% block subtitle %}{{ _('Resend the confirmation e-mail') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-auth" id="c4w-main">
+    <h1>{{ _('Resend the confirmation e-mail') }}</h1>
+    {% if sent %}
+      <p class="c4w-auth__lede">{{ _('If an unconfirmed account exists for that address, a new link is on its way. Check your spam folder too.') }}</p>
+      <p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('login') }}">{{ _('Sign in') }}</a></p>
+    {% else %}
+      <p class="c4w-auth__lede">{{ _('Enter the e-mail you registered with.') }}</p>
+      <form class="c4w-form" method="post" action="{{ h.c4w_url('verify_resend') }}" novalidate>
+        {{ h.csrf_input() }}
+        {{ form.input('email', _('E-mail'), email, {}, required=true, type='email', autocomplete='email') }}
+        <div class="c4w-form__actions">
+          <button type="submit" class="c4w-btn">{{ _('Send the link') }}</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -14,7 +14,7 @@ scripts/run-ckan-tests.sh asserts both directions of that mapping.
 
 from ckanext.c4w.logic.action import (
     datasets, events, moderation, organisations, platforms, posts, projects,
-    resources, stats)
+    registration, resources, stats)
 
 
 def get_actions():
@@ -22,6 +22,6 @@ def get_actions():
     # Domain modules land here as the increments arrive. The loop shape is
     # deliberate: adding a module is one import and one tuple entry.
     for module in (datasets, events, moderation, organisations, platforms,
-                   posts, projects, resources, stats):
+                   posts, projects, registration, resources, stats):
         actions.update(module.get_actions())
     return actions

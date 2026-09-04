@@ -383,3 +383,106 @@ def test_a_long_published_slug_is_preserved(session):
 
 def test_a_non_slug_base_is_still_slugified(session):
     assert db.unique_slug(db.C4wPost, u'Some Title!') == u'some-title'
+
+
+# --------------------------------------------------------------------------- #
+# Datasets, files, bundles and profiles
+# --------------------------------------------------------------------------- #
+
+def test_dataset_tables_round_trip_and_default_to_draft(session):
+    dataset = db.C4wDataset(slug=u'd', title=u'D', created_by=u'u1')
+    session.add(dataset)
+    session.flush()
+    session.add(db.C4wDatasetFile(dataset_id=dataset.id, kind=u'data',
+                                  original_name=u'x.csv', size_bytes=12))
+    session.add(db.C4wUserProfile(user_id=u'u1', profile_type=u'citizen'))
+    session.commit()
+
+    row = session.query(db.C4wDataset).one()
+    assert row.processing_status == u'draft'
+    assert row.approved is False and row.hidden is False
+    assert row.bundle_generation == 0
+    assert row.wizard_step == 1
+    assert session.query(db.C4wDatasetFile).one().kind == u'data'
+    assert session.query(db.C4wUserProfile).one().email_verified is False
+
+
+def test_user_profile_is_unique_per_user(session):
+    session.add(db.C4wUserProfile(user_id=u'u1'))
+    session.commit()
+    session.add(db.C4wUserProfile(user_id=u'u1'))
+    with pytest.raises(IntegrityError):
+        session.commit()
+    session.rollback()
+
+
+def test_bundle_blob_round_trips_gzip_and_is_unique_per_generation(session):
+    import gzip
+    import hashlib
+    raw = b'{"schema": 1, "records": 3}'
+    body = gzip.compress(raw, 9)
+    dataset = db.C4wDataset(slug=u'd', title=u'D')
+    session.add(dataset)
+    session.flush()
+    session.add(db.C4wDashboardBundle(
+        dataset_id=dataset.id, generation=1, name=u'meta.json',
+        etag=hashlib.sha256(raw).hexdigest(), raw_size=len(raw),
+        gz_size=len(body), body=body))
+    session.commit()
+    blob = session.query(db.C4wDashboardBundle).one()
+    assert gzip.decompress(blob.body) == raw
+    assert blob.etag == hashlib.sha256(raw).hexdigest()
+    session.add(db.C4wDashboardBundle(
+        dataset_id=dataset.id, generation=1, name=u'meta.json', body=body))
+    with pytest.raises(IntegrityError):
+        session.commit()
+    session.rollback()
+
+
+def test_owner_only_columns_stay_out_of_the_public_dict(session):
+    dataset = db.C4wDataset(slug=u'd', title=u'D', mapping_json=u'{"a": 1}',
+                            processing_error=u'boom',
+                            contact_email=u'x@y.z')
+    session.add(dataset)
+    session.commit()
+    public = db.entity_dictize('dataset', dataset)
+    assert 'mapping_json' not in public
+    assert 'processing_error' not in public
+    assert 'contact_email' not in public
+    private = db.entity_dictize('dataset', dataset, include_contact=True,
+                                include_private=True)
+    assert private['mapping_json'] == u'{"a": 1}'
+    assert private['contact_email'] == u'x@y.z'
+
+
+def test_dataset_visibility_matches_the_public_filter(session):
+    """An unapproved dataset is invisible to strangers, visible to its
+    owner, an editor and a sysadmin -- through the shared rule."""
+    from ckanext.c4w.logic.action import _common
+
+    dataset = db.C4wDataset(slug=u'd', title=u'D', created_by=u'owner')
+    session.add(dataset)
+    session.flush()
+    session.add(db.C4wRelation(subject_type=u'dataset', subject_id=dataset.id,
+                               predicate=u'editor', object_type=u'user',
+                               object_id=u'editor'))
+    session.commit()
+
+    class _User(object):
+        def __init__(self, id, sysadmin=False):
+            self.id = id
+            self.sysadmin = sysadmin
+
+    assert not _common.is_visible('dataset', dataset, {})
+    assert _common.is_visible('dataset', dataset,
+                              {'auth_user_obj': _User(u'owner')})
+    assert _common.is_visible('dataset', dataset,
+                              {'auth_user_obj': _User(u'editor')})
+    assert _common.is_visible('dataset', dataset,
+                              {'auth_user_obj': _User(u'x', True)})
+    assert not _common.is_visible('dataset', dataset,
+                                  {'auth_user_obj': _User(u'stranger')})
+    assert not _common.can_edit('dataset', dataset,
+                                {'auth_user_obj': _User(u'stranger')})
+    dataset.approved = True
+    assert _common.is_visible('dataset', dataset, {})
