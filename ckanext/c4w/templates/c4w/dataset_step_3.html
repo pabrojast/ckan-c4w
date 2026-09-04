@@ -1,0 +1,152 @@
+{% extends "c4w/dataset_wizard_base.html" %}
+
+{#
+  The column mapping. Every control is a plain form field; the view rebuilds
+  the spec from the posted names (views_submit_data._mapping_from_form).
+
+  Handed: spec (the current mapping), columns (the sniffed columns),
+  column_names, file, date_formats, country_kinds, stored.
+#}
+
+{% macro col_select(name, label, value, hint=None, required=false, allow_empty=true) %}
+  {% set options = [] %}
+  {% for c in columns %}{% do options.append((c.name, c.name ~ '  ·  ' ~ c.type)) %}{% endfor %}
+  {{ form.select(name, label, options, value or '', errors, hint=hint, required=required,
+       empty_label=(_('— none —') if allow_empty else none)) }}
+{% endmacro %}
+
+{% block wizard_body %}
+  <p class="c4w-listing__count">
+    {{ _('Read from') }} <strong>{{ file.original_name }}</strong>
+    ({{ h.c4w_number(file.row_estimate) }} {{ _('rows, estimated') }}).
+    {% if stored %}
+      <a href="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=3, reset=1) }}">{{ _('Start again from our proposal') }}</a>
+    {% endif %}
+  </p>
+
+  <form class="c4w-form c4w-form--wide" method="post"
+        action="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=3) }}" novalidate>
+    {{ h.csrf_input() }}
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Layout') }}</h2>
+      {{ form.radios('layout', _('How are the rows organised?'), h.c4w_option_list('layout'), spec.layout, errors, required=true) }}
+      <div class="c4w-mapping__grid" id="c4w-long-fields">
+        {{ col_select('long__parameter', _('Parameter column'), (spec.long or {}).parameter, hint=_('Only for "one measurement per row".')) }}
+        {{ col_select('long__value', _('Value column'), (spec.long or {}).value) }}
+        {{ col_select('long__unit', _('Unit column'), (spec.long or {}).unit) }}
+        {{ form.checkbox('long__discover', _('Include every parameter code found in the file'), (spec.long or {}).discover if spec.long else true, errors,
+             hint=_('Codes not listed below get their code as label and the unit from the unit column.')) }}
+      </div>
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Sites and positions') }}</h2>
+      <div class="c4w-mapping__grid">
+        {{ col_select('site__id', _('Site identifier'), spec.site.id, hint=_('A station code or site name that stays the same across samples. Leave empty to group by coordinates.')) }}
+        {{ col_select('site__name', _('Site name'), spec.site.name) }}
+        {{ col_select('site__lat', _('Latitude'), spec.site.lat, required=true) }}
+        {{ col_select('site__lon', _('Longitude'), spec.site.lon, required=true) }}
+        {{ col_select('site__country', _('Country'), spec.site.country) }}
+        {{ form.select('site__country_kind', _('Country is given as'), country_kinds, spec.site.country_kind or '', errors) }}
+      </div>
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Time') }}</h2>
+      <div class="c4w-mapping__grid">
+        {{ col_select('date__column', _('Date column'), spec.date.column, required=true) }}
+        {{ form.select('date__format', _('Date format'), date_formats | map('string') | zip(date_formats) | list, spec.date.format or 'auto', errors,
+             hint=_('"auto" tries the common formats; pick one if days and months are ambiguous.')) }}
+        {{ form.radios('date__grain', _('Aggregate the dashboard by'), h.c4w_option_list('grain'), spec.date.grain or 'year', errors, required=true,
+             hint=_('Values of one site inside a period are summarised by their median.')) }}
+      </div>
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Parameters') }}</h2>
+      <p class="c4w-form__lede">{{ _('Each parameter becomes a layer of the dashboard. Give it a readable label and its unit. Six optional cut points override the automatic colour scale (e.g. a guideline).') }}</p>
+      {% if errors.get('parameters') %}<p class="c4w-field__error">{{ errors.get('parameters') | join(' ') }}</p>{% endif %}
+      <div class="c4w-mapping">
+        <table class="c4w-table">
+          <thead>
+            <tr>
+              <th class="c4w-mapping__include">{{ _('Use') }}</th>
+              <th>{{ _('Source') }}</th>
+              <th>{{ _('Label') }}</th>
+              <th>{{ _('Unit') }}</th>
+              <th>{{ _('Family') }}</th>
+              <th>{{ _('Units') }}</th>
+              <th>{{ _('Cut points') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in spec.parameters %}
+              {% set i = loop.index0 %}
+              {% set row_errors = [] %}
+              {% for key in ('label', 'unit', 'bins', 'source', 'key') %}
+                {% if errors.get('param__' ~ i ~ '__' ~ key) %}{% do row_errors.extend(errors.get('param__' ~ i ~ '__' ~ key)) %}{% endif %}
+              {% endfor %}
+              <tr{% if not p.include %} class="is-excluded"{% endif %}>
+                <td class="c4w-mapping__include">
+                  <input type="hidden" name="param__{{ i }}__key" value="{{ p.key }}">
+                  <input type="hidden" name="param__{{ i }}__source" value="{{ p.source }}">
+                  <input type="checkbox" name="param__{{ i }}__include" value="1" {% if p.include %}checked{% endif %}
+                         aria-label="{{ _('Use') }} {{ p.source }}">
+                </td>
+                <td><span class="c4w-mapping__col">{{ p.source }}</span>
+                  {% if row_errors %}<span class="c4w-field__error">{{ row_errors | join(' ') }}</span>{% endif %}</td>
+                <td><input class="c4w-input" type="text" name="param__{{ i }}__label" value="{{ p.label }}" aria-label="{{ _('Label') }}"></td>
+                <td><input class="c4w-input" type="text" name="param__{{ i }}__unit" value="{{ p.unit }}" size="8" aria-label="{{ _('Unit') }}" placeholder="mg/L"></td>
+                <td><input class="c4w-input" type="text" name="param__{{ i }}__family" value="{{ p.family or '' }}" size="10" aria-label="{{ _('Family') }}"></td>
+                <td>
+                  <select class="c4w-input c4w-select" name="param__{{ i }}__normalise" aria-label="{{ _('Unit handling') }}">
+                    <option value="auto" {% if p.normalise != 'none' %}selected{% endif %}>{{ _('Convert to µg/L') }}</option>
+                    <option value="none" {% if p.normalise == 'none' %}selected{% endif %}>{{ _('Keep as is') }}</option>
+                  </select>
+                </td>
+                <td><input class="c4w-input" type="text" name="param__{{ i }}__bins" value="{{ p.bins | join(', ') if p.bins else '' }}" size="14" aria-label="{{ _('Cut points') }}" placeholder="0.5, 1, 2, 5, 10, 20"></td>
+              </tr>
+            {% endfor %}
+            {% if not spec.parameters %}
+              <tr><td colspan="7" class="c4w-files__empty">{{ _('No numeric column was found. Check the layout and the value column.') }}</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Extra filters') }} <span class="c4w-badge c4w-badge--muted">{{ _('optional') }}</span></h2>
+      <p class="c4w-form__lede">{{ _('Up to three categorical columns (water body type, land use…) become filters of the dashboard.') }}</p>
+      <div class="c4w-mapping__grid">
+        {% for i in range(3) %}
+          {% set d = spec.dimensions[i] if spec.dimensions | length > i else {} %}
+          <div>
+            <input type="hidden" name="dim__{{ i }}__key" value="{{ d.key or '' }}">
+            {{ col_select('dim__' ~ i ~ '__column', _('Filter %(n)s') | replace('%(n)s', (i + 1) | string), d.column) }}
+            {{ form.input('dim__' ~ i ~ '__label', _('Label'), d.label or '', errors) }}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Values') }}</h2>
+      <div class="c4w-mapping__grid">
+        {{ form.checkbox('filters__drop_negative', _('Drop negative values'), spec.filters.drop_negative, errors) }}
+        {{ form.input('filters__min_value', _('Ignore values below'), spec.filters.min_value if spec.filters.min_value is not none else '', errors, type='number', attrs={'step': 'any'}) }}
+        {{ form.input('filters__max_value', _('Ignore values above'), spec.filters.max_value if spec.filters.max_value is not none else '', errors, type='number', attrs={'step': 'any'}) }}
+      </div>
+      {{ form.textarea('unit_note', _('Notes about the units or the columns'), data.unit_note, errors, rows=3,
+           hint=_('Anything a reader must know to interpret the values.')) }}
+    </div>
+
+    <div class="c4w-form__actions">
+      <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=2) }}">{{ _('Back') }}</a>
+      <button type="submit" name="action" value="save" class="c4w-btn c4w-btn--quiet">{{ _('Save') }}</button>
+      <span class="c4w-form__spacer"></span>
+      <button type="submit" name="action" value="next" class="c4w-btn">{{ _('Save and continue') }}</button>
+    </div>
+  </form>
+{% endblock %}

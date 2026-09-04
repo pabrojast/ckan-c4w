@@ -114,6 +114,24 @@ MUST_RESOLVE = [
     ("/citizens4water/account", "c4w.account"),
     ("/citizens4water/submit", "c4w.submit"),
     ("/citizens4water/admin", "c4w.admin_index"),
+    # The data flow.
+    ("/citizens4water/data", "c4w.dataset_list"),
+    ("/citizens4water/data/river-watch", "c4w.dataset_detail"),
+    ("/citizens4water/data/river-watch/dashboard", "c4w.dataset_dashboard"),
+    ("/citizens4water/data/river-watch/embed", "c4w.dataset_embed"),
+    ("/citizens4water/data/river-watch/bundle/meta.json", "c4w.dataset_bundle"),
+    ("/citizens4water/data/river-watch/bundle/p/3.json", "c4w.dataset_bundle"),
+    ("/citizens4water/data/river-watch/download/abc", "c4w.dataset_download"),
+    ("/citizens4water/data/river-watch/edit", "c4w.dataset_edit"),
+    ("/citizens4water/submit/data", "c4w.submit_data_start"),
+    ("/citizens4water/submit/data/abc/2", "c4w.submit_data_step"),
+    ("/citizens4water/register", "c4w.register_choose"),
+    ("/citizens4water/register/citizen", "c4w.register_citizen"),
+    ("/citizens4water/register/manager", "c4w.register_manager"),
+    # 'resend' must never be read as a token.
+    ("/citizens4water/verify/resend", "c4w.verify_resend"),
+    ("/citizens4water/verify/abc123", "c4w.verify_email"),
+    ("/citizens4water/login", "c4w.login"),
 ]
 adapter = probe.url_map.bind("ihp-wins.unesco.org")
 route_problems = []

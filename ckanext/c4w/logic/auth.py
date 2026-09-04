@@ -70,7 +70,8 @@ def get_auth_functions():
     fails the build if a single name is registered on one side only.
     """
     from ckanext.c4w.logic.action import (
-        events, moderation, organisations, platforms, posts, resources)
+        datasets, events, moderation, organisations, platforms, posts,
+        resources)
 
     functions = {
         'c4w_stats': c4w_stats,
@@ -79,7 +80,7 @@ def get_auth_functions():
         'c4w_project_facets': c4w_project_facets,
         'c4w_project_record_view': c4w_project_record_view,
     }
-    for module in (events, moderation, organisations, platforms, posts,
-                   resources):
+    for module in (datasets, events, moderation, organisations, platforms,
+                   posts, resources):
         functions.update(module.get_auth_functions())
     return functions

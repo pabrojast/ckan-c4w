@@ -122,6 +122,104 @@ def post_legacy_dated(year, month, day, slug):
     return views_catalogue.redirect_to_post(slug)
 
 
+# Datasets: the public catalogue, the dashboard and its bundle.
+def dataset_list():
+    from ckanext.c4w.logic import views_datasets
+    return views_datasets.dataset_list()
+
+
+def dataset_detail(slug):
+    from ckanext.c4w.logic import views_datasets
+    return views_datasets.dataset_detail(slug)
+
+
+def dataset_dashboard(slug):
+    from ckanext.c4w.logic import views_datasets
+    return views_datasets.dataset_dashboard(slug)
+
+
+def dataset_embed(slug):
+    from ckanext.c4w.logic import views_datasets
+    return views_datasets.dataset_embed(slug)
+
+
+def dataset_bundle(slug, name):
+    from ckanext.c4w.logic import views_datasets
+    return views_datasets.dataset_bundle(slug, name)
+
+
+def dataset_download(slug, file_id):
+    from ckanext.c4w.logic import views_datasets
+    return views_datasets.dataset_download(slug, file_id)
+
+
+# The data wizard.
+def submit_data_start():
+    from ckanext.c4w.logic import views_submit_data
+    return views_submit_data.start()
+
+
+def submit_data_step(dataset_id, step):
+    from ckanext.c4w.logic import views_submit_data
+    return views_submit_data.step(dataset_id, step)
+
+
+def submit_data_file(dataset_id):
+    from ckanext.c4w.logic import views_submit_data
+    return views_submit_data.file(dataset_id)
+
+
+def submit_data_process(dataset_id):
+    from ckanext.c4w.logic import views_submit_data
+    return views_submit_data.process(dataset_id)
+
+
+def dataset_edit(slug):
+    from ckanext.c4w.logic import views_submit_data
+    return views_submit_data.edit(slug)
+
+
+def dataset_delete(slug):
+    from ckanext.c4w.logic import views_submit_data
+    return views_submit_data.delete(slug)
+
+
+# Registration, verification and login, in the portal's own chrome.
+def register_choose():
+    from ckanext.c4w.logic import views_register
+    return views_register.choose()
+
+
+def register_citizen():
+    from ckanext.c4w.logic import views_register
+    return views_register.register('citizen')
+
+
+def register_manager():
+    from ckanext.c4w.logic import views_register
+    return views_register.register('manager')
+
+
+def verify_email(token):
+    from ckanext.c4w.logic import views_register
+    return views_register.verify(token)
+
+
+def verify_resend():
+    from ckanext.c4w.logic import views_register
+    return views_register.resend()
+
+
+def login():
+    from ckanext.c4w.logic import views_login
+    return views_login.login()
+
+
+def admin_manager(user_id, operation):
+    from ckanext.c4w.logic import views_admin
+    return views_admin.admin_manager(user_id, operation)
+
+
 # --------------------------------------------------------------------------- #
 # Route registration
 # --------------------------------------------------------------------------- #
@@ -141,8 +239,55 @@ def _register(bp):
     bp.add_url_rule('/admin', 'admin_index', admin_index, methods=['GET'],
                     strict_slashes=False)
     bp.add_url_rule(
+        '/admin/managers/<user_id>/<operation>',
+        'admin_manager', admin_manager, methods=['POST'])
+    bp.add_url_rule(
         '/admin/<entity>/<item_id>/<operation>',
         'admin_moderate', admin_moderate, methods=['POST'])
+
+    # Account: registration, verification, login. /verify/resend is a
+    # static rule registered BEFORE /verify/<token> so Flask never reads
+    # "resend" as a token.
+    bp.add_url_rule('/register', 'register_choose', register_choose,
+                    methods=['GET'], strict_slashes=False)
+    bp.add_url_rule('/register/citizen', 'register_citizen',
+                    register_citizen, methods=['GET', 'POST'])
+    bp.add_url_rule('/register/manager', 'register_manager',
+                    register_manager, methods=['GET', 'POST'])
+    bp.add_url_rule('/verify/resend', 'verify_resend', verify_resend,
+                    methods=['GET', 'POST'])
+    bp.add_url_rule('/verify/<token>', 'verify_email', verify_email,
+                    methods=['GET'])
+    bp.add_url_rule('/login', 'login', login, methods=['GET', 'POST'],
+                    strict_slashes=False)
+
+    # Data: the wizard first (static prefix), then the public catalogue.
+    bp.add_url_rule('/submit/data', 'submit_data_start', submit_data_start,
+                    methods=['GET', 'POST'], strict_slashes=False)
+    bp.add_url_rule('/submit/data/<dataset_id>/file', 'submit_data_file',
+                    submit_data_file, methods=['POST'])
+    bp.add_url_rule('/submit/data/<dataset_id>/process',
+                    'submit_data_process', submit_data_process,
+                    methods=['POST'])
+    bp.add_url_rule('/submit/data/<dataset_id>/<int:step>',
+                    'submit_data_step', submit_data_step,
+                    methods=['GET', 'POST'])
+    bp.add_url_rule('/data', 'dataset_list', dataset_list, methods=['GET'],
+                    strict_slashes=False)
+    bp.add_url_rule('/data/<slug>', 'dataset_detail', dataset_detail,
+                    methods=['GET'], strict_slashes=False)
+    bp.add_url_rule('/data/<slug>/dashboard', 'dataset_dashboard',
+                    dataset_dashboard, methods=['GET'], strict_slashes=False)
+    bp.add_url_rule('/data/<slug>/embed', 'dataset_embed', dataset_embed,
+                    methods=['GET'], strict_slashes=False)
+    bp.add_url_rule('/data/<slug>/bundle/<path:name>', 'dataset_bundle',
+                    dataset_bundle, methods=['GET'])
+    bp.add_url_rule('/data/<slug>/download/<file_id>', 'dataset_download',
+                    dataset_download, methods=['GET'])
+    bp.add_url_rule('/data/<slug>/edit', 'dataset_edit', dataset_edit,
+                    methods=['GET'])
+    bp.add_url_rule('/data/<slug>/delete', 'dataset_delete', dataset_delete,
+                    methods=['POST'])
 
     # Legacy media. Load-bearing: every <img src> inside a migrated blog body
     # still points at this shape, as does every inbound link to an old image.

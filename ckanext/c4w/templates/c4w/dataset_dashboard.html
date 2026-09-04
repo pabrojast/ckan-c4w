@@ -1,0 +1,40 @@
+{% extends "c4w/base.html" %}
+
+{% block subtitle %}{{ dataset.title }} · {{ _('Dashboard') }}{% endblock %}
+
+{% block styles %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ h.c4w_dashboard_asset('c4w-dashboard.css') }}">
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script type="module" src="{{ h.c4w_dashboard_asset('c4w-dashboard.js') }}"></script>
+{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-page--wide" id="c4w-main">
+    {% snippet 'c4w/snippets/detail_breadcrumb.html',
+       back_endpoint='dataset_list', back_label=_('Data'), title=dataset.title %}
+
+    <header class="c4w-pagehead c4w-pagehead--dashboard">
+      <div>
+        <h1>{{ dataset.title }}</h1>
+        <p class="c4w-listing__count">
+          {% if dataset.publisher %}{{ dataset.publisher }} · {% endif %}
+          <a href="{{ h.c4w_url('dataset_detail', slug=dataset.slug) }}">{{ _('About this dataset') }}</a>
+        </p>
+      </div>
+      {% if not dataset.approved %}
+        <span class="c4w-badge c4w-badge--pending">{{ _('Awaiting review') }}</span>
+      {% endif %}
+    </header>
+
+    {% if dataset.bundle_ready %}
+      {% snippet 'c4w/snippets/dashboard_shell.html', dataset=dataset,
+         bundle_base=bundle_base, basemap_style=basemap_style, lang=lang %}
+    {% else %}
+      <p class="c4w-empty">{{ _('This dashboard has not been built yet.') }}</p>
+    {% endif %}
+  </div>
+{% endblock %}

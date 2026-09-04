@@ -1,0 +1,159 @@
+{#
+  Dashboard shell: the DOM the built bundle (public/c4w/dashboard/) mounts on.
+
+  Contract with dashboard/src (keep both sides in sync):
+    - Root: <div class="c4w-dash" data-c4w-dashboard ...>. The bundle auto-mounts
+      every [data-c4w-dashboard] on DOMContentLoaded and reads its data-* attrs:
+        data-bundle-base   URL prefix that serves meta.json, sites.json, p/<i>.json
+                           (absolute path, trailing slash added if missing)
+        data-lang          en | es | fr (anything else falls back to en)
+        data-basemap       MapLibre style URL (empty -> OpenFreeMap positron)
+        data-title         dataset title (document title, popup context)
+        data-source-url    fallback source link when meta.dataset.source is empty
+    - Every element the TypeScript touches carries a data-role; the code only
+      queries INSIDE the root, never document.getElementById, so two dashboards
+      on one page cannot clash. Roles: boot, boot-title, boot-detail, count,
+      credit, source, parameter, country-field, country, dimensions, period-from,
+      period-to, site-chip, site-chip-label, site-clear, map, legend, legend-high,
+      legend-fill, legend-low, legend-name, legend-unit, view-chip, view-chip-text,
+      loading, scale-warning, empty, panel-trend, trend-subtitle, chart-trend,
+      panel-distribution, chart-distribution, panel-comparison, comparison-title,
+      chart-comparison, stat-sites, stat-records, stat-samples, stat-median,
+      stat-max, csv.
+    - Static labels go through _() so CKAN can translate them server-side; the
+      bundle then re-applies its own en/es/fr table to every [data-i18n] /
+      [data-i18n-aria] so static and dynamic strings speak the same language.
+
+  Expected variables:
+    dataset        dict with slug, title, source_url
+    bundle_base    string, e.g. h.c4w_url('dataset_bundle', slug=..., name='')
+    basemap_style  string (may be empty)
+    lang           string, e.g. h.lang()
+    full           bool, True on the embed page (fills the viewport, no frame)
+
+  The page including this snippet must also include the built assets:
+    <link rel="stylesheet" href="/c4w/dashboard/c4w-dashboard.css?v=...">
+    <script type="module" src="/c4w/dashboard/c4w-dashboard.js?v=..."></script>
+#}
+<div class="c4w-dash{% if full %} c4w-dash--full{% endif %}"
+     data-c4w-dashboard
+     data-bundle-base="{{ bundle_base }}"
+     data-lang="{{ lang }}"
+     data-basemap="{{ basemap_style or '' }}"
+     data-title="{{ dataset.title }}"
+     data-source-url="{{ dataset.source_url or '' }}">
+
+  <div class="c4w-dash__boot" data-role="boot" role="status" aria-live="polite">
+    <p class="c4w-dash__boot-title" data-role="boot-title">{{ _('Loading the dataset…') }}</p>
+    <p class="c4w-dash__boot-detail" data-role="boot-detail">{{ _('Reading sites and parameters.') }}</p>
+  </div>
+  <noscript>
+    <p class="c4w-dash__noscript">{{ _('This dashboard needs JavaScript. The data files can still be downloaded from the dataset page.') }}</p>
+  </noscript>
+
+  <header class="c4w-dash__mast">
+    <div class="c4w-dash__brand">
+      <h2 class="c4w-dash__title">{{ dataset.title }}</h2>
+      <p class="c4w-dash__count" data-role="count"></p>
+    </div>
+    <a class="c4w-dash__credit" data-role="source"
+       href="{{ dataset.source_url or '#' }}" target="_blank" rel="noopener noreferrer">
+      <span data-i18n="mast.source">{{ _('Source') }}</span>: <span data-role="credit"></span>
+    </a>
+  </header>
+
+  <form class="c4w-dash__filters" aria-label="{{ _('Filters') }}" data-i18n-aria="filter.aria"
+        autocomplete="off" onsubmit="return false">
+    <label class="c4w-dash__field c4w-dash__field--wide">
+      <span data-i18n="filter.parameter">{{ _('Parameter') }}</span>
+      <select data-role="parameter"></select>
+    </label>
+    <label class="c4w-dash__field" data-role="country-field" hidden>
+      <span data-i18n="filter.country">{{ _('Country') }}</span>
+      <select data-role="country"></select>
+    </label>
+    <div class="c4w-dash__dims" data-role="dimensions"></div>
+    <div class="c4w-dash__period" role="group" aria-label="{{ _('Period') }}" data-i18n-aria="filter.period">
+      <label class="c4w-dash__field c4w-dash__field--period">
+        <span data-i18n="filter.from">{{ _('From') }}</span>
+        <input data-role="period-from" type="text">
+      </label>
+      <span class="c4w-dash__period-rule" aria-hidden="true"></span>
+      <label class="c4w-dash__field c4w-dash__field--period">
+        <span data-i18n="filter.to">{{ _('To') }}</span>
+        <input data-role="period-to" type="text">
+      </label>
+    </div>
+    <div class="c4w-dash__chip" data-role="site-chip" hidden>
+      <span class="c4w-dash__chip-kicker" data-i18n="filter.site">{{ _('Site') }}</span>
+      <span data-role="site-chip-label"></span>
+      <button type="button" data-role="site-clear"
+              aria-label="{{ _('Clear site') }}" data-i18n-aria="filter.clearSite">&times;</button>
+    </div>
+  </form>
+
+  <div class="c4w-dash__workspace">
+    <section class="c4w-dash__map-pane" aria-label="{{ _('Site map') }}" data-i18n-aria="map.aria">
+      <div class="c4w-dash__map" data-role="map"></div>
+      <aside class="c4w-dash__legend" data-role="legend"
+             aria-label="{{ _('Colour scale') }}" data-i18n-aria="scale.aria">
+        <p data-role="legend-high"></p>
+        <div class="c4w-dash__legend-glass"><div class="c4w-dash__legend-fill" data-role="legend-fill"></div></div>
+        <p data-role="legend-low"></p>
+        <div class="c4w-dash__legend-caption">
+          <strong data-role="legend-name"></strong>
+          <span data-role="legend-unit"></span>
+        </div>
+      </aside>
+      <div class="c4w-dash__chip c4w-dash__chip--view" data-role="view-chip" hidden>
+        <span data-role="view-chip-text"></span>
+      </div>
+      <div class="c4w-dash__chip c4w-dash__chip--loading" data-role="loading" hidden
+           data-i18n="filter.loading">{{ _('Loading parameter…') }}</div>
+      <p class="c4w-dash__warning" data-role="scale-warning" hidden></p>
+      <div class="c4w-dash__empty" data-role="empty" role="status" hidden></div>
+    </section>
+
+    <aside class="c4w-dash__notebook">
+      <section class="c4w-dash__panel" data-role="panel-trend">
+        <h3 class="c4w-dash__panel-head">
+          <span data-i18n="chart.trend">{{ _('Trend') }}</span>
+          <span class="c4w-dash__panel-sub" data-role="trend-subtitle"></span>
+        </h3>
+        <div class="c4w-dash__chart">
+          <canvas data-role="chart-trend"></canvas>
+          <p class="c4w-dash__empty-copy" data-i18n="chart.empty">{{ _('No values match this filter.') }}</p>
+        </div>
+      </section>
+
+      <section class="c4w-dash__panel" data-role="panel-distribution">
+        <h3 class="c4w-dash__panel-head"><span data-i18n="chart.distribution">{{ _('Distribution') }}</span></h3>
+        <div class="c4w-dash__chart">
+          <canvas data-role="chart-distribution"></canvas>
+          <p class="c4w-dash__empty-copy" data-i18n="chart.empty">{{ _('No values match this filter.') }}</p>
+        </div>
+      </section>
+
+      <section class="c4w-dash__panel" data-role="panel-comparison">
+        <h3 class="c4w-dash__panel-head"><span data-role="comparison-title" data-i18n="chart.countries">{{ _('Countries') }}</span></h3>
+        <div class="c4w-dash__chart">
+          <canvas data-role="chart-comparison"></canvas>
+          <p class="c4w-dash__empty-copy" data-i18n="chart.emptyGroups">{{ _('Not enough groups with sites to compare.') }}</p>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="c4w-dash__status">
+    <dl class="c4w-dash__kpis">
+      <div><dt data-i18n="stat.sites">{{ _('sites') }}</dt><dd data-role="stat-sites">0</dd></div>
+      <div><dt data-i18n="stat.records">{{ _('site-periods') }}</dt><dd data-role="stat-records">0</dd></div>
+      <div><dt data-i18n="stat.samples">{{ _('measurements') }}</dt><dd data-role="stat-samples">0</dd></div>
+      <div><dt data-i18n="stat.median">{{ _('median') }}</dt><dd data-role="stat-median">—</dd></div>
+      <div><dt data-i18n="stat.max">{{ _('maximum') }}</dt><dd data-role="stat-max">—</dd></div>
+    </dl>
+    <div class="c4w-dash__status-end">
+      <button type="button" class="c4w-dash__csv" data-role="csv" data-i18n="stat.csv">{{ _('Download CSV') }}</button>
+    </div>
+  </footer>
+</div>

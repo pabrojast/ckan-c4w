@@ -3,3 +3,4 @@ recursive-include ckanext/c4w/assets *
 recursive-include ckanext/c4w/public *
 include ckanext/c4w/config_declaration.yaml
 recursive-include ckanext/c4w/tests/fixtures *.json
+recursive-include ckanext/c4w/tests/fixtures *.csv

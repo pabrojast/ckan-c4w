@@ -1,0 +1,36 @@
+{% extends "c4w/listing_base.html" %}
+{% set endpoint = 'dataset_list' %}
+
+{% block listing_title %}{{ _('Data') }}{% endblock %}
+{% block listing_count %}{{ ungettext('{n} dataset', '{n} datasets', listing.count).format(n=listing.count) }}{% endblock %}
+{% block listing_search_label %}{{ _('Search data') }}{% endblock %}
+
+{% block listing_cards %}
+  <div class="c4w-card-grid">
+    {% for dataset in listing.results %}
+      {% snippet 'c4w/snippets/dataset_card.html', dataset=dataset %}
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block listing_facets %}
+  {% if c.userobj %}
+    <p class="c4w-facet c4w-facet--cta">
+      <a class="c4w-btn" href="{{ h.c4w_url('submit_data_start') }}">{{ _('Share your data') }}</a>
+    </p>
+  {% else %}
+    <p class="c4w-facet c4w-facet--cta">
+      <a class="c4w-btn" href="{{ h.c4w_register_url() }}">{{ _('Register to share data') }}</a>
+    </p>
+  {% endif %}
+
+  {% snippet 'c4w/snippets/country_facet.html', counts=listing.facets.get('country', {}) %}
+
+  {% for name, title in [
+      ('water_data_type', _('Water data type')), ('water_type', _('Water type')),
+      ('topic', _('Topic')), ('technology_used', _('Technology used')),
+      ('grain', _('Time resolution')), ('frequency', _('Update frequency'))] %}
+    {% snippet 'c4w/snippets/facet_group.html', name=name, title=title,
+       options=h.c4w_option_list(name), counts=listing.facets.get(name, {}) %}
+  {% endfor %}
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "c4w/dataset_wizard_base.html" %}
+
+{% block wizard_body %}
+  {% set data_files = dataset.data_files or [] %}
+  {% set attachments = dataset.attachments or [] %}
+
+  <div class="c4w-form__section">
+    <h2>{{ _('Measurements') }}</h2>
+    <p class="c4w-form__lede">
+      {% trans %}A CSV or TSV table: one row per sample (a column per measured value) or one row per measurement (parameter, value and unit columns). Include the site, its coordinates and the date. You can add several files with the same columns.{% endtrans %}
+    </p>
+    <p class="c4w-note">
+      {{ _('Files are stored in the portal\'s object store as soon as they are uploaded and are reachable by their address; only publish data you may share.') }}
+    </p>
+
+    {% if data_files %}
+      <div class="c4w-files">
+        <table class="c4w-table">
+          <thead>
+            <tr><th>{{ _('File') }}</th><th>{{ _('Size') }}</th><th>{{ _('Rows (est.)') }}</th><th>{{ _('Format') }}</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for file in data_files %}
+              <tr>
+                <td><span class="c4w-files__name">{{ file.original_name }}</span>
+                  <span class="c4w-files__meta">{{ file.created[:10] if file.created else '' }}</span></td>
+                <td>{{ h.c4w_bytes(file.size_bytes) }}</td>
+                <td>{{ h.c4w_number(file.row_estimate) }}</td>
+                <td>{{ file.format | upper }} · {{ file.encoding }}</td>
+                <td class="c4w-table__actions">
+                  <form method="post" action="{{ h.c4w_url('submit_data_file', dataset_id=dataset.id) }}">
+                    {{ h.csrf_input() }}
+                    <input type="hidden" name="op" value="delete">
+                    <input type="hidden" name="file_id" value="{{ file.id }}">
+                    <button type="submit" class="c4w-btn c4w-btn--danger">{{ _('Remove') }}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% set sniff = primary.sniff or {} %}
+      {% if sniff.columns %}
+        <details class="c4w-sample-details" open>
+          <summary>{{ _('What we read from the first file') }}</summary>
+          <div class="c4w-sample">
+            <table>
+              <thead>
+                <tr>
+                  {% for col in sniff.columns %}
+                    <th>{{ col.name }}<small>{{ col.type }}</small></th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in (sniff.sample_rows or [])[:8] %}
+                  <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      {% endif %}
+    {% else %}
+      <p class="c4w-files__empty">{{ _('No data file yet.') }}</p>
+    {% endif %}
+
+    <form class="c4w-form" method="post" enctype="multipart/form-data"
+          action="{{ h.c4w_url('submit_data_file', dataset_id=dataset.id) }}">
+      {{ h.csrf_input() }}
+      <input type="hidden" name="op" value="upload">
+      <input type="hidden" name="kind" value="data">
+      {{ form.file('upload', _('Add a data file') if data_files else _('Data file'), errors,
+           hint=_('CSV or TSV, up to %(mb)s MB. Spreadsheets: export as CSV first.') | replace('%(mb)s', max_upload_mb | string),
+           accept='.csv,.tsv,.txt,text/csv,text/tab-separated-values', required=(not data_files)) }}
+      <div class="c4w-form__actions">
+        <button type="submit" class="c4w-btn{% if data_files %} c4w-btn--quiet{% endif %}">{{ _('Upload') }}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="c4w-form__section">
+    <h2>{{ _('Documents') }} <span class="c4w-badge c4w-badge--muted">{{ _('optional') }}</span></h2>
+    <p class="c4w-form__lede">{{ _('A protocol, a field sheet or a codebook that explains the columns. PDF, CSV or text, up to %(mb)s MB each, five at most.') | replace('%(mb)s', max_attachment_mb | string) }}</p>
+    {% if attachments %}
+      <ul class="c4w-plain-list">
+        {% for file in attachments %}
+          <li>
+            <a href="{{ file.url }}" rel="noopener">{{ file.original_name }}</a>
+            <small>({{ h.c4w_bytes(file.size_bytes) }})</small>
+            <form method="post" action="{{ h.c4w_url('submit_data_file', dataset_id=dataset.id) }}" style="display:inline">
+              {{ h.csrf_input() }}
+              <input type="hidden" name="op" value="delete">
+              <input type="hidden" name="file_id" value="{{ file.id }}">
+              <button type="submit" class="c4w-btn c4w-btn--danger">{{ _('Remove') }}</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% if attachments | length < 5 %}
+      <form class="c4w-form" method="post" enctype="multipart/form-data"
+            action="{{ h.c4w_url('submit_data_file', dataset_id=dataset.id) }}">
+        {{ h.csrf_input() }}
+        <input type="hidden" name="op" value="upload">
+        <input type="hidden" name="kind" value="attachment">
+        {{ form.file('upload', _('Add a document'), errors, accept='.pdf,.csv,.tsv,.txt,.md,application/pdf,text/plain,text/csv') }}
+        <div class="c4w-form__actions">
+          <button type="submit" class="c4w-btn c4w-btn--quiet">{{ _('Upload document') }}</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="c4w-form__actions">
+    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=1) }}">{{ _('Back') }}</a>
+    <span class="c4w-form__spacer"></span>
+    {% if data_files %}
+      <a class="c4w-btn" href="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=3) }}">{{ _('Continue to the columns') }}</a>
+    {% else %}
+      <span class="c4w-btn" aria-disabled="true">{{ _('Continue to the columns') }}</span>
+    {% endif %}
+  </div>
+{% endblock %}

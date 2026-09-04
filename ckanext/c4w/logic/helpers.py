@@ -383,8 +383,123 @@ def c4w_image_url(entity, field='image1_url'):
     return entity.get(field) or None
 
 
+_DASHBOARD_STAMP = None
+
+
+def c4w_dashboard_asset(name):
+    """URL of a built dashboard asset, with a cache-busting build stamp.
+
+    The stamp comes from BUILD.json written by ``npm run build``; without it
+    (a checkout that never built) the bare URL is returned and the page
+    degrades to "dashboard not available".
+    """
+    global _DASHBOARD_STAMP
+    if _DASHBOARD_STAMP is None:
+        stamp = u''
+        try:
+            import json
+            import os
+            here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            path = os.path.join(here, 'public', 'c4w', 'dashboard',
+                                'BUILD.json')
+            with open(path, 'r', encoding='utf-8') as handle:
+                info = json.load(handle)
+            stamp = u'%s' % (info.get('builtAt') or info.get('version')
+                             or u'')
+        except Exception:
+            stamp = u''
+        _DASHBOARD_STAMP = u''.join(ch for ch in stamp if ch.isalnum())[:20]
+    url = tk.h.url_for_static('/c4w/dashboard/%s' % name)
+    if _DASHBOARD_STAMP:
+        url += u'?v=' + _DASHBOARD_STAMP
+    return url
+
+
+def c4w_status_badge(status):
+    """A status badge for a processing / moderation state, as markup."""
+    status = u'%s' % (status or u'draft')
+    label = constants.label_for('processing_status', status)
+    return tk.h.literal(
+        u'<span class="c4w-badge c4w-badge--%s">%s</span>'
+        % (tk.h.escape(status), tk.h.escape(tk._(label))))
+
+
+def c4w_number(value):
+    """A thousands-separated integer, or an en dash when unknown."""
+    if value in (None, u''):
+        return u'\u2013'
+    try:
+        return u'{:,}'.format(int(value)).replace(u',', u'\u202f')
+    except (TypeError, ValueError):
+        return u'%s' % value
+
+
+def c4w_bytes(value):
+    """Human-readable file size."""
+    try:
+        size = float(value or 0)
+    except (TypeError, ValueError):
+        return u''
+    for unit in (u'B', u'KB', u'MB', u'GB'):
+        if size < 1024 or unit == u'GB':
+            return (u'%d %s' % (size, unit) if unit == u'B'
+                    else u'%.1f %s' % (size, unit))
+        size /= 1024.0
+    return u''
+
+
+def c4w_license_title(license_id):
+    """Title of a CKAN licence id, falling back to the id."""
+    if not license_id:
+        return u''
+    try:
+        for item in tk.get_action('license_list')({}, {}):
+            if item.get('id') == license_id:
+                return item.get('title') or license_id
+    except Exception:
+        pass
+    return license_id
+
+
+def c4w_license_options():
+    """``[(id, title)]`` for the licences the wizard offers."""
+    titles = {}
+    try:
+        for item in tk.get_action('license_list')({}, {}):
+            titles[item.get('id')] = item.get('title') or item.get('id')
+    except Exception:
+        pass
+    return [(lid, titles.get(lid, lid)) for lid in constants.DATASET_LICENSES]
+
+
+def c4w_language_options():
+    """``[(code, name)]`` for the metadata language select."""
+    return [(code, c4w_language_name(code))
+            for code in constants.DATASET_LANGUAGES]
+
+
+def c4w_country_options():
+    """Every ISO 3166-1 territory as ``[(code, name)]``, sorted by name."""
+    try:
+        from babel import Locale
+        locale = Locale.parse(tk.request.environ.get('CKAN_LANG') or 'en')
+        pairs = [(code, name) for code, name in locale.territories.items()
+                 if len(code) == 2 and code.isalpha() and code.isupper()]
+    except Exception:
+        return []
+    return sorted(pairs, key=lambda pair: pair[1].casefold())
+
+
 def get_helpers():
     return {
+        'c4w_dashboard_asset': c4w_dashboard_asset,
+        'c4w_status_badge': c4w_status_badge,
+        'c4w_number': c4w_number,
+        'c4w_bytes': c4w_bytes,
+        'c4w_license_title': c4w_license_title,
+        'c4w_license_options': c4w_license_options,
+        'c4w_language_options': c4w_language_options,
+        'c4w_country_options': c4w_country_options,
         'c4w_version': lambda: __version__,
         'c4w_url': c4w_url,
         'c4w_nav': c4w_nav,

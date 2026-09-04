@@ -1,0 +1,44 @@
+{#
+  Standalone dashboard document for embedding in an <iframe>.
+
+  Deliberately not built on page.html: no CKAN chrome, no session-bound
+  controls, just the portal fonts/tokens and the dashboard bundle.
+#}
+<!DOCTYPE html>
+<html lang="{{ lang }}" class="c4w-portal c4w-embed">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{{ dataset.title }} · Citizens4Water</title>
+  {% asset 'c4w/c4w-css' %}
+  <link rel="stylesheet" href="{{ h.c4w_dashboard_asset('c4w-dashboard.css') }}">
+  <style>
+    html.c4w-embed, html.c4w-embed body { background: var(--c4w-white, #fff); min-height: 100%; }
+    .c4w-embed__bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.45rem 0.9rem; border-bottom: 1px solid var(--c4w-rule, #C5D5E0); font-size: 0.85rem; }
+    .c4w-embed__bar strong { font-weight: 600; }
+    .c4w-embed__bar img { height: 22px; }
+    .c4w-embed__body { padding: 0.6rem 0.9rem 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="c4w-embed__bar">
+    <a href="{{ h.url_for('c4w.index', qualified=True) }}" target="_blank" rel="noopener">
+      <img src="{{ h.url_for_static('/c4w/img/Citizens4Water_Horizontal.svg') }}" alt="Citizens4Water">
+    </a>
+    <strong>{{ dataset.title }}</strong>
+    <a href="{{ h.url_for('c4w.dataset_detail', slug=dataset.slug, qualified=True) }}" target="_blank" rel="noopener">{{ _('Open in Citizens4Water') }}</a>
+  </div>
+  <div class="c4w-embed__body">
+    {% if dataset.bundle_ready %}
+      {% snippet 'c4w/snippets/dashboard_shell.html', dataset=dataset,
+         bundle_base=bundle_base, basemap_style=basemap_style, lang=lang,
+         full=True %}
+    {% else %}
+      <p class="c4w-empty">{{ _('This dashboard has not been built yet.') }}</p>
+    {% endif %}
+  </div>
+  <script type="module" src="{{ h.c4w_dashboard_asset('c4w-dashboard.js') }}"></script>
+</body>
+</html>

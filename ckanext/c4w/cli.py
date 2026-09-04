@@ -48,6 +48,10 @@ def report():
         (u'term links', db.C4wTermLink),
         (u'relations', db.C4wRelation),
         (u'media map', db.C4wMediaMap),
+        (u'datasets', db.C4wDataset),
+        (u'dataset files', db.C4wDatasetFile),
+        (u'bundle blobs', db.C4wDashboardBundle),
+        (u'user profiles', db.C4wUserProfile),
     ]
     for label, model_cls in rows:
         click.echo(u'  %-16s %6d' % (label, Session.query(model_cls).count()))
@@ -216,3 +220,118 @@ def link_organisations(threshold, apply_, unlink):
             Session.add(row)
     Session.commit()
     click.secho(u'\nlinked %d organisations' % len(matched), fg=u'green')
+
+
+# --------------------------------------------------------------------------- #
+# Datasets
+# --------------------------------------------------------------------------- #
+
+def _dataset(reference):
+    from ckanext.c4w import db
+    from ckanext.c4w.logic.action import _common
+    db.ensure_mappers()
+    row = _common.get_by_reference(db.C4wDataset, reference)
+    if row is None:
+        raise click.ClickException(u'no dataset matches %r' % reference)
+    return row
+
+
+@c4w.command(name='process-dataset')
+@click.argument('reference')
+@click.option('--force', is_flag=True,
+              help='Run even if the dataset is marked processing.')
+def process_dataset(reference, force):
+    """Run the pipeline for one dataset (slug or id), inline, now.
+
+    The way to process a file too large for the web request, and the
+    fallback on a deployment without a jobs worker.
+    """
+    from ckanext.c4w.data import jobs
+
+    row = _dataset(reference)
+    if row.processing_status == u'processing' and not force:
+        raise click.ClickException(
+            u'%s is already processing; use --force to override' % row.slug)
+
+    def progress(done, total=None):
+        click.echo(u'  %s rows read' % format(done, ','), err=True)
+
+    click.echo(u'processing %s (%s)' % (row.slug, row.id))
+    status = jobs.process_dataset(row.id, force=True, progress=progress)
+    row = _dataset(row.id)
+    colour = u'green' if status == u'ready' else u'red'
+    click.secho(u'%s: %s' % (row.slug, status), fg=colour)
+    if row.processing_error:
+        click.echo(u'  ' + row.processing_error)
+    if status != u'ready':
+        raise SystemExit(1)
+
+
+@c4w.command(name='process-pending')
+@click.option('--retry-failed', is_flag=True,
+              help='Also re-run datasets whose last run failed.')
+def process_pending(retry_failed):
+    """Process every queued dataset, one after another."""
+    from ckan.model.meta import Session
+    from ckanext.c4w import db
+    from ckanext.c4w.data import jobs
+
+    db.ensure_mappers()
+    statuses = [u'queued']
+    if retry_failed:
+        statuses.append(u'failed')
+    rows = (Session.query(db.C4wDataset)
+            .filter(db.C4wDataset.processing_status.in_(statuses))
+            .order_by(db.C4wDataset.submitted_at.asc().nullslast()).all())
+    if not rows:
+        click.echo(u'nothing to process')
+        return
+    failures = 0
+    for row in rows:
+        click.echo(u'processing %s' % row.slug)
+        status = jobs.process_dataset(row.id, force=True)
+        click.secho(u'  %s' % status,
+                    fg=u'green' if status == u'ready' else u'red')
+        if status != u'ready':
+            failures += 1
+    if failures:
+        raise SystemExit(1)
+
+
+@c4w.command(name='dataset-report')
+@click.argument('reference')
+@click.option('--dump-bundle', 'dump_dir', default=None,
+              help='Write the current bundle files into this directory.')
+def dataset_report(reference, dump_dir):
+    """Print a dataset's state; optionally dump its bundle to disk."""
+    import gzip
+    import os
+    from ckan.model.meta import Session
+    from ckanext.c4w import db
+
+    row = _dataset(reference)
+    click.echo(u'%s  [%s]' % (row.title, row.slug))
+    for key in ('processing_status', 'processing_error', 'bundle_generation',
+                'record_count', 'site_count', 'parameter_count', 'grain',
+                'temporal_start', 'temporal_end', 'approved', 'hidden',
+                'submitted_at', 'processed_at'):
+        click.echo(u'  %-18s %s' % (key, getattr(row, key)))
+    files = (Session.query(db.C4wDatasetFile)
+             .filter(db.C4wDatasetFile.dataset_id == row.id).all())
+    for f in files:
+        click.echo(u'  file %-10s %10s bytes  %s' % (
+            f.kind, f.size_bytes, f.url))
+    blobs = (Session.query(db.C4wDashboardBundle)
+             .filter(db.C4wDashboardBundle.dataset_id == row.id,
+                     db.C4wDashboardBundle.generation
+                     == row.bundle_generation).all())
+    for blob in blobs:
+        click.echo(u'  bundle %-14s %8s raw  %8s gz' % (
+            blob.name, blob.raw_size, blob.gz_size))
+        if dump_dir:
+            target = os.path.join(dump_dir, blob.name)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with open(target, 'wb') as handle:
+                handle.write(gzip.decompress(blob.body))
+    if dump_dir and blobs:
+        click.secho(u'bundle written to %s' % dump_dir, fg=u'green')

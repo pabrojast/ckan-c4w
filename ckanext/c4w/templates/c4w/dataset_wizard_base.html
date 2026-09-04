@@ -1,0 +1,42 @@
+{% extends "c4w/base.html" %}
+
+{#
+  Shared shell of the five wizard steps.
+
+  A child fills `wizard_body` (the fields) and optionally `wizard_actions`.
+  Handed: step (the DATASET_FORM_STEPS entry), step_number, dataset (None on
+  the very first page), data (values to echo), errors (dict), reachable.
+#}
+
+{% import 'c4w/macros/form.html' as form %}
+
+{% block subtitle %}{{ _(step.title) }} · {{ _('Share data') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-wizard" id="c4w-main">
+    <header class="c4w-wizard__head">
+      <h1>{% if dataset %}{{ dataset.title }}{% else %}{{ _('Share your data') }}{% endif %}</h1>
+      <p class="c4w-wizard__dataset">
+        {% if dataset %}
+          {{ h.c4w_status_badge(dataset.processing_status) }}
+          {% if dataset.approved %}<span class="c4w-badge c4w-badge--approved">{{ _('Published') }}</span>{% endif %}
+          · <a href="{{ h.c4w_url('dataset_detail', slug=dataset.slug) }}">{{ _('View') }}</a>
+          · <a href="{{ h.c4w_url('account') }}">{{ _('My submissions') }}</a>
+        {% else %}
+          {{ _('Step 1 of 5. Your draft is saved as soon as you continue.') }}
+        {% endif %}
+      </p>
+    </header>
+
+    {% snippet 'c4w/snippets/wizard_steps.html', steps=h.c4w_dataset_form_steps(),
+       current=step_number, reachable=reachable,
+       dataset_id=(dataset.id if dataset else none) %}
+
+    <h2 class="c4w-wizard__title-row">{{ _(step.title) }}</h2>
+    <p class="c4w-form__lede">{{ _(step.hint) }}</p>
+
+    {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
+
+    {% block wizard_body %}{% endblock %}
+  </div>
+{% endblock %}

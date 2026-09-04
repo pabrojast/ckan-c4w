@@ -1,0 +1,44 @@
+{% extends "c4w/dataset_wizard_base.html" %}
+
+{% block wizard_body %}
+  <form class="c4w-form" method="post"
+        action="{% if dataset %}{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=1) }}{% else %}{{ h.c4w_url('submit_data_start') }}{% endif %}"
+        novalidate>
+    {{ h.csrf_input() }}
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Identity') }}</h2>
+      {{ form.input('title', _('Title'), data.title, errors, required=true, maxlength=200,
+           hint=_('Say what was measured and where, e.g. "Nitrate in the Maipo river, 2021–2024".')) }}
+      {{ form.textarea('description', _('Description'), data.description, errors, required=true, rows=6,
+           hint=_('What the data is, who collected it and why. Plain text or simple HTML.')) }}
+      {{ form.input('keywords', _('Keywords'), data.keywords, errors,
+           hint=_('Comma-separated. Free words people would search for.'), placeholder='nitrate, river, school monitoring') }}
+      {{ form.select('language', _('Language of the metadata'), h.c4w_language_options(), data.language or 'en', errors, required=true) }}
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Classification') }}</h2>
+      {{ form.checkboxes('topic', _('Topics'), h.c4w_option_list('topic'), data.topic, errors, required=true, columns=3) }}
+      {{ form.checkboxes('water_type', _('Water type'), h.c4w_option_list('water_type'), data.water_type, errors, required=true, columns=3) }}
+      {{ form.checkboxes('water_data_type', _('Kind of measurement'), h.c4w_option_list('water_data_type'), data.water_data_type, errors, required=true, columns=3) }}
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Belongs to') }}</h2>
+      <p class="c4w-form__lede">{{ _('Optional. Link the data to a project or organisation already in Citizens4Water.') }}</p>
+      {% call form.row() %}
+        {{ form.select('project_id', _('Project'), project_options, data.project_id, errors, empty_label=_('None')) }}
+        {{ form.select('organisation_id', _('Organisation'), organisation_options, data.organisation_id, errors, empty_label=_('None')) }}
+      {% endcall %}
+    </div>
+
+    <div class="c4w-form__actions">
+      {% if dataset %}
+        <button type="submit" name="action" value="save" class="c4w-btn c4w-btn--quiet">{{ _('Save') }}</button>
+      {% endif %}
+      <span class="c4w-form__spacer"></span>
+      <button type="submit" name="action" value="next" class="c4w-btn">{{ _('Save and continue') }}</button>
+    </div>
+  </form>
+{% endblock %}

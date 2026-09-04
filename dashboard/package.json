@@ -1,0 +1,23 @@
+{
+  "name": "c4w-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Citizens4Water dataset dashboard: map + charts over a precomputed bundle served by ckanext-c4w.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "dev-data": "node scripts/make-dev-data.mjs"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vite": "8.2.2"
+  },
+  "dependencies": {
+    "chart.js": "4.5.1",
+    "chartjs-adapter-date-fns": "3.0.0",
+    "date-fns": "4.4.0",
+    "maplibre-gl": "6.4.1"
+  }
+}

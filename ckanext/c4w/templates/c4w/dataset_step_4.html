@@ -1,0 +1,66 @@
+{% extends "c4w/dataset_wizard_base.html" %}
+
+{% block wizard_body %}
+  <form class="c4w-form" method="post"
+        action="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=4) }}" novalidate>
+    {{ h.csrf_input() }}
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Licence') }}</h2>
+      {{ form.select('license_id', _('Licence'), h.c4w_license_options(), data.license_id, errors, required=true,
+           hint=_('CC BY 4.0 lets anyone reuse the data with attribution; CC0 waives attribution.')) }}
+      {{ form.select('frequency', _('Update frequency'), h.c4w_option_list('frequency'), data.frequency or '', errors, empty_label=_('Not given')) }}
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Coverage') }}</h2>
+      {% call form.row() %}
+        {{ form.date('temporal_start', _('First measurement'), data.temporal_start, errors, hint=_('Filled from the data if left empty.')) }}
+        {{ form.date('temporal_end', _('Last measurement'), data.temporal_end, errors) }}
+      {% endcall %}
+      <div class="c4w-field{% if errors.get('country') %} is-invalid{% endif %}" id="c4w-field-country">
+        <label class="c4w-field__label" for="c4w-f-country">{{ _('Countries') }} <span class="c4w-field__required" aria-hidden="true">*</span></label>
+        <p class="c4w-field__hint" id="c4w-f-country-hint">{{ _('Hold Ctrl (or Cmd) to pick several.') }}</p>
+        <select class="c4w-input c4w-select" id="c4w-f-country" name="country" multiple size="8" required
+                aria-describedby="c4w-f-country-hint{% if errors.get('country') %} c4w-f-country-error{% endif %}">
+          {% set selected = data.country or [] %}
+          {% for code, name in h.c4w_country_options() %}
+            <option value="{{ code }}" {% if code in selected %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+        {% if errors.get('country') %}<p class="c4w-field__error" id="c4w-f-country-error" role="alert">{{ errors.get('country') | join(' ') }}</p>{% endif %}
+      </div>
+      {{ form.select('geographic_extent', _('Geographic extent'), h.c4w_option_list('geographic_extent'), data.geographic_extent or '', errors, empty_label=_('Not given')) }}
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Method') }}</h2>
+      {{ form.textarea('provenance', _('How was the data collected?'), data.provenance, errors, required=true, rows=5,
+           hint=_('Who took the samples, with what instruments or kits, how often, and what checks were made. This is what lets a reader trust the numbers.')) }}
+      {{ form.textarea('methodology', _('Analytical method'), data.methodology, errors, rows=4,
+           hint=_('Optional: lab method, standard followed, detection limits.')) }}
+      {{ form.checkboxes('technology_used', _('Technology used'), h.c4w_option_list('technology_used'), data.technology_used, errors, columns=3) }}
+      {{ form.textarea('data_quality_note', _('Known limitations'), data.data_quality_note, errors, rows=3,
+           hint=_('Gaps, calibration issues, values to treat with care.')) }}
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Sources and references') }}</h2>
+      {{ form.input('source_url', _('Original source'), data.source_url, errors, type='url',
+           hint=_('If the data is also published elsewhere.'), placeholder='https://') }}
+      {% call form.row() %}
+        {{ form.input('doi', _('DOI'), data.doi, errors, placeholder='10.1234/abcd') }}
+        {{ form.input('citation', _('Preferred citation'), data.citation, errors, maxlength=500) }}
+      {% endcall %}
+      {{ form.textarea('related_urls', _('Related links'), data.related_urls, errors, rows=3,
+           hint=_('One address per line, five at most.')) }}
+    </div>
+
+    <div class="c4w-form__actions">
+      <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=3) }}">{{ _('Back') }}</a>
+      <button type="submit" name="action" value="save" class="c4w-btn c4w-btn--quiet">{{ _('Save') }}</button>
+      <span class="c4w-form__spacer"></span>
+      <button type="submit" name="action" value="next" class="c4w-btn">{{ _('Save and continue') }}</button>
+    </div>
+  </form>
+{% endblock %}

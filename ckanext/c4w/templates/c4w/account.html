@@ -19,6 +19,7 @@
                 <th>{{ _('Title') }}</th>
                 <th>{{ _('Status') }}</th>
                 <th>{{ _('Updated') }}</th>
+                {% if group.entity_type == 'dataset' %}<th></th>{% endif %}
               </tr>
             </thead>
             <tbody>
@@ -34,13 +35,29 @@
                   </td>
                   <td>
                     {% if item.approved is not none %}
-                      {% if item.approved %}{{ _('Approved') }}{% else %}{{ _('Pending') }}{% endif %}
+                      {% if item.approved %}<span class="c4w-badge c4w-badge--approved">{{ _('Approved') }}</span>
+                      {% elif item.submitted_at is defined and item.entity_type == 'dataset' and not item.submitted_at %}<span class="c4w-badge c4w-badge--draft">{{ _('Draft') }}</span>
+                      {% else %}<span class="c4w-badge c4w-badge--pending">{{ _('Pending') }}</span>{% endif %}
                     {% elif item.status %}
                       {{ item.status }}
                     {% endif %}
-                    {% if item.hidden %} · {{ _('Hidden') }}{% endif %}
+                    {% if item.hidden %}<span class="c4w-badge c4w-badge--hidden">{{ _('Hidden') }}</span>{% endif %}
+                    {% if item.entity_type == 'dataset' %}
+                      {{ h.c4w_status_badge(item.processing_status) }}
+                    {% endif %}
                   </td>
                   <td>{% if item.modified %}{{ item.modified[:10] }}{% endif %}</td>
+                  {% if group.entity_type == 'dataset' %}
+                    <td class="c4w-table__actions">
+                      {% set target = [item.wizard_step or 1, 5] | min %}
+                      <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_step', dataset_id=item.id, step=target) }}">
+                        {% if item.submitted_at %}{{ _('Edit') }}{% else %}{{ _('Continue') }}{% endif %}
+                      </a>
+                      {% if item.processing_status == 'ready' %}
+                        <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('dataset_dashboard', slug=item.slug) }}">{{ _('Dashboard') }}</a>
+                      {% endif %}
+                    </td>
+                  {% endif %}
                 </tr>
               {% endfor %}
             </tbody>

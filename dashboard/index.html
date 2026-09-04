@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en" class="c4w-portal">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>C4W dashboard · dev harness</title>
+    <style>
+      /* Réplica mínima de los tokens del portal (c4w.css) para desarrollar el
+         dashboard fuera de CKAN. Las fuentes vienen del symlink public/fonts. */
+      @font-face { font-family: "IBM Plex Sans"; font-weight: 400; src: url("/c4w/dashboard/fonts/plex-sans-400.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Sans"; font-weight: 600; src: url("/c4w/dashboard/fonts/plex-sans-600.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Serif"; font-weight: 600; src: url("/c4w/dashboard/fonts/plex-serif-600.woff2") format("woff2"); }
+      html.c4w-portal {
+        --c4w-blue: #0077D4; --c4w-deep: #005FAA; --c4w-ice: #E2EEF3; --c4w-cyan: #00D4C7;
+        --c4w-ink: #0A1628; --c4w-muted: #5B6B7A; --c4w-rule: #C5D5E0; --c4w-white: #FFFFFF;
+        --c4w-radius: 2px; --c4w-page: 72rem;
+        --c4w-sans: "IBM Plex Sans", "Noto Sans", "Segoe UI", sans-serif;
+        --c4w-serif: "IBM Plex Serif", Georgia, serif;
+      }
+      html, body { margin: 0; background: var(--c4w-ice); color: var(--c4w-ink); font-family: var(--c4w-sans); }
+      .page { width: min(var(--c4w-page), calc(100% - 2rem)); margin: 1.5rem auto; }
+      .page h1 { font-family: var(--c4w-serif); font-weight: 600; font-size: 1.6rem; margin: 0 0 0.25rem; }
+      .page p { margin: 0 0 1rem; color: var(--c4w-muted); }
+      .page.full { width: auto; margin: 0; }
+    </style>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <h1>Dev sample · river monitoring</h1>
+      <p>Harness for dashboard/src. Run <code>npm run dev-data</code> first. Add <code>?full=1</code> to preview the embed layout.</p>
+
+      <!-- Copia manual de ckanext/c4w/templates/c4w/snippets/dashboard_shell.html
+           sin Jinja. Si cambias el snippet, cambia esto también. -->
+      <div class="c4w-dash" id="dev-dash" data-c4w-dashboard
+           data-bundle-base="/c4w/dashboard/dev-data/"
+           data-lang="en"
+           data-basemap=""
+           data-title="Dev sample · river monitoring"
+           data-source-url="https://example.org/dev-sample">
+        <div class="c4w-dash__boot" data-role="boot" role="status" aria-live="polite">
+          <p class="c4w-dash__boot-title" data-role="boot-title">Loading the dataset…</p>
+          <p class="c4w-dash__boot-detail" data-role="boot-detail">Reading sites and parameters.</p>
+        </div>
+        <noscript><p class="c4w-dash__noscript">This dashboard needs JavaScript.</p></noscript>
+
+        <header class="c4w-dash__mast">
+          <div class="c4w-dash__brand">
+            <h2 class="c4w-dash__title">Dev sample · river monitoring</h2>
+            <p class="c4w-dash__count" data-role="count"></p>
+          </div>
+          <a class="c4w-dash__credit" data-role="source" href="#" target="_blank" rel="noopener noreferrer">
+            <span data-i18n="mast.source">Source</span>: <span data-role="credit"></span>
+          </a>
+        </header>
+
+        <form class="c4w-dash__filters" aria-label="Filters" data-i18n-aria="filter.aria" autocomplete="off" onsubmit="return false">
+          <label class="c4w-dash__field c4w-dash__field--wide">
+            <span data-i18n="filter.parameter">Parameter</span>
+            <select data-role="parameter"></select>
+          </label>
+          <label class="c4w-dash__field" data-role="country-field" hidden>
+            <span data-i18n="filter.country">Country</span>
+            <select data-role="country"></select>
+          </label>
+          <div class="c4w-dash__dims" data-role="dimensions"></div>
+          <div class="c4w-dash__period" role="group" aria-label="Period" data-i18n-aria="filter.period">
+            <label class="c4w-dash__field c4w-dash__field--period">
+              <span data-i18n="filter.from">From</span>
+              <input data-role="period-from" type="text">
+            </label>
+            <span class="c4w-dash__period-rule" aria-hidden="true"></span>
+            <label class="c4w-dash__field c4w-dash__field--period">
+              <span data-i18n="filter.to">To</span>
+              <input data-role="period-to" type="text">
+            </label>
+          </div>
+          <div class="c4w-dash__chip" data-role="site-chip" hidden>
+            <span class="c4w-dash__chip-kicker" data-i18n="filter.site">Site</span>
+            <span data-role="site-chip-label"></span>
+            <button type="button" data-role="site-clear" aria-label="Clear site" data-i18n-aria="filter.clearSite">&times;</button>
+          </div>
+        </form>
+
+        <div class="c4w-dash__workspace">
+          <section class="c4w-dash__map-pane" aria-label="Site map" data-i18n-aria="map.aria">
+            <div class="c4w-dash__map" data-role="map"></div>
+            <aside class="c4w-dash__legend" data-role="legend" aria-label="Colour scale" data-i18n-aria="scale.aria">
+              <p data-role="legend-high"></p>
+              <div class="c4w-dash__legend-glass"><div class="c4w-dash__legend-fill" data-role="legend-fill"></div></div>
+              <p data-role="legend-low"></p>
+              <div class="c4w-dash__legend-caption">
+                <strong data-role="legend-name"></strong>
+                <span data-role="legend-unit"></span>
+              </div>
+            </aside>
+            <div class="c4w-dash__chip c4w-dash__chip--view" data-role="view-chip" hidden><span data-role="view-chip-text"></span></div>
+            <div class="c4w-dash__chip c4w-dash__chip--loading" data-role="loading" hidden data-i18n="filter.loading">Loading parameter…</div>
+            <p class="c4w-dash__warning" data-role="scale-warning" hidden></p>
+            <div class="c4w-dash__empty" data-role="empty" role="status" hidden></div>
+          </section>
+
+          <aside class="c4w-dash__notebook">
+            <section class="c4w-dash__panel" data-role="panel-trend">
+              <h3 class="c4w-dash__panel-head"><span data-i18n="chart.trend">Trend</span><span class="c4w-dash__panel-sub" data-role="trend-subtitle"></span></h3>
+              <div class="c4w-dash__chart">
+                <canvas data-role="chart-trend"></canvas>
+                <p class="c4w-dash__empty-copy" data-i18n="chart.empty">No values match this filter.</p>
+              </div>
+            </section>
+            <section class="c4w-dash__panel" data-role="panel-distribution">
+              <h3 class="c4w-dash__panel-head"><span data-i18n="chart.distribution">Distribution</span></h3>
+              <div class="c4w-dash__chart">
+                <canvas data-role="chart-distribution"></canvas>
+                <p class="c4w-dash__empty-copy" data-i18n="chart.empty">No values match this filter.</p>
+              </div>
+            </section>
+            <section class="c4w-dash__panel" data-role="panel-comparison">
+              <h3 class="c4w-dash__panel-head"><span data-role="comparison-title" data-i18n="chart.countries">Countries</span></h3>
+              <div class="c4w-dash__chart">
+                <canvas data-role="chart-comparison"></canvas>
+                <p class="c4w-dash__empty-copy" data-i18n="chart.emptyGroups">Not enough groups with sites to compare.</p>
+              </div>
+            </section>
+          </aside>
+        </div>
+
+        <footer class="c4w-dash__status">
+          <dl class="c4w-dash__kpis">
+            <div><dt data-i18n="stat.sites">sites</dt><dd data-role="stat-sites">0</dd></div>
+            <div><dt data-i18n="stat.records">site-periods</dt><dd data-role="stat-records">0</dd></div>
+            <div><dt data-i18n="stat.samples">measurements</dt><dd data-role="stat-samples">0</dd></div>
+            <div><dt data-i18n="stat.median">median</dt><dd data-role="stat-median">—</dd></div>
+            <div><dt data-i18n="stat.max">maximum</dt><dd data-role="stat-max">—</dd></div>
+          </dl>
+          <div class="c4w-dash__status-end">
+            <button type="button" class="c4w-dash__csv" data-role="csv" data-i18n="stat.csv">Download CSV</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+    <script>
+      // ?full=1 → layout de la página embed; ?lang=es|fr → tabla de idioma.
+      const q = new URLSearchParams(location.search);
+      const dash = document.getElementById("dev-dash");
+      if (q.get("full")) { dash.classList.add("c4w-dash--full"); document.getElementById("page").classList.add("full"); }
+      if (q.get("lang")) dash.dataset.lang = q.get("lang");
+    </script>
+  </body>
+</html>

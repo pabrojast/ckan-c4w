@@ -1,0 +1,201 @@
+id,site,country,county,date,body,lon,lat,nitrate,phosphate,turbidity,land_use
+80,Lago de Sanabria,Spain,Zamora,2021-04-17,Lake,-6.71500,42.12500,0.07,0.133,40,Forest
+128,Arroyo del Valle,Spain,Zamora,2018-01-08,Stream,-6.10000,41.90000,,0.085,20,Agriculture
+162,"Rio Mapocho, Santiago",Chile,Santiago,2023-10-13,River,-70.65000,-33.43000,0.18,0.074,30,Urban
+178,Laguna Aculeo,Chile,Santiago,2022-04-16,Lake,-70.90000,-33.85000,0.43,,20,Agriculture
+117,"Rio Duero, Zamora",Spain,Zamora,2021-07-04,River,-5.74500,41.50300,0.76,0.271,,Urban
+20,"Kybes Lane, Foudry Brook",England,Berkshire,2022-08-17,Stream,-0.99193,51.41265,1.77,,30,Agriculture
+30,"River Kennet, Reading",England,Berkshire,2019-04-03,River,-0.97000,51.45500,0.47,,7,Urban
+28,"River Kennet, Reading",England,Berkshire,2024-01-10,River,-0.97000,51.45500,0.45,0.051,150,Urban
+166,"Rio Mapocho, Santiago",Chile,Santiago,2021-08-13,River,-70.65000,-33.43000,0.60,0.187,30,Urban
+73,Thames at Sonning,England,Berkshire,2023-08-05,River,-0.91200,51.47200,1.03,0.051,14,Agriculture
+127,Arroyo del Valle,Spain,Zamora,2020-03-09,Stream,-6.10000,41.90000,1.19,0.102,7,Agriculture
+43,"River Kennet, Reading",England,Berkshire,2020-09-19,River,-0.97000,51.45500,0.35,0.143,30,Urban
+110,"Rio Duero, Zamora",Spain,Zamora,2018-01-23,River,-5.74500,41.50300,1.32,0.229,30,Urban
+146,Arroyo del Valle,Spain,Zamora,2018-06-04,Stream,-6.10000,41.90000,,0.171,100,Agriculture
+152,"Rio Mapocho, Santiago",Chile,Santiago,2018-08-17,River,-70.65000,-33.43000,0.29,0.091,30,Urban
+194,Laguna Aculeo,Chile,Santiago,2023-04-22,Lake,-70.90000,-33.85000,1.76,0.010,7,Agriculture
+161,"Rio Mapocho, Santiago",Chile,Santiago,2019-11-19,River,-70.65000,-33.43000,0.45,0.113,7,Urban
+51,Thames at Sonning,England,Berkshire,2018-06-13,River,-0.91200,51.47200,1.23,0.244,14,Agriculture
+197,Laguna Aculeo,Chile,Santiago,2022-02-01,Lake,-70.90000,-33.85000,1.36,0.163,40,Agriculture
+187,Laguna Aculeo,Chile,Santiago,2023-08-25,Lake,-70.90000,-33.85000,1.78,0.020,30,Agriculture
+115,"Rio Duero, Zamora",Spain,Zamora,2019-09-20,River,-5.74500,41.50300,0.98,0.142,40,Urban
+78,Lago de Sanabria,Spain,Zamora,2021-06-13,Lake,-6.71500,42.12500,0.27,0.010,150,Forest
+185,Laguna Aculeo,Chile,Santiago,2023-04-02,Lake,-70.90000,-33.85000,0.74,0.133,40,Agriculture
+99,Lago de Sanabria,Spain,Zamora,2024-09-22,Lake,-6.71500,42.12500,1.30,0.120,,Forest
+64,Thames at Sonning,England,Berkshire,2022-02-20,River,-0.91200,51.47200,0.98,0.190,14,Agriculture
+16,"Kybes Lane, Foudry Brook",England,Berkshire,2020-11-12,Stream,-0.99193,51.41265,1.08,,,Agriculture
+123,"Rio Duero, Zamora",Spain,Zamora,2022-10-02,River,-5.74500,41.50300,0.68,0.118,7,Urban
+66,Thames at Sonning,England,Berkshire,2019-02-06,River,-0.91200,51.47200,0.69,,30,Agriculture
+34,"River Kennet, Reading",England,Berkshire,2023-11-14,River,-0.97000,51.45500,1.04,0.141,75,Urban
+61,Thames at Sonning,England,Berkshire,2022-05-26,River,-0.91200,51.47200,1.55,0.148,20,Agriculture
+54,Thames at Sonning,England,Berkshire,2022-01-08,River,-0.91200,51.47200,0.80,0.189,,Agriculture
+151,"Rio Mapocho, Santiago",Chile,Santiago,2019-01-11,River,-70.65000,-33.43000,1.14,,40,Urban
+84,Lago de Sanabria,Spain,Zamora,2021-10-14,Lake,-6.71500,42.12500,0.50,0.068,14,Forest
+134,Arroyo del Valle,Spain,Zamora,2020-01-25,Stream,-6.10000,41.90000,1.15,0.115,30,Agriculture
+102,"Rio Duero, Zamora",Spain,Zamora,2021-09-24,River,-5.74500,41.50300,0.74,0.010,7,Urban
+7,"Kybes Lane, Foudry Brook",England,Berkshire,2018-11-17,Stream,-0.99193,51.41265,1.22,0.157,20,Agriculture
+95,Lago de Sanabria,Spain,Zamora,2021-02-24,Lake,-6.71500,42.12500,0.05,0.030,75,Forest
+4,"Kybes Lane, Foudry Brook",England,Berkshire,2020-02-19,Stream,-0.99193,51.41265,0.18,0.274,20,Agriculture
+35,"River Kennet, Reading",England,Berkshire,2023-07-14,River,-0.97000,51.45500,0.05,0.214,40,Urban
+142,Arroyo del Valle,Spain,Zamora,2023-04-12,Stream,-6.10000,41.90000,1.60,0.140,100,Agriculture
+165,"Rio Mapocho, Santiago",Chile,Santiago,2023-02-12,River,-70.65000,-33.43000,0.24,0.199,20,Urban
+90,Lago de Sanabria,Spain,Zamora,2019-03-11,Lake,-6.71500,42.12500,0.05,0.011,30,Forest
+93,Lago de Sanabria,Spain,Zamora,2024-08-19,Lake,-6.71500,42.12500,0.99,0.083,,Forest
+24,"Kybes Lane, Foudry Brook",England,Berkshire,2023-04-19,Stream,-0.99193,51.41265,,0.089,,Agriculture
+195,Laguna Aculeo,Chile,Santiago,2021-03-21,Lake,-70.90000,-33.85000,1.12,0.138,40,Agriculture
+60,Thames at Sonning,England,Berkshire,2019-06-18,River,-0.91200,51.47200,0.51,0.170,,Agriculture
+173,"Rio Mapocho, Santiago",Chile,Santiago,2019-02-01,River,-70.65000,-33.43000,0.05,0.010,,Urban
+72,Thames at Sonning,England,Berkshire,2023-08-23,River,-0.91200,51.47200,1.97,0.135,100,Agriculture
+70,Thames at Sonning,England,Berkshire,2023-12-21,River,-0.91200,51.47200,2.39,0.124,100,Agriculture
+53,Thames at Sonning,England,Berkshire,2018-08-28,River,-0.91200,51.47200,1.60,0.010,,Agriculture
+89,Lago de Sanabria,Spain,Zamora,2019-08-21,Lake,-6.71500,42.12500,1.61,0.030,40,Forest
+75,Thames at Sonning,England,Berkshire,2024-06-23,River,-0.91200,51.47200,0.73,0.098,75,Agriculture
+132,Arroyo del Valle,Spain,Zamora,2019-05-19,Stream,-6.10000,41.90000,0.77,0.124,30,Agriculture
+103,"Rio Duero, Zamora",Spain,Zamora,2024-12-03,River,-5.74500,41.50300,1.50,0.081,,Urban
+15,"Kybes Lane, Foudry Brook",England,Berkshire,2018-05-13,Stream,-0.99193,51.41265,2.00,0.185,7,Agriculture
+160,"Rio Mapocho, Santiago",Chile,Santiago,2024-11-16,River,-70.65000,-33.43000,1.83,0.241,75,Urban
+97,Lago de Sanabria,Spain,Zamora,2024-12-20,Lake,-6.71500,42.12500,0.28,0.155,7,Forest
+200,Laguna Aculeo,Chile,Santiago,2023-03-24,Lake,-70.90000,-33.85000,,0.010,100,Agriculture
+71,Thames at Sonning,England,Berkshire,2020-02-19,River,-0.91200,51.47200,1.69,0.178,,Agriculture
+11,"Kybes Lane, Foudry Brook",England,Berkshire,2018-01-10,Stream,-0.99193,51.41265,1.19,0.185,150,Agriculture
+13,"Kybes Lane, Foudry Brook",England,Berkshire,2018-12-11,Stream,-0.99193,51.41265,1.91,0.122,100,Agriculture
+193,Laguna Aculeo,Chile,Santiago,2023-12-03,Lake,-70.90000,-33.85000,1.05,0.174,30,Agriculture
+167,"Rio Mapocho, Santiago",Chile,Santiago,2019-08-03,River,-70.65000,-33.43000,0.05,,,Urban
+114,"Rio Duero, Zamora",Spain,Zamora,2024-02-19,River,-5.74500,41.50300,0.72,0.010,14,Urban
+112,"Rio Duero, Zamora",Spain,Zamora,2023-11-05,River,-5.74500,41.50300,,0.083,30,Urban
+18,"Kybes Lane, Foudry Brook",England,Berkshire,2020-10-08,Stream,-0.99193,51.41265,1.39,0.154,100,Agriculture
+107,"Rio Duero, Zamora",Spain,Zamora,2023-05-06,River,-5.74500,41.50300,0.57,0.183,,Urban
+180,Laguna Aculeo,Chile,Santiago,2018-11-14,Lake,-70.90000,-33.85000,1.52,0.184,14,Agriculture
+190,Laguna Aculeo,Chile,Santiago,2024-01-08,Lake,-70.90000,-33.85000,,,30,Agriculture
+159,"Rio Mapocho, Santiago",Chile,Santiago,2023-11-13,River,-70.65000,-33.43000,0.05,0.024,100,Urban
+59,Thames at Sonning,England,Berkshire,2022-10-20,River,-0.91200,51.47200,1.22,0.101,150,Agriculture
+38,"River Kennet, Reading",England,Berkshire,2023-04-02,River,-0.97000,51.45500,0.29,0.024,30,Urban
+140,Arroyo del Valle,Spain,Zamora,2021-02-18,Stream,-6.10000,41.90000,1.27,0.033,14,Agriculture
+6,"Kybes Lane, Foudry Brook",England,Berkshire,2019-09-09,Stream,-0.99193,51.41265,1.11,0.079,30,Agriculture
+9,"Kybes Lane, Foudry Brook",England,Berkshire,2020-05-21,Stream,-0.99193,51.41265,,0.086,7,Agriculture
+135,Arroyo del Valle,Spain,Zamora,2021-08-02,Stream,-6.10000,41.90000,0.97,0.116,100,Agriculture
+83,Lago de Sanabria,Spain,Zamora,2019-11-22,Lake,-6.71500,42.12500,0.51,,30,Forest
+157,"Rio Mapocho, Santiago",Chile,Santiago,2022-04-26,River,-70.65000,-33.43000,1.20,0.255,7,Urban
+65,Thames at Sonning,England,Berkshire,2023-09-08,River,-0.91200,51.47200,1.44,0.189,150,Agriculture
+113,"Rio Duero, Zamora",Spain,Zamora,2023-12-05,River,-5.74500,41.50300,0.41,0.068,20,Urban
+141,Arroyo del Valle,Spain,Zamora,2019-11-10,Stream,-6.10000,41.90000,1.15,0.098,14,Agriculture
+109,"Rio Duero, Zamora",Spain,Zamora,2021-11-03,River,-5.74500,41.50300,1.17,0.121,150,Urban
+40,"River Kennet, Reading",England,Berkshire,2023-08-08,River,-0.97000,51.45500,0.46,0.043,40,Urban
+45,"River Kennet, Reading",England,Berkshire,2021-03-24,River,-0.97000,51.45500,0.99,0.232,7,Urban
+29,"River Kennet, Reading",England,Berkshire,2020-03-09,River,-0.97000,51.45500,0.82,0.122,7,Urban
+32,"River Kennet, Reading",England,Berkshire,2022-05-08,River,-0.97000,51.45500,0.55,0.050,75,Urban
+133,Arroyo del Valle,Spain,Zamora,2023-09-25,Stream,-6.10000,41.90000,1.68,0.136,7,Agriculture
+111,"Rio Duero, Zamora",Spain,Zamora,2021-02-24,River,-5.74500,41.50300,0.98,0.166,20,Urban
+87,Lago de Sanabria,Spain,Zamora,2024-11-23,Lake,-6.71500,42.12500,1.18,0.068,30,Forest
+3,"Kybes Lane, Foudry Brook",England,Berkshire,2019-05-25,Stream,-0.99193,51.41265,1.41,0.241,40,Agriculture
+175,"Rio Mapocho, Santiago",Chile,Santiago,2020-03-15,River,-70.65000,-33.43000,,0.107,20,Urban
+68,Thames at Sonning,England,Berkshire,2024-10-13,River,-0.91200,51.47200,1.47,0.045,20,Agriculture
+42,"River Kennet, Reading",England,Berkshire,2024-06-07,River,-0.97000,51.45500,0.05,0.173,,Urban
+2,"Kybes Lane, Foudry Brook",England,Berkshire,2023-12-22,Stream,-0.99193,51.41265,0.96,0.017,40,Agriculture
+48,"River Kennet, Reading",England,Berkshire,2023-08-01,River,-0.97000,51.45500,,0.199,,Urban
+94,Lago de Sanabria,Spain,Zamora,2024-09-27,Lake,-6.71500,42.12500,0.52,0.126,30,Forest
+26,"River Kennet, Reading",England,Berkshire,2020-07-15,River,-0.97000,51.45500,1.14,0.034,20,Urban
+69,Thames at Sonning,England,Berkshire,2020-06-20,River,-0.91200,51.47200,1.99,0.039,40,Agriculture
+5,"Kybes Lane, Foudry Brook",England,Berkshire,2020-01-10,Stream,-0.99193,51.41265,2.20,0.207,30,Agriculture
+124,"Rio Duero, Zamora",Spain,Zamora,2019-08-12,River,-5.74500,41.50300,0.35,0.111,,Urban
+148,Arroyo del Valle,Spain,Zamora,2018-10-20,Stream,-6.10000,41.90000,1.51,0.010,14,Agriculture
+62,Thames at Sonning,England,Berkshire,2023-07-11,River,-0.91200,51.47200,2.20,0.224,14,Agriculture
+171,"Rio Mapocho, Santiago",Chile,Santiago,2023-05-10,River,-70.65000,-33.43000,0.94,,150,Urban
+138,Arroyo del Valle,Spain,Zamora,2020-05-28,Stream,-6.10000,41.90000,1.44,0.010,40,Agriculture
+55,Thames at Sonning,England,Berkshire,2018-11-09,River,-0.91200,51.47200,0.83,0.300,30,Agriculture
+126,Arroyo del Valle,Spain,Zamora,2020-12-19,Stream,-6.10000,41.90000,1.37,0.093,20,Agriculture
+56,Thames at Sonning,England,Berkshire,2022-03-25,River,-0.91200,51.47200,1.44,0.181,100,Agriculture
+163,"Rio Mapocho, Santiago",Chile,Santiago,2023-10-04,River,-70.65000,-33.43000,0.47,0.118,20,Urban
+17,"Kybes Lane, Foudry Brook",England,Berkshire,2020-03-13,Stream,-0.99193,51.41265,2.13,0.042,40,Agriculture
+12,"Kybes Lane, Foudry Brook",England,Berkshire,2019-09-15,Stream,-0.99193,51.41265,1.16,0.057,20,Agriculture
+156,"Rio Mapocho, Santiago",Chile,Santiago,2019-08-02,River,-70.65000,-33.43000,,0.139,,Urban
+116,"Rio Duero, Zamora",Spain,Zamora,2019-09-20,River,-5.74500,41.50300,0.05,0.112,30,Urban
+101,"Rio Duero, Zamora",Spain,Zamora,2021-03-19,River,-5.74500,41.50300,0.95,0.098,14,Urban
+63,Thames at Sonning,England,Berkshire,2019-02-06,River,-0.91200,51.47200,0.64,0.086,,Agriculture
+131,Arroyo del Valle,Spain,Zamora,2021-02-15,Stream,-6.10000,41.90000,1.26,,75,Agriculture
+120,"Rio Duero, Zamora",Spain,Zamora,2024-07-17,River,-5.74500,41.50300,0.40,0.010,20,Urban
+74,Thames at Sonning,England,Berkshire,2021-10-16,River,-0.91200,51.47200,0.53,0.263,7,Agriculture
+22,"Kybes Lane, Foudry Brook",England,Berkshire,2018-09-15,Stream,-0.99193,51.41265,1.47,0.032,,Agriculture
+199,Laguna Aculeo,Chile,Santiago,2019-03-17,Lake,-70.90000,-33.85000,1.64,0.169,75,Agriculture
+145,Arroyo del Valle,Spain,Zamora,2022-10-09,Stream,-6.10000,41.90000,2.73,0.244,20,Agriculture
+27,"River Kennet, Reading",England,Berkshire,2023-06-04,River,-0.97000,51.45500,1.13,0.010,7,Urban
+139,Arroyo del Valle,Spain,Zamora,2019-02-07,Stream,-6.10000,41.90000,1.23,0.082,75,Agriculture
+191,Laguna Aculeo,Chile,Santiago,2020-06-27,Lake,-70.90000,-33.85000,1.10,0.227,150,Agriculture
+1,"Kybes Lane, Foudry Brook",England,Berkshire,2022-06-22,Stream,-0.99193,51.41265,0.30,0.260,75,Agriculture
+8,"Kybes Lane, Foudry Brook",England,Berkshire,2018-09-06,Stream,-0.99193,51.41265,2.14,0.055,40,Agriculture
+82,Lago de Sanabria,Spain,Zamora,2022-03-18,Lake,-6.71500,42.12500,1.17,0.176,20,Forest
+41,"River Kennet, Reading",England,Berkshire,2021-08-18,River,-0.97000,51.45500,0.43,0.191,150,Urban
+46,"River Kennet, Reading",England,Berkshire,2022-01-27,River,-0.97000,51.45500,1.30,0.080,30,Urban
+179,Laguna Aculeo,Chile,Santiago,2018-08-06,Lake,-70.90000,-33.85000,1.80,0.132,,Agriculture
+125,"Rio Duero, Zamora",Spain,Zamora,2024-05-24,River,-5.74500,41.50300,0.30,0.263,14,Urban
+21,"Kybes Lane, Foudry Brook",England,Berkshire,2022-09-05,Stream,-0.99193,51.41265,1.50,0.010,150,Agriculture
+170,"Rio Mapocho, Santiago",Chile,Santiago,2019-01-04,River,-70.65000,-33.43000,0.90,0.034,40,Urban
+81,Lago de Sanabria,Spain,Zamora,2018-12-04,Lake,-6.71500,42.12500,,0.231,30,Forest
+37,"River Kennet, Reading",England,Berkshire,2021-04-09,River,-0.97000,51.45500,0.05,0.010,,Urban
+118,"Rio Duero, Zamora",Spain,Zamora,2020-06-05,River,-5.74500,41.50300,1.05,0.032,150,Urban
+105,"Rio Duero, Zamora",Spain,Zamora,2022-08-26,River,-5.74500,41.50300,0.61,0.155,150,Urban
+192,Laguna Aculeo,Chile,Santiago,2022-08-06,Lake,-70.90000,-33.85000,0.85,0.050,40,Agriculture
+52,Thames at Sonning,England,Berkshire,2023-11-25,River,-0.91200,51.47200,,0.055,20,Agriculture
+36,"River Kennet, Reading",England,Berkshire,2024-12-05,River,-0.97000,51.45500,1.15,0.068,20,Urban
+39,"River Kennet, Reading",England,Berkshire,2021-04-28,River,-0.97000,51.45500,0.24,0.285,14,Urban
+153,"Rio Mapocho, Santiago",Chile,Santiago,2020-09-27,River,-70.65000,-33.43000,0.53,0.010,100,Urban
+106,"Rio Duero, Zamora",Spain,Zamora,2018-02-28,River,-5.74500,41.50300,0.67,0.204,20,Urban
+181,Laguna Aculeo,Chile,Santiago,2018-07-18,Lake,-70.90000,-33.85000,1.74,0.105,100,Agriculture
+136,Arroyo del Valle,Spain,Zamora,2023-06-15,Stream,-6.10000,41.90000,1.35,,,Agriculture
+98,Lago de Sanabria,Spain,Zamora,2022-06-18,Lake,-6.71500,42.12500,0.86,0.064,40,Forest
+155,"Rio Mapocho, Santiago",Chile,Santiago,2022-10-05,River,-70.65000,-33.43000,1.16,0.340,40,Urban
+129,Arroyo del Valle,Spain,Zamora,2024-01-18,Stream,-6.10000,41.90000,1.04,0.010,75,Agriculture
+50,"River Kennet, Reading",England,Berkshire,2018-02-17,River,-0.97000,51.45500,0.82,0.211,100,Urban
+154,"Rio Mapocho, Santiago",Chile,Santiago,2020-03-06,River,-70.65000,-33.43000,0.26,0.239,75,Urban
+19,"Kybes Lane, Foudry Brook",England,Berkshire,2023-09-16,Stream,-0.99193,51.41265,1.50,0.010,14,Agriculture
+149,Arroyo del Valle,Spain,Zamora,2020-07-05,Stream,-6.10000,41.90000,1.21,0.138,7,Agriculture
+158,"Rio Mapocho, Santiago",Chile,Santiago,2019-10-23,River,-70.65000,-33.43000,0.13,0.210,75,Urban
+14,"Kybes Lane, Foudry Brook",England,Berkshire,2024-07-17,Stream,-0.99193,51.41265,0.89,0.307,30,Agriculture
+174,"Rio Mapocho, Santiago",Chile,Santiago,2024-07-16,River,-70.65000,-33.43000,0.48,0.090,100,Urban
+31,"River Kennet, Reading",England,Berkshire,2019-12-02,River,-0.97000,51.45500,0.63,0.176,,Urban
+119,"Rio Duero, Zamora",Spain,Zamora,2024-02-01,River,-5.74500,41.50300,0.90,,7,Urban
+188,Laguna Aculeo,Chile,Santiago,2024-07-24,Lake,-70.90000,-33.85000,1.56,0.101,14,Agriculture
+196,Laguna Aculeo,Chile,Santiago,2021-07-28,Lake,-70.90000,-33.85000,1.88,0.010,100,Agriculture
+184,Laguna Aculeo,Chile,Santiago,2018-03-09,Lake,-70.90000,-33.85000,1.46,0.086,75,Agriculture
+96,Lago de Sanabria,Spain,Zamora,2024-02-15,Lake,-6.71500,42.12500,2.42,0.141,75,Forest
+85,Lago de Sanabria,Spain,Zamora,2022-02-26,Lake,-6.71500,42.12500,0.77,0.186,150,Forest
+108,"Rio Duero, Zamora",Spain,Zamora,2023-11-06,River,-5.74500,41.50300,,0.162,30,Urban
+79,Lago de Sanabria,Spain,Zamora,2018-05-14,Lake,-6.71500,42.12500,1.41,0.198,75,Forest
+58,Thames at Sonning,England,Berkshire,2023-06-02,River,-0.91200,51.47200,,0.010,,Agriculture
+91,Lago de Sanabria,Spain,Zamora,2024-07-18,Lake,-6.71500,42.12500,0.05,0.124,150,Forest
+198,Laguna Aculeo,Chile,Santiago,2020-11-04,Lake,-70.90000,-33.85000,0.80,0.108,40,Agriculture
+23,"Kybes Lane, Foudry Brook",England,Berkshire,2021-11-26,Stream,-0.99193,51.41265,1.15,,7,Agriculture
+168,"Rio Mapocho, Santiago",Chile,Santiago,2020-02-03,River,-70.65000,-33.43000,0.83,,14,Urban
+86,Lago de Sanabria,Spain,Zamora,2022-11-11,Lake,-6.71500,42.12500,0.09,0.052,20,Forest
+177,Laguna Aculeo,Chile,Santiago,2024-10-08,Lake,-70.90000,-33.85000,1.70,0.010,150,Agriculture
+144,Arroyo del Valle,Spain,Zamora,2018-01-27,Stream,-6.10000,41.90000,1.26,0.172,14,Agriculture
+67,Thames at Sonning,England,Berkshire,2023-11-16,River,-0.91200,51.47200,1.47,0.173,75,Agriculture
+33,"River Kennet, Reading",England,Berkshire,2019-05-05,River,-0.97000,51.45500,0.09,0.109,20,Urban
+121,"Rio Duero, Zamora",Spain,Zamora,2020-02-10,River,-5.74500,41.50300,,0.166,14,Urban
+25,"Kybes Lane, Foudry Brook",England,Berkshire,2018-08-02,Stream,-0.99193,51.41265,0.61,0.196,100,Agriculture
+76,Lago de Sanabria,Spain,Zamora,2019-11-20,Lake,-6.71500,42.12500,,0.094,100,Forest
+47,"River Kennet, Reading",England,Berkshire,2018-12-05,River,-0.97000,51.45500,,0.042,150,Urban
+143,Arroyo del Valle,Spain,Zamora,2024-08-18,Stream,-6.10000,41.90000,1.20,0.209,,Agriculture
+169,"Rio Mapocho, Santiago",Chile,Santiago,2020-10-20,River,-70.65000,-33.43000,0.41,0.014,100,Urban
+44,"River Kennet, Reading",England,Berkshire,2021-09-21,River,-0.97000,51.45500,0.16,0.236,150,Urban
+77,Lago de Sanabria,Spain,Zamora,2024-06-26,Lake,-6.71500,42.12500,0.99,0.124,30,Forest
+130,Arroyo del Valle,Spain,Zamora,2020-02-19,Stream,-6.10000,41.90000,0.12,0.118,7,Agriculture
+92,Lago de Sanabria,Spain,Zamora,2019-02-19,Lake,-6.71500,42.12500,,0.103,20,Forest
+172,"Rio Mapocho, Santiago",Chile,Santiago,2019-01-12,River,-70.65000,-33.43000,,,150,Urban
+122,"Rio Duero, Zamora",Spain,Zamora,2020-12-14,River,-5.74500,41.50300,0.55,0.152,150,Urban
+164,"Rio Mapocho, Santiago",Chile,Santiago,2023-02-27,River,-70.65000,-33.43000,0.23,0.186,30,Urban
+137,Arroyo del Valle,Spain,Zamora,2019-11-27,Stream,-6.10000,41.90000,1.05,0.104,,Agriculture
+176,Laguna Aculeo,Chile,Santiago,2024-12-22,Lake,-70.90000,-33.85000,,0.272,100,Agriculture
+57,Thames at Sonning,England,Berkshire,2023-09-11,River,-0.91200,51.47200,1.02,0.151,,Agriculture
+183,Laguna Aculeo,Chile,Santiago,2024-05-28,Lake,-70.90000,-33.85000,0.05,0.053,150,Agriculture
+186,Laguna Aculeo,Chile,Santiago,2020-05-27,Lake,-70.90000,-33.85000,1.14,0.252,,Agriculture
+88,Lago de Sanabria,Spain,Zamora,2020-02-06,Lake,-6.71500,42.12500,0.91,0.182,100,Forest
+49,"River Kennet, Reading",England,Berkshire,2022-12-09,River,-0.97000,51.45500,0.47,0.212,20,Urban
+147,Arroyo del Valle,Spain,Zamora,2021-01-13,Stream,-6.10000,41.90000,1.77,0.131,20,Agriculture
+182,Laguna Aculeo,Chile,Santiago,2018-07-05,Lake,-70.90000,-33.85000,1.75,0.130,14,Agriculture
+150,Arroyo del Valle,Spain,Zamora,2021-12-12,Stream,-6.10000,41.90000,0.84,0.062,40,Agriculture
+10,"Kybes Lane, Foudry Brook",England,Berkshire,2019-07-27,Stream,-0.99193,51.41265,0.90,0.200,40,Agriculture
+189,Laguna Aculeo,Chile,Santiago,2020-12-17,Lake,-70.90000,-33.85000,1.32,0.017,30,Agriculture
+100,Lago de Sanabria,Spain,Zamora,2020-11-05,Lake,-6.71500,42.12500,0.09,0.163,100,Forest
+104,"Rio Duero, Zamora",Spain,Zamora,2022-07-07,River,-5.74500,41.50300,0.20,0.049,20,Urban

@@ -1,0 +1,103 @@
+{% extends "c4w/dataset_wizard_base.html" %}
+
+{% block wizard_body %}
+  {% set summary = dataset.processing_summary or {} %}
+
+  <form class="c4w-form" method="post"
+        action="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=5) }}" novalidate>
+    {{ h.csrf_input() }}
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Contact') }}</h2>
+      {% call form.row() %}
+        {{ form.input('contact_name', _('Contact name'), data.contact_name, errors, required=true, autocomplete='name') }}
+        {{ form.input('contact_email', _('Contact e-mail'), data.contact_email, errors, required=true, type='email', autocomplete='email',
+             hint=_('Shown to signed-in visitors only.')) }}
+      {% endcall %}
+      {{ form.input('contact_url', _('Contact web page'), data.contact_url, errors, type='url', placeholder='https://') }}
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Credits') }}</h2>
+      {% call form.row() %}
+        {{ form.input('author', _('Author(s)'), data.author, errors, hint=_('People or group who made the measurements.')) }}
+        {{ form.input('author_email', _('Author e-mail'), data.author_email, errors, type='email') }}
+      {% endcall %}
+      {{ form.input('publisher', _('Publisher'), data.publisher, errors, hint=_('Organisation responsible for the data. Shown as the dashboard credit.')) }}
+      {{ form.input('attribution_text', _('Acknowledgements'), data.attribution_text, errors, hint=_('Funders, volunteers, partners.')) }}
+    </div>
+
+    <div class="c4w-form__section">
+      <h2>{{ _('Confirmation') }}</h2>
+      {{ form.checkbox('terms_accepted', _('I have the right to share this data and I accept that it is published under the chosen licence.'), data.terms_accepted, errors, required=true) }}
+      {{ form.checkbox('licence_confirm', _('The data contains no personal information about identifiable people.'), data.licence_confirm, errors, required=true) }}
+    </div>
+
+    <div class="c4w-form__section" id="c4w-review">
+      <h2>{{ _('Review') }}</h2>
+      {% if missing_by_step %}
+        <div class="c4w-note c4w-note--warn">
+          <p><strong>{{ _('Before submitting, complete:') }}</strong></p>
+          <ul>
+            {% for step_no, names in missing_by_step %}
+              <li><a href="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=step_no) }}">{{ _('Step %(n)s') | replace('%(n)s', step_no | string) }}</a>:
+                {{ names | map('replace', '_', ' ') | join(', ') }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% else %}
+        <p class="c4w-note c4w-note--ok">{{ _('Everything needed is here.') }}</p>
+      {% endif %}
+
+      <ul class="c4w-tiles">
+        <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number((dataset.data_files or []) | length) }}</span><span class="c4w-tile__label">{{ _('data files') }}</span></li>
+        <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number((dataset.mapping.parameters | selectattr('include') | list | length) if dataset.mapping else none) }}</span><span class="c4w-tile__label">{{ _('parameters mapped') }}</span></li>
+        <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.record_count) }}</span><span class="c4w-tile__label">{{ _('records') }}</span></li>
+        <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.site_count) }}</span><span class="c4w-tile__label">{{ _('sites') }}</span></li>
+      </ul>
+
+      <p class="c4w-status-list">
+        {{ _('Processing:') }} {{ h.c4w_status_badge(dataset.processing_status) }}
+        {% if dataset.processing_error %}<span class="c4w-field__error">{{ dataset.processing_error }}</span>{% endif %}
+        {% if summary.rejected %}<span class="c4w-files__meta">{{ ungettext('{n} row rejected', '{n} rows rejected', summary.rejected).format(n=summary.rejected) }}</span>{% endif %}
+        {% if summary.dropped %}<span class="c4w-files__meta">{{ ungettext('{n} parameter left out', '{n} parameters left out', summary.dropped).format(n=summary.dropped) }}</span>{% endif %}
+      </p>
+      {% if dataset.bundle_ready %}
+        <p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('dataset_dashboard', slug=dataset.slug) }}">{{ _('Preview the dashboard') }}</a></p>
+      {% endif %}
+    </div>
+
+    <div class="c4w-form__actions">
+      <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=4) }}">{{ _('Back') }}</a>
+      <button type="submit" name="action" value="save" class="c4w-btn c4w-btn--quiet">{{ _('Save') }}</button>
+      <span class="c4w-form__spacer"></span>
+      {% if dataset.submitted_at %}
+        <button type="submit" name="action" value="submit" class="c4w-btn">{{ _('Save and resubmit') }}</button>
+      {% else %}
+        <button type="submit" name="action" value="submit" class="c4w-btn">{{ _('Submit for review') }}</button>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if dataset.submitted_at and dataset.mapping %}
+    <form method="post" action="{{ h.c4w_url('submit_data_process', dataset_id=dataset.id) }}" class="c4w-form">
+      {{ h.csrf_input() }}
+      <input type="hidden" name="next" value="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=5) }}">
+      <div class="c4w-form__actions">
+        <button type="submit" class="c4w-btn c4w-btn--quiet">{{ _('Rebuild the dashboard') }}</button>
+        <span class="c4w-files__meta">{{ _('Runs the processing again with the current files and columns.') }}</span>
+      </div>
+    </form>
+  {% endif %}
+
+  {% if not dataset.approved %}
+    <form method="post" action="{{ h.c4w_url('dataset_delete', slug=dataset.slug) }}" class="c4w-form"
+          onsubmit="return window.confirm(this.getAttribute('data-confirm'));"
+          data-confirm="{{ _('Remove this dataset and its files?') }}">
+      {{ h.csrf_input() }}
+      <div class="c4w-form__actions">
+        <button type="submit" class="c4w-btn c4w-btn--danger">{{ _('Remove this dataset') }}</button>
+      </div>
+    </form>
+  {% endif %}
+{% endblock %}

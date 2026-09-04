@@ -9,3 +9,5 @@ dist/
 .coverage
 htmlcov/
 *.mo
+dashboard/node_modules/
+dashboard/public/dev-data/
