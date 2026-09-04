@@ -240,6 +240,13 @@ def test_portal_base_replaces_ihp_wins_chrome():
     assert 'block content' in base
 
 
+def test_flash_uses_the_ckan_210_helper():
+    """h.flash is Flask's flash() in 2.10; pop_messages is a 500."""
+    base = _read('templates', 'c4w', 'base.html')
+    assert 'h.get_flashed_messages' in base
+    assert 'h.flash.pop_messages' not in base
+
+
 def test_credits_strip_keeps_the_contractual_attribution():
     """The funding attribution is a contractual obligation, not decoration.
     A restyle may move it; it may never drop it."""

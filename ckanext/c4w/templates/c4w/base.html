@@ -44,11 +44,15 @@
 {% block content %}
   <div class="c4w-shell">
     {% block flash %}
-      {% set flashes = h.flash.pop_messages() | list %}
+      {#
+        CKAN 2.10 uses Flask's get_flashed_messages. The old webhelpers
+        flash object is gone: calling pop_messages on Flask's flash() 500s.
+      #}
+      {% set flashes = h.get_flashed_messages(with_categories=true) %}
       {% if flashes %}
         <div class="c4w-flash" role="status">
-          {% for message in flashes %}
-            <div class="c4w-flash__item {{ message.category }}">{{ h.literal(message) }}</div>
+          {% for category, message in flashes %}
+            <div class="c4w-flash__item {{ category }}">{{ h.literal(message) }}</div>
           {% endfor %}
         </div>
       {% endif %}
