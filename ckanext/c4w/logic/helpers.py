@@ -129,8 +129,8 @@ def c4w_profile_url():
 
 def c4w_is_sysadmin():
     """True when the current visitor is a CKAN sysadmin."""
-    userobj = (getattr(tk.g, 'userobj', None)
-               or getattr(tk.c, 'userobj', None))
+    from ckanext.c4w.logic.access import current_userobj
+    userobj = current_userobj()
     return bool(userobj is not None and getattr(userobj, 'sysadmin', False))
 
 

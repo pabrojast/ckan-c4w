@@ -13,9 +13,21 @@ from ckanext.c4w.logic import helpers as c4w_helpers
 
 
 def current_userobj():
-    """The CKAN user object, or None for an anonymous visitor."""
-    return (getattr(tk.g, 'userobj', None)
+    """The real CKAN user, or None for an anonymous visitor.
+
+    CKAN 2.10 puts an AnonymousUser on ``g.userobj``. It is not None and
+    is truthy, so a bare ``if userobj`` treats a stranger as signed in
+    and the next ``get_action`` 500s on NotAuthorized.
+    """
+    user = (getattr(tk.g, 'userobj', None)
             or getattr(tk.c, 'userobj', None))
+    if user is None:
+        return None
+    if getattr(user, 'is_anonymous', False):
+        return None
+    if not getattr(user, 'id', None):
+        return None
+    return user
 
 
 def require_user():

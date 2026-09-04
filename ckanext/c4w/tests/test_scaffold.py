@@ -240,6 +240,13 @@ def test_portal_base_replaces_ihp_wins_chrome():
     assert 'block content' in base
 
 
+def test_access_treats_anonymous_user_as_logged_out():
+    """CKAN 2.10's AnonymousUser is not None; a bare truthiness check 500s."""
+    source = _read('logic', 'access.py')
+    assert 'is_anonymous' in source
+    assert 'current_userobj' in source
+
+
 def test_flash_uses_the_ckan_210_helper():
     """h.flash is Flask's flash() in 2.10; pop_messages is a 500."""
     base = _read('templates', 'c4w', 'base.html')

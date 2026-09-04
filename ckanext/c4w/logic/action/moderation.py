@@ -171,18 +171,23 @@ def get_actions():
     }
 
 
+@tk.auth_allow_anonymous_access
 def c4w_my_submissions_auth(context, data_dict):
+    # Allow the auth function to run for strangers so the view can redirect
+    # to login instead of CKAN turning "not logged in" into a 500.
     if _common.is_authenticated(context):
         return {'success': True}
     return {'success': False, 'msg': tk._('Not authorized')}
 
 
+@tk.auth_allow_anonymous_access
 def c4w_moderation_list_auth(context, data_dict):
     if _common.is_sysadmin(context):
         return {'success': True}
     return {'success': False, 'msg': tk._('Not authorized')}
 
 
+@tk.auth_allow_anonymous_access
 def c4w_entity_moderate_auth(context, data_dict):
     if _common.is_sysadmin(context):
         return {'success': True}
