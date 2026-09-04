@@ -417,11 +417,12 @@ def c4w_dashboard_asset(name):
 
 def c4w_status_badge(status):
     """A status badge for a processing / moderation state, as markup."""
+    from markupsafe import escape
     status = u'%s' % (status or u'draft')
     label = constants.label_for('processing_status', status)
     return tk.h.literal(
         u'<span class="c4w-badge c4w-badge--%s">%s</span>'
-        % (tk.h.escape(status), tk.h.escape(tk._(label))))
+        % (escape(status), escape(tk._(label))))
 
 
 def c4w_number(value):
