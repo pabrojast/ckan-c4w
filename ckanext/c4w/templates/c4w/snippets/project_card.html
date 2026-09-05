@@ -3,40 +3,35 @@
 
   Expects: project -- a dictized c4w_project.
 #}
-{% set image = h.c4w_image_url(project, 'image1_url') %}
+{% import 'c4w/macros/ui.html' as ui with context %}
 <article class="c4w-card">
   <a class="c4w-card__link" href="{{ h.c4w_url('project_detail', slug=project.slug) }}">
-    <div class="c4w-card__media">
-      {% if image %}
-        {# Decorative: the title right below carries the same information. #}
-        <img src="{{ image }}" alt="" loading="lazy">
-      {% endif %}
-    </div>
-    <h2 class="c4w-card__title">{{ project.name }}</h2>
+    {{ ui.card_media(h.c4w_image_url(project, 'image1_url'), 'project') }}
   </a>
-
-  <p class="c4w-card__meta">
-    {% if project.status %}
-      <span class="c4w-card__status">{{ h.c4w_term_label('status', project.status) }}</span>
+  <div class="c4w-card__body">
+    <h2 class="c4w-card__title">
+      <a href="{{ h.c4w_url('project_detail', slug=project.slug) }}">{{ project.name }}</a>
+    </h2>
+    <p class="c4w-card__meta">
+      {% if project.status %}
+        <span class="c4w-card__status">{{ h.c4w_term_label('status', project.status) }}</span>
+      {% endif %}
+      {% set countries = h.c4w_terms(project, 'country') %}
+      {% if countries %}
+        {# Territory NAMES, not the raw ISO slugs. #}
+        <span class="c4w-card__countries">{{ ui.icon('map-pin', 'c4w-icon--sm') }}
+          {{ countries[:3] | map(attribute='label') | join(', ') }}{% if countries|length > 3 %}…{% endif %}
+        </span>
+      {% endif %}
+    </p>
+    {% if project.description %}
+      <p class="c4w-card__excerpt">{{ project.description | striptags | truncate(160) }}</p>
     {% endif %}
-    {% set countries = h.c4w_terms(project, 'country') %}
-    {% if countries %}
-      {# Territory NAMES, not the raw ISO slugs: the filter sidebar two columns
-         away already shows 'Italy', and 'it' beside it reads as a defect. #}
-      <span class="c4w-card__countries">
-        {{ countries[:3] | map(attribute='label') | join(', ') }}{% if countries|length > 3 %}…{% endif %}
-      </span>
+    {% set topics = h.c4w_terms(project, 'topic') %}
+    {% if topics %}
+      <ul class="c4w-card__tags">
+        {% for topic in topics[:4] %}<li>{{ topic.label }}</li>{% endfor %}
+      </ul>
     {% endif %}
-  </p>
-
-  {% if project.description %}
-    <p class="c4w-card__excerpt">{{ project.description | striptags | truncate(180) }}</p>
-  {% endif %}
-
-  {% set topics = h.c4w_terms(project, 'topic') %}
-  {% if topics %}
-    <ul class="c4w-card__tags">
-      {% for topic in topics[:4] %}<li>{{ topic.label }}</li>{% endfor %}
-    </ul>
-  {% endif %}
+  </div>
 </article>

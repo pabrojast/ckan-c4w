@@ -1,4 +1,5 @@
 {% extends "c4w/base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
 
 {% block subtitle %}{{ _('New submission') }}{% endblock %}
 
@@ -14,6 +15,7 @@
       {% for key, title, hint in choices %}
         {% set endpoint = endpoints.get(key) %}
         <li{% if endpoint %} class="c4w-chooser__item--open"{% endif %}>
+          <span class="c4w-choice__icon">{{ ui.icon(h.c4w_entity_icon(key)) }}</span>
           {% if endpoint %}
             <h2><a href="{{ h.c4w_url(endpoint) }}">{{ _(title) }}</a></h2>
             <p>{{ _(hint) }}</p>

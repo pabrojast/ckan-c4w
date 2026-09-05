@@ -1,25 +1,16 @@
-{% extends "c4w/base.html" %}
+{% extends "c4w/detail_base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
+{% set back_endpoint = 'project_list' %}
+{% set back_label = _('Projects') %}
 
 {% block subtitle %}{{ project.name }}{% endblock %}
 
 {#
   Every long-form field on this page is stored HTML that was sanitised on the
-  way IN (logic/sanitize.py), which is why it renders with `| safe` here. Never
-  add a `| safe` for a value that has not been through a sanitiser.
+  way IN (logic/sanitize.py), which is why it renders with `| safe` here.
 #}
 {% macro rich(value) %}{% if value %}{{ value | safe }}{% endif %}{% endmacro %}
 
-{#
-  A fact row of vocabulary chips.
-
-  Goes through h.c4w_terms so an OPEN vocabulary (keyword, funding_body) keeps
-  the label recorded at import time, and a country renders as 'Italy' rather
-  than the stored 'it'.
-
-  Only vocabularies the listing actually facets on become links; the rest
-  render as plain chips. A chip that looks like a filter and silently returns
-  the unfiltered list is worse than no chip at all.
-#}
 {% set LINKED = ('country', 'topic', 'has_tag', 'participation_task',
                  'water_type', 'water_data_type', 'stakeholder_type',
                  'community_impact_type') %}
@@ -30,145 +21,134 @@
      link_endpoint=('project_list' if vocabulary in LINKED else none) %}
 {% endmacro %}
 
-{% block c4w_content %}
-  <div class="c4w-page">
-  {% snippet 'c4w/snippets/detail_breadcrumb.html',
-     back_endpoint='project_list', back_label=_('Projects'),
-     title=project.name %}
-  {% set heading = h.c4w_image_url(project, 'image3_url') %}
-  <article class="c4w-detail" id="c4w-main">
-    {% if heading %}
-      <div class="c4w-detail__hero">
-        <img src="{{ heading }}" alt="" loading="lazy">
-        {% if project.image3_credit %}
-          <p class="c4w-detail__credit">{{ project.image3_credit }}</p>
-        {% endif %}
-      </div>
-    {% endif %}
-
-    <header class="c4w-detail__header">
-      <h1>{{ project.name }}</h1>
-      <p class="c4w-detail__meta">
-        {% if project.status %}
-          <span class="c4w-detail__status">{{ h.c4w_term_label('status', project.status) }}</span>
-        {% endif %}
-        {% if project.start_date %}
-          <span>{{ _('Started') }} {{ project.start_date }}</span>
-        {% endif %}
-        {% if project.total_accesses %}
-          <span>{{ ungettext('{n} view', '{n} views', project.total_accesses).format(n=project.total_accesses) }}</span>
-        {% endif %}
-      </p>
-    </header>
-
-    <div class="c4w-detail__body">
-      {% if project.description %}
-        <section>
-          <h2>{{ _('About') }}</h2>
-          {{ rich(project.description) }}
-        </section>
+{% block detail_hero %}
+  {% set heading = h.c4w_image_url(project, 'image3_url') or h.c4w_image_url(project, 'image1_url') %}
+  {% if heading %}
+    <div class="c4w-detail__hero">
+      <img src="{{ heading }}" alt="" loading="lazy">
+      {% if project.image3_credit %}
+        <p class="c4w-detail__credit">{{ project.image3_credit }}</p>
       {% endif %}
-
-      {% if project.aim %}
-        <section><h2>{{ _('Aim') }}</h2>{{ rich(project.aim) }}</section>
-      {% endif %}
-
-      {% if project.how_to_participate %}
-        <section>
-          <h2>{{ _('How to participate') }}</h2>
-          {{ rich(project.how_to_participate) }}
-        </section>
-      {% endif %}
-
-      {% if project.equipment %}
-        <section><h2>{{ _('Equipment needed') }}</h2>{{ rich(project.equipment) }}</section>
-      {% endif %}
-
-      {% if project.achievements or project.challenges or project.interesting_highlights %}
-        <section>
-          <h2>{{ _('Impact and insights') }}</h2>
-          {{ rich(project.achievements) }}
-          {{ rich(project.challenges) }}
-          {{ rich(project.interesting_highlights) }}
-        </section>
-      {% endif %}
-
-      {% if project.main_organisation or project.organisations %}
-        <section>
-          <h2>{{ _('Organisations') }}</h2>
-          <ul class="c4w-orglist">
-            {% if project.main_organisation %}
-              <li><strong>{{ _('Coordinator') }}:</strong>
-                {{ project.main_organisation.name }}</li>
-            {% endif %}
-            {% for organisation in project.organisations %}
-              <li>{{ organisation.name }}</li>
-            {% endfor %}
-          </ul>
-        </section>
-      {% endif %}
-
-      <p class="c4w-detail__actions">
-        {% if project.url %}
-          <a class="c4w-btn" href="{{ project.url }}"
-             rel="noopener noreferrer nofollow" target="_blank">{{ _('Go to project') }}</a>
-        {% endif %}
-        {% if project.data_url %}
-          <a class="c4w-btn" href="{{ project.data_url }}"
-             rel="noopener noreferrer">{{ _('Access dataset') }}</a>
-        {% endif %}
-      </p>
     </div>
+  {% endif %}
+{% endblock %}
 
-    <dl class="c4w-detail__facts">
-      {{ terms('country', _('Countries')) }}
-      {{ terms('topic', _('Science topics')) }}
-      {{ terms('water_type', _('Water type')) }}
-      {{ terms('water_data_type', _('Water data type')) }}
-      {{ terms('participation_task', _('Participation tasks')) }}
-      {{ terms('stakeholder_type', _('Stakeholders')) }}
-      {{ terms('community_impact_type', _('Community impact')) }}
-      {{ terms('has_tag', _('Tags')) }}
-      {{ terms('keyword', _('Keywords')) }}
-      {{ terms('funding_body', _('Funding bodies')) }}
+{% block detail_title %}{{ project.name }}{% endblock %}
 
-      {% if project.difficulty_level %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Difficulty') }}</dt>
-          <dd>{{ h.c4w_term_label('difficulty_level', project.difficulty_level) }}</dd>
-        </div>
-      {% endif %}
-      {% if project.locality %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Location') }}</dt><dd>{{ project.locality }}</dd>
-        </div>
-      {% endif %}
-      {% if project.number_of_participants %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Participants') }}</dt><dd>{{ project.number_of_participants }}</dd>
-        </div>
-      {% endif %}
-      {% if project.funding_programme %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Funding programme') }}</dt><dd>{{ project.funding_programme }}</dd>
-        </div>
-      {% endif %}
-      {#
-        The contact address is shown to signed-in visitors only. It is a real
-        person's inbox on a page a scraper can reach, and the Django original
-        published it to everyone.
-      #}
-      {% if project.author_email and c.user %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Contact') }}</dt>
-          <dd><a href="mailto:{{ project.author_email }}">{{ project.author or project.author_email }}</a></dd>
-        </div>
-      {% elif project.author %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Contact') }}</dt><dd>{{ project.author }}</dd>
-        </div>
-      {% endif %}
-    </dl>
-  </article>
-  </div>
+{% block detail_meta %}
+  {% if project.status %}
+    <span class="c4w-detail__status">{{ h.c4w_term_label('status', project.status) }}</span>
+  {% endif %}
+  {% if project.start_date %}
+    <span>{{ ui.icon('calendar', 'c4w-icon--sm') }} {{ _('Started') }} {{ project.start_date }}</span>
+  {% endif %}
+  {% if project.locality %}
+    <span>{{ ui.icon('map-pin', 'c4w-icon--sm') }} {{ project.locality }}</span>
+  {% endif %}
+  {% if project.total_accesses %}
+    <span>{{ ungettext('{n} view', '{n} views', project.total_accesses).format(n=project.total_accesses) }}</span>
+  {% endif %}
+{% endblock %}
+
+{% block detail_body %}
+  {% if project.description %}
+    <section>
+      <h2>{{ _('About') }}</h2>
+      {{ rich(project.description) }}
+    </section>
+  {% endif %}
+
+  {% if project.aim %}
+    <section><h2>{{ _('Aim') }}</h2>{{ rich(project.aim) }}</section>
+  {% endif %}
+
+  {% if project.how_to_participate %}
+    <section>
+      <h2>{{ _('How to participate') }}</h2>
+      {{ rich(project.how_to_participate) }}
+    </section>
+  {% endif %}
+
+  {% if project.equipment %}
+    <section><h2>{{ _('Equipment needed') }}</h2>{{ rich(project.equipment) }}</section>
+  {% endif %}
+
+  {% if project.achievements or project.challenges or project.interesting_highlights %}
+    <section>
+      <h2>{{ _('Impact and insights') }}</h2>
+      {{ rich(project.achievements) }}
+      {{ rich(project.challenges) }}
+      {{ rich(project.interesting_highlights) }}
+    </section>
+  {% endif %}
+
+  {% if project.main_organisation or project.organisations %}
+    <section>
+      <h2>{{ _('Organisations') }}</h2>
+      <ul class="c4w-orglist">
+        {% if project.main_organisation %}
+          <li><strong>{{ _('Coordinator') }}:</strong>
+            <a href="{{ h.c4w_url('organisation_detail', slug=project.main_organisation.slug) }}">{{ project.main_organisation.name }}</a></li>
+        {% endif %}
+        {% for organisation in project.organisations %}
+          <li><a href="{{ h.c4w_url('organisation_detail', slug=organisation.slug) }}">{{ organisation.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+{% endblock %}
+
+{% block detail_actions %}
+  {% if project.url %}
+    <a class="c4w-btn" href="{{ project.url }}"
+       rel="noopener noreferrer nofollow" target="_blank">{{ _('Go to project') }} {{ ui.icon('external', 'c4w-icon--sm') }}</a>
+  {% endif %}
+  {% if project.data_url %}
+    <a class="c4w-btn c4w-btn--quiet" href="{{ project.data_url }}"
+       rel="noopener noreferrer">{{ ui.icon('database', 'c4w-icon--sm') }} {{ _('Access dataset') }}</a>
+  {% endif %}
+{% endblock %}
+
+{% block detail_facts %}
+  {{ terms('country', _('Countries')) }}
+  {{ terms('topic', _('Science topics')) }}
+  {{ terms('water_type', _('Water type')) }}
+  {{ terms('water_data_type', _('Water data type')) }}
+  {{ terms('participation_task', _('Participation tasks')) }}
+  {{ terms('stakeholder_type', _('Stakeholders')) }}
+  {{ terms('community_impact_type', _('Community impact')) }}
+  {{ terms('has_tag', _('Tags')) }}
+  {{ terms('keyword', _('Keywords')) }}
+  {{ terms('funding_body', _('Funding bodies')) }}
+
+  {% if project.difficulty_level %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Difficulty') }}</dt>
+      <dd>{{ h.c4w_term_label('difficulty_level', project.difficulty_level) }}</dd>
+    </div>
+  {% endif %}
+  {% if project.number_of_participants %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Participants') }}</dt><dd>{{ project.number_of_participants }}</dd>
+    </div>
+  {% endif %}
+  {% if project.funding_programme %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Funding programme') }}</dt><dd>{{ project.funding_programme }}</dd>
+    </div>
+  {% endif %}
+  {#
+    The contact address is shown to signed-in visitors only. It is a real
+    person's inbox on a page a scraper can reach.
+  #}
+  {% if project.author_email and c.user %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Contact') }}</dt>
+      <dd><a href="mailto:{{ project.author_email }}">{{ project.author or project.author_email }}</a></dd>
+    </div>
+  {% elif project.author %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Contact') }}</dt><dd>{{ project.author }}</dd>
+    </div>
+  {% endif %}
 {% endblock %}

@@ -5,9 +5,10 @@
   Home is the C4W portal, not IHP-WINS. Params: back_endpoint, back_label,
   title (plain text).
 #}
+{% import 'c4w/macros/ui.html' as ui with context %}
 <nav class="c4w-toolbar" aria-label="{{ _('Breadcrumb') }}">
   <ol class="c4w-breadcrumb">
-    <li><a href="{{ h.c4w_url('index') }}">{{ _('Citizens4Water') }}</a></li>
+    <li><a href="{{ h.c4w_url('index') }}">{{ ui.icon('home') }}<span class="c4w-sr-only">{{ _('Citizens4Water') }}</span></a></li>
     <li><a href="{{ h.c4w_url(back_endpoint) }}">{{ back_label }}</a></li>
     <li aria-current="page">{{ title }}</li>
   </ol>

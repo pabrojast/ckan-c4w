@@ -491,8 +491,52 @@ def c4w_country_options():
     return sorted(pairs, key=lambda pair: pair[1].casefold())
 
 
+# Entity (or nav stat key) -> icon symbol in snippets/icons.html.
+_ENTITY_ICONS = {
+    'project': 'drop', 'projects': 'drop',
+    'dataset': 'database', 'datasets': 'database',
+    'resource': 'book', 'resources': 'book',
+    'training_resource': 'school', 'training_resources': 'school',
+    'organisation': 'building', 'organisations': 'building',
+    'platform': 'layers', 'platforms': 'layers',
+    'event': 'calendar', 'events': 'calendar',
+    'post': 'newspaper', 'posts': 'newspaper',
+}
+
+
+def c4w_entity_icon(entity_type):
+    """Icon name for an entity type or a nav stat key; 'drop' otherwise."""
+    return _ENTITY_ICONS.get(u'%s' % (entity_type or u''), 'drop')
+
+
+def c4w_avatar_initial():
+    """First letter of the signed-in person's display name, for the avatar."""
+    from ckanext.c4w.logic.access import current_userobj
+    user = current_userobj()
+    if user is None:
+        return u''
+    name = (getattr(user, 'fullname', None) or getattr(user, 'name', None)
+            or u'').strip()
+    return name[:1].upper() if name else u'?'
+
+
+def c4w_month_name(month):
+    """Abbreviated month name in the active locale, from a 'MM' string."""
+    try:
+        number = int(month)
+        from babel import Locale
+        from babel.dates import get_month_names
+        locale = Locale.parse(tk.request.environ.get('CKAN_LANG') or 'en')
+        return get_month_names('abbreviated', locale=locale)[number]
+    except Exception:
+        return u'%s' % month
+
+
 def get_helpers():
     return {
+        'c4w_entity_icon': c4w_entity_icon,
+        'c4w_avatar_initial': c4w_avatar_initial,
+        'c4w_month_name': c4w_month_name,
         'c4w_dashboard_asset': c4w_dashboard_asset,
         'c4w_status_badge': c4w_status_badge,
         'c4w_number': c4w_number,

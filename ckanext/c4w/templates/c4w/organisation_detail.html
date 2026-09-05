@@ -1,63 +1,67 @@
-{% extends "c4w/base.html" %}
+{% extends "c4w/detail_base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
+{% set back_endpoint = 'organisation_list' %}
+{% set back_label = _('Organisations') %}
 
 {% block subtitle %}{{ organisation.name }}{% endblock %}
 
-{% block c4w_content %}
-  <div class="c4w-page">
-  {% snippet 'c4w/snippets/detail_breadcrumb.html',
-     back_endpoint='organisation_list', back_label=_('Organisations'),
-     title=organisation.name %}
+{% block detail_hero %}
   {% set logo = h.c4w_image_url(organisation, 'logo_url') %}
-  <article class="c4w-detail c4w-detail--org" id="c4w-main">
-    <header class="c4w-detail__header">
-      {% if logo %}
-        <div class="c4w-detail__logo"><img src="{{ logo }}" alt="" loading="lazy"></div>
-      {% endif %}
-      <h1>{{ organisation.name }}</h1>
-      <p class="c4w-detail__meta">
-        {% if organisation.org_type %}
-          <span class="c4w-detail__status">{{
-            h.c4w_term_label('org_type', organisation.org_type) }}</span>
-        {% endif %}
-        {% if organisation.country %}
-          <span>{{ h.c4w_country_name(organisation.country) }}</span>
-        {% endif %}
-      </p>
-    </header>
+  {% if logo %}
+    <div class="c4w-detail__logo"><img src="{{ logo }}" alt="" loading="lazy"></div>
+  {% endif %}
+{% endblock %}
 
-    <div class="c4w-detail__body">
-      {% if organisation.description %}
-        {# Sanitised on the way in; see logic/sanitize.py. #}
-        <section>{{ organisation.description | safe }}</section>
-      {% endif %}
+{% block detail_title %}{{ organisation.name }}{% endblock %}
 
-      <p class="c4w-detail__actions">
-        {% if organisation.url %}
-          <a class="c4w-btn" href="{{ organisation.url }}"
-             rel="noopener noreferrer nofollow" target="_blank">{{ _('Visit website') }}</a>
-        {% endif %}
-        {#
-          Present only when this directory entry is linked to an organization
-          that actually publishes on the portal. The link is not a foreign key,
-          so the action resolves it and leaves it None when the target is gone.
-        #}
-        {% if organisation.ckan_organization %}
-          <a class="c4w-btn" href="{{ h.url_for('organization.read',
-             id=organisation.ckan_organization.name) }}">{{ _('Datasets on IHP-WINS') }}</a>
-        {% endif %}
-      </p>
+{% block detail_meta %}
+  {% if organisation.org_type %}
+    <span class="c4w-detail__status">{{ h.c4w_term_label('org_type', organisation.org_type) }}</span>
+  {% endif %}
+  {% if organisation.country %}
+    <span>{{ ui.icon('map-pin', 'c4w-icon--sm') }} {{ h.c4w_country_name(organisation.country) }}</span>
+  {% endif %}
+{% endblock %}
 
-      {% if organisation.projects %}
-        <section>
-          <h2>{{ _('Projects') }}</h2>
-          <div class="c4w-card-grid">
-            {% for project in organisation.projects %}
-              {% snippet 'c4w/snippets/project_card.html', project=project %}
-            {% endfor %}
-          </div>
-        </section>
-      {% endif %}
+{% block detail_body %}
+  {% if organisation.description %}
+    {# Sanitised on the way in; see logic/sanitize.py. #}
+    <section>{{ organisation.description | safe }}</section>
+  {% endif %}
+  {% if organisation.projects %}
+    <section>
+      <h2>{{ _('Projects') }}</h2>
+      <div class="c4w-card-grid">
+        {% for project in organisation.projects %}
+          {% snippet 'c4w/snippets/project_card.html', project=project %}
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}
+
+{% block detail_actions %}
+  {% if organisation.url %}
+    <a class="c4w-btn" href="{{ organisation.url }}"
+       rel="noopener noreferrer nofollow" target="_blank">{{ _('Visit website') }} {{ ui.icon('external', 'c4w-icon--sm') }}</a>
+  {% endif %}
+  {#
+    Present only when this directory entry is linked to an organization that
+    actually publishes on the portal. The link is not a foreign key, so the
+    action resolves it and leaves it None when the target is gone.
+  #}
+  {% if organisation.ckan_organization %}
+    <a class="c4w-btn c4w-btn--quiet" href="{{ h.url_for('organization.read',
+       id=organisation.ckan_organization.name) }}">{{ ui.icon('database', 'c4w-icon--sm') }} {{ _('Datasets on IHP-WINS') }}</a>
+  {% endif %}
+{% endblock %}
+
+{% block detail_facts %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Contact'),
+     value=organisation.contact_point %}
+  {% if organisation.ecsa_member %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Membership') }}</dt><dd>{{ _('ECSA member') }}</dd>
     </div>
-  </article>
-  </div>
+  {% endif %}
 {% endblock %}

@@ -14,7 +14,7 @@
           <span class="c4w-directory__count">{{ managers | length }}</span>
         </h2>
         <p class="c4w-form__lede">{{ _('Project managers who confirmed their e-mail and wait for an organisation link.') }}</p>
-        <table class="c4w-table">
+        <div class="c4w-table-wrap"><table class="c4w-table">
           <thead>
             <tr>
               <th>{{ _('Person') }}</th>
@@ -55,7 +55,7 @@
               </tr>
             {% endfor %}
           </tbody>
-        </table>
+        </table></div>
       </section>
     {% endif %}
 
@@ -67,7 +67,7 @@
             <h2>{{ _(group.entity_type | capitalize) }}
               <span class="c4w-directory__count">{{ group.rows | length }}</span>
             </h2>
-            <table class="c4w-table">
+            <div class="c4w-table-wrap"><table class="c4w-table">
               <thead>
                 <tr>
                   <th>{{ _('Title') }}</th>
@@ -133,7 +133,7 @@
                   </tr>
                 {% endfor %}
               </tbody>
-            </table>
+            </table></div>
           </section>
         {% endif %}
       {% endfor %}

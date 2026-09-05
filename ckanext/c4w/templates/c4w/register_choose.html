@@ -1,9 +1,11 @@
 {% extends "c4w/base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
 
 {% block subtitle %}{{ _('Register') }}{% endblock %}
 
 {% block c4w_content %}
   <div class="c4w-page c4w-auth c4w-auth--wide" id="c4w-main">
+    <img class="c4w-auth__logo" src="{{ h.url_for_static('/c4w/img/Citizens4Water_Vertical.svg') }}" alt="" width="96" height="127">
     <h1>{{ _('Join Citizens4Water') }}</h1>
     <p class="c4w-auth__lede">
       {% trans %}One account works across IHP-WINS. Choose how you take part.{% endtrans %}
@@ -13,11 +15,13 @@
     {% endif %}
     <div class="c4w-choice-grid">
       <a class="c4w-choice" href="{{ h.c4w_url('register_citizen') }}">
+        <span class="c4w-choice__icon">{{ ui.icon('user') }}</span>
         <h2>{{ _('Citizen scientist') }}</h2>
         <p>{% trans %}You measure, observe or sample water and want to share your data. Your account is active as soon as you confirm your e-mail.{% endtrans %}</p>
         <span class="c4w-btn">{{ _('Register as a citizen scientist') }}</span>
       </a>
       <a class="c4w-choice" href="{{ h.c4w_url('register_manager') }}">
+        <span class="c4w-choice__icon">{{ ui.icon('building') }}</span>
         <h2>{{ _('Project manager') }}</h2>
         <p>{% trans %}You coordinate a monitoring project on behalf of an organisation. After you confirm your e-mail the Citizens4Water team reviews the request and links you to your organisation.{% endtrans %}</p>
         <span class="c4w-btn c4w-btn--quiet">{{ _('Register as a project manager') }}</span>

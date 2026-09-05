@@ -1,4 +1,7 @@
-{% extends "c4w/base.html" %}
+{% extends "c4w/detail_base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
+{% set back_endpoint = 'dataset_list' %}
+{% set back_label = _('Data') %}
 
 {% block subtitle %}{{ dataset.title }}{% endblock %}
 
@@ -14,201 +17,196 @@
      link_endpoint=('dataset_list' if vocabulary in LINKED else none) %}
 {% endmacro %}
 
-{% block c4w_content %}
-  <div class="c4w-page">
-  {% snippet 'c4w/snippets/detail_breadcrumb.html',
-     back_endpoint='dataset_list', back_label=_('Data'), title=dataset.title %}
+{% block detail_title %}{{ dataset.title }}{% endblock %}
 
-  <article class="c4w-detail c4w-detail--dataset" id="c4w-main">
-    <header class="c4w-detail__header">
-      <h1>{{ dataset.title }}</h1>
-      <p class="c4w-detail__meta">
-        {% if not dataset.approved %}
-          <span class="c4w-badge c4w-badge--pending">{{ _('Awaiting review') }}</span>
-        {% endif %}
-        {% if dataset.hidden %}
-          <span class="c4w-badge c4w-badge--hidden">{{ _('Hidden') }}</span>
-        {% endif %}
-        {% if dataset.can_edit and dataset.processing_status != 'ready' %}
-          {{ h.c4w_status_badge(dataset.processing_status) }}
-        {% endif %}
-        {% if dataset.publisher %}<span>{{ dataset.publisher }}</span>{% endif %}
-        {% if dataset.temporal_start or dataset.temporal_end %}
-          <span>{{ dataset.temporal_start or '?' }} – {{ dataset.temporal_end or '?' }}</span>
-        {% endif %}
-        {% if dataset.total_accesses %}
-          <span>{{ ungettext('{n} view', '{n} views', dataset.total_accesses).format(n=dataset.total_accesses) }}</span>
+{% block detail_meta %}
+  {% if not dataset.approved %}
+    <span class="c4w-badge c4w-badge--pending">{{ _('Awaiting review') }}</span>
+  {% endif %}
+  {% if dataset.hidden %}
+    <span class="c4w-badge c4w-badge--hidden">{{ _('Hidden') }}</span>
+  {% endif %}
+  {% if dataset.can_edit and dataset.processing_status != 'ready' %}
+    {{ h.c4w_status_badge(dataset.processing_status) }}
+  {% endif %}
+  {% if dataset.publisher %}<span>{{ ui.icon('building', 'c4w-icon--sm') }} {{ dataset.publisher }}</span>{% endif %}
+  {% if dataset.temporal_start or dataset.temporal_end %}
+    <span>{{ ui.icon('calendar', 'c4w-icon--sm') }} {{ dataset.temporal_start or '?' }} – {{ dataset.temporal_end or '?' }}</span>
+  {% endif %}
+  {% if dataset.total_accesses %}
+    <span>{{ ungettext('{n} view', '{n} views', dataset.total_accesses).format(n=dataset.total_accesses) }}</span>
+  {% endif %}
+{% endblock %}
+
+{% block detail_body %}
+  {% if dataset.record_count or dataset.site_count or dataset.parameter_count %}
+    <ul class="c4w-tiles">
+      <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.record_count) }}</span><span class="c4w-tile__label">{{ _('aggregated records') }}</span></li>
+      <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.site_count) }}</span><span class="c4w-tile__label">{{ _('sites') }}</span></li>
+      <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.parameter_count) }}</span><span class="c4w-tile__label">{{ _('parameters') }}</span></li>
+      {% if dataset.grain %}
+        <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_term_label('grain', dataset.grain) }}</span><span class="c4w-tile__label">{{ _('time resolution') }}</span></li>
+      {% endif %}
+    </ul>
+  {% endif %}
+
+  {% if dataset.can_edit and not dataset.bundle_ready %}
+    <div class="c4w-note c4w-note--warn">
+      {{ ui.icon('info') }}
+      <p>
+        {% if dataset.processing_status == 'failed' %}
+          {{ _('Processing failed:') }} {{ dataset.processing_error }}
+        {% elif dataset.processing_status == 'queued' %}
+          {{ _('The file is queued for processing. The dashboard appears once it has run.') }}
+        {% elif dataset.processing_status == 'processing' %}
+          {{ _('Processing is running.') }}
+        {% else %}
+          {{ _('The dashboard is built once the wizard is complete.') }}
         {% endif %}
       </p>
-    </header>
+    </div>
+  {% endif %}
 
-    {% if dataset.record_count or dataset.site_count or dataset.parameter_count %}
-      <ul class="c4w-tiles">
-        <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.record_count) }}</span><span class="c4w-tile__label">{{ _('aggregated records') }}</span></li>
-        <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.site_count) }}</span><span class="c4w-tile__label">{{ _('sites') }}</span></li>
-        <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.parameter_count) }}</span><span class="c4w-tile__label">{{ _('parameters') }}</span></li>
-        {% if dataset.grain %}
-          <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_term_label('grain', dataset.grain) }}</span><span class="c4w-tile__label">{{ _('time resolution') }}</span></li>
+  {% if dataset.description %}
+    <section><h2>{{ _('About the data') }}</h2>{{ rich(dataset.description) }}</section>
+  {% endif %}
+
+  {% if dataset.provenance %}
+    <section><h2>{{ _('How the data was collected') }}</h2>{{ rich(dataset.provenance) }}</section>
+  {% endif %}
+
+  {% if dataset.methodology %}
+    <section><h2>{{ _('Method') }}</h2>{{ rich(dataset.methodology) }}</section>
+  {% endif %}
+
+  {% if dataset.data_quality_note %}
+    <section><h2>{{ _('Data quality') }}</h2>{{ rich(dataset.data_quality_note) }}</section>
+  {% endif %}
+
+  {% if dataset.attachments %}
+    <section>
+      <h2>{{ _('Documents') }}</h2>
+      <ul class="c4w-plain-list">
+        {% for file in dataset.attachments %}
+          <li>{{ ui.icon('file', 'c4w-icon--sm') }} <a href="{{ h.c4w_url('dataset_download', slug=dataset.slug, file_id=file.id) }}" rel="nofollow">{{ file.original_name }}</a>
+            <small>({{ h.c4w_bytes(file.size_bytes) }})</small></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if dataset.project or dataset.organisation %}
+    <section>
+      <h2>{{ _('Part of') }}</h2>
+      <ul class="c4w-orglist">
+        {% if dataset.project %}
+          <li><strong>{{ _('Project') }}:</strong>
+            <a href="{{ h.c4w_url('project_detail', slug=dataset.project.slug) }}">{{ dataset.project.name }}</a></li>
+        {% endif %}
+        {% if dataset.organisation %}
+          <li><strong>{{ _('Organisation') }}:</strong>
+            <a href="{{ h.c4w_url('organisation_detail', slug=dataset.organisation.slug) }}">{{ dataset.organisation.name }}</a></li>
         {% endif %}
       </ul>
-    {% endif %}
+    </section>
+  {% endif %}
 
-    <div class="c4w-detail__body">
-      <p class="c4w-detail__actions c4w-detail__actions--top">
-        {% if dataset.bundle_ready %}
-          <a class="c4w-btn" href="{{ h.c4w_url('dataset_dashboard', slug=dataset.slug) }}">{{ _('Open the dashboard') }}</a>
-        {% elif dataset.can_edit %}
-          <span class="c4w-note c4w-note--warn">
-            {% if dataset.processing_status == 'failed' %}
-              {{ _('Processing failed:') }} {{ dataset.processing_error }}
-            {% elif dataset.processing_status == 'queued' %}
-              {{ _('The file is queued for processing. The dashboard appears once it has run.') }}
-            {% elif dataset.processing_status == 'processing' %}
-              {{ _('Processing is running.') }}
-            {% else %}
-              {{ _('The dashboard is built once the wizard is complete.') }}
-            {% endif %}
-          </span>
-        {% endif %}
-        {% for file in dataset.data_files %}
-          <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('dataset_download', slug=dataset.slug, file_id=file.id) }}"
-             rel="nofollow">{{ _('Download') }} {{ file.original_name }} <small>({{ h.c4w_bytes(file.size_bytes) }})</small></a>
-        {% endfor %}
-        {% if dataset.can_edit %}
-          <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('dataset_edit', slug=dataset.slug) }}">{{ _('Edit') }}</a>
-        {% endif %}
-      </p>
+  {% if dataset.bundle_ready %}
+    <section>
+      <h2>{{ _('Embed the dashboard') }}</h2>
+      <p>{{ _('Paste this in any page to show the dashboard there:') }}</p>
+      <pre class="c4w-embed-code">&lt;iframe src="{{ h.url_for('c4w.dataset_embed', slug=dataset.slug, qualified=True) }}" width="100%" height="720" loading="lazy" title="{{ dataset.title }}"&gt;&lt;/iframe&gt;</pre>
+    </section>
+  {% endif %}
+{% endblock %}
 
-      {% if dataset.description %}
-        <section><h2>{{ _('About the data') }}</h2>{{ rich(dataset.description) }}</section>
-      {% endif %}
+{% block detail_actions %}
+  {% if dataset.bundle_ready %}
+    <a class="c4w-btn c4w-btn--block" href="{{ h.c4w_url('dataset_dashboard', slug=dataset.slug) }}">{{ ui.icon('chart') }} {{ _('Open the dashboard') }}</a>
+  {% endif %}
+  {% for file in dataset.data_files %}
+    <a class="c4w-btn c4w-btn--quiet c4w-btn--block" href="{{ h.c4w_url('dataset_download', slug=dataset.slug, file_id=file.id) }}"
+       rel="nofollow">{{ ui.icon('download', 'c4w-icon--sm') }} {{ _('Download') }} <small>({{ h.c4w_bytes(file.size_bytes) }})</small></a>
+  {% endfor %}
+  {% if dataset.can_edit %}
+    <a class="c4w-btn c4w-btn--quiet c4w-btn--block" href="{{ h.c4w_url('dataset_edit', slug=dataset.slug) }}">{{ _('Edit') }}</a>
+  {% endif %}
+{% endblock %}
 
-      {% if dataset.provenance %}
-        <section><h2>{{ _('How the data was collected') }}</h2>{{ rich(dataset.provenance) }}</section>
-      {% endif %}
+{% block detail_facts %}
+  {{ terms('country', _('Countries')) }}
+  {{ terms('water_data_type', _('Water data type')) }}
+  {{ terms('water_type', _('Water type')) }}
+  {{ terms('topic', _('Topics')) }}
+  {{ terms('technology_used', _('Technology used')) }}
+  {{ terms('keyword', _('Keywords')) }}
 
-      {% if dataset.methodology %}
-        <section><h2>{{ _('Method') }}</h2>{{ rich(dataset.methodology) }}</section>
-      {% endif %}
-
-      {% if dataset.data_quality_note %}
-        <section><h2>{{ _('Data quality') }}</h2>{{ rich(dataset.data_quality_note) }}</section>
-      {% endif %}
-
-      {% if dataset.attachments %}
-        <section>
-          <h2>{{ _('Documents') }}</h2>
-          <ul class="c4w-plain-list">
-            {% for file in dataset.attachments %}
-              <li><a href="{{ h.c4w_url('dataset_download', slug=dataset.slug, file_id=file.id) }}" rel="nofollow">{{ file.original_name }}</a>
-                <small>({{ h.c4w_bytes(file.size_bytes) }})</small></li>
-            {% endfor %}
-          </ul>
-        </section>
-      {% endif %}
-
-      {% if dataset.project or dataset.organisation %}
-        <section>
-          <h2>{{ _('Part of') }}</h2>
-          <ul class="c4w-orglist">
-            {% if dataset.project %}
-              <li><strong>{{ _('Project') }}:</strong>
-                <a href="{{ h.c4w_url('project_detail', slug=dataset.project.slug) }}">{{ dataset.project.name }}</a></li>
-            {% endif %}
-            {% if dataset.organisation %}
-              <li><strong>{{ _('Organisation') }}:</strong>
-                <a href="{{ h.c4w_url('organisation_detail', slug=dataset.organisation.slug) }}">{{ dataset.organisation.name }}</a></li>
-            {% endif %}
-          </ul>
-        </section>
-      {% endif %}
-
-      {% if dataset.bundle_ready %}
-        <section>
-          <h2>{{ _('Embed the dashboard') }}</h2>
-          <p>{{ _('Paste this in any page to show the dashboard there:') }}</p>
-          <pre class="c4w-embed-code">&lt;iframe src="{{ h.url_for('c4w.dataset_embed', slug=dataset.slug, qualified=True) }}" width="100%" height="720" loading="lazy" title="{{ dataset.title }}"&gt;&lt;/iframe&gt;</pre>
-        </section>
-      {% endif %}
+  {% if dataset.license_id %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Licence') }}</dt><dd>{{ h.c4w_license_title(dataset.license_id) }}</dd>
     </div>
-
-    <dl class="c4w-detail__facts">
-      {{ terms('country', _('Countries')) }}
-      {{ terms('water_data_type', _('Water data type')) }}
-      {{ terms('water_type', _('Water type')) }}
-      {{ terms('topic', _('Topics')) }}
-      {{ terms('technology_used', _('Technology used')) }}
-      {{ terms('keyword', _('Keywords')) }}
-
-      {% if dataset.license_id %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Licence') }}</dt><dd>{{ h.c4w_license_title(dataset.license_id) }}</dd>
-        </div>
-      {% endif %}
-      {% if dataset.frequency %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Update frequency') }}</dt><dd>{{ h.c4w_term_label('frequency', dataset.frequency) }}</dd>
-        </div>
-      {% endif %}
-      {% if dataset.geographic_extent %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Geographic extent') }}</dt><dd>{{ h.c4w_term_label('geographic_extent', dataset.geographic_extent) }}</dd>
-        </div>
-      {% endif %}
-      {% if dataset.language %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Language') }}</dt><dd>{{ h.c4w_language_name(dataset.language) }}</dd>
-        </div>
-      {% endif %}
-      {% if dataset.source_url %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Source') }}</dt><dd><a href="{{ dataset.source_url }}" rel="noopener noreferrer nofollow">{{ dataset.source_url }}</a></dd>
-        </div>
-      {% endif %}
-      {% if dataset.doi %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('DOI') }}</dt><dd><a href="https://doi.org/{{ dataset.doi }}" rel="noopener noreferrer">{{ dataset.doi }}</a></dd>
-        </div>
-      {% endif %}
-      {% if dataset.citation %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Cite as') }}</dt><dd>{{ dataset.citation }}</dd>
-        </div>
-      {% endif %}
-      {% if dataset.author %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Author') }}</dt><dd>{{ dataset.author }}</dd>
-        </div>
-      {% endif %}
-      {% if dataset.attribution_text %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Credits') }}</dt><dd>{{ dataset.attribution_text }}</dd>
-        </div>
-      {% endif %}
-      {% if dataset.related_urls %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Related links') }}</dt>
-          <dd><ul class="c4w-plain-list">
-            {% for url in dataset.related_urls %}<li><a href="{{ url }}" rel="noopener noreferrer nofollow">{{ url }}</a></li>{% endfor %}
-          </ul></dd>
-        </div>
-      {% endif %}
-      {% if dataset.contact_email and c.user %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Contact') }}</dt>
-          <dd><a href="mailto:{{ dataset.contact_email }}">{{ dataset.contact_name or dataset.contact_email }}</a></dd>
-        </div>
-      {% elif dataset.contact_name %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Contact') }}</dt><dd>{{ dataset.contact_name }}</dd>
-        </div>
-      {% endif %}
-      {% if dataset.processed_at %}
-        <div class="c4w-detail__facts-row">
-          <dt>{{ _('Dashboard built') }}</dt><dd>{{ dataset.processed_at[:10] }}</dd>
-        </div>
-      {% endif %}
-    </dl>
-  </article>
-  </div>
+  {% endif %}
+  {% if dataset.frequency %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Update frequency') }}</dt><dd>{{ h.c4w_term_label('frequency', dataset.frequency) }}</dd>
+    </div>
+  {% endif %}
+  {% if dataset.geographic_extent %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Geographic extent') }}</dt><dd>{{ h.c4w_term_label('geographic_extent', dataset.geographic_extent) }}</dd>
+    </div>
+  {% endif %}
+  {% if dataset.language %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Language') }}</dt><dd>{{ h.c4w_language_name(dataset.language) }}</dd>
+    </div>
+  {% endif %}
+  {% if dataset.source_url %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Source') }}</dt><dd><a href="{{ dataset.source_url }}" rel="noopener noreferrer nofollow">{{ dataset.source_url }}</a></dd>
+    </div>
+  {% endif %}
+  {% if dataset.doi %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('DOI') }}</dt><dd><a href="https://doi.org/{{ dataset.doi }}" rel="noopener noreferrer">{{ dataset.doi }}</a></dd>
+    </div>
+  {% endif %}
+  {% if dataset.citation %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Cite as') }}</dt><dd>{{ dataset.citation }}</dd>
+    </div>
+  {% endif %}
+  {% if dataset.author %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Author') }}</dt><dd>{{ dataset.author }}</dd>
+    </div>
+  {% endif %}
+  {% if dataset.attribution_text %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Credits') }}</dt><dd>{{ dataset.attribution_text }}</dd>
+    </div>
+  {% endif %}
+  {% if dataset.related_urls %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Related links') }}</dt>
+      <dd><ul class="c4w-plain-list">
+        {% for url in dataset.related_urls %}<li><a href="{{ url }}" rel="noopener noreferrer nofollow">{{ url }}</a></li>{% endfor %}
+      </ul></dd>
+    </div>
+  {% endif %}
+  {% if dataset.contact_email and c.user %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Contact') }}</dt>
+      <dd><a href="mailto:{{ dataset.contact_email }}">{{ dataset.contact_name or dataset.contact_email }}</a></dd>
+    </div>
+  {% elif dataset.contact_name %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Contact') }}</dt><dd>{{ dataset.contact_name }}</dd>
+    </div>
+  {% endif %}
+  {% if dataset.processed_at %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Dashboard built') }}</dt><dd>{{ dataset.processed_at[:10] }}</dd>
+    </div>
+  {% endif %}
 {% endblock %}

@@ -5,16 +5,15 @@
   works with no JavaScript at all, carries the other parameters without a
   single hidden input, and gives every combination its own shareable URL.
 
-  Expects: name, title, options ([{term, label}]), counts ({term: n}).
-  Options with a zero count are hidden -- a value that would return nothing is
-  noise, and the counts already exclude this facet's own selection so an
-  active value never hides itself.
+  Expects: name, title, options ([{term, label}]), counts ({term: n}),
+  optional icon (sprite name). Options with a zero count are hidden.
 #}
+{% import 'c4w/macros/ui.html' as ui with context %}
 {% set counts = counts or {} %}
 {% set visible = options | selectattr('term', 'in', counts) | list %}
 {% if visible or h.c4w_facet_active(name, '') %}
   <div class="c4w-facet">
-    <h3 class="c4w-facet__title">{{ title }}</h3>
+    <h3 class="c4w-facet__title">{{ ui.icon(icon or 'filter', 'c4w-icon--sm') }} {{ title }}</h3>
     <ul class="c4w-facet__list">
       {% for option in visible %}
         {% set active = h.c4w_facet_active(name, option.term) %}

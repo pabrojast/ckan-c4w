@@ -3,27 +3,27 @@
 
   Expects: organisation -- a dictized c4w_organisation.
 #}
-{% set logo = h.c4w_image_url(organisation, 'logo_url') %}
+{% import 'c4w/macros/ui.html' as ui with context %}
 <article class="c4w-card c4w-card--org">
-  <a class="c4w-card__link"
-     href="{{ h.c4w_url('organisation_detail', slug=organisation.slug) }}">
-    <div class="c4w-card__media c4w-card__media--logo">
-      {% if logo %}
-        {# Decorative: the name right below carries the same information. #}
-        <img src="{{ logo }}" alt="" loading="lazy">
-      {% endif %}
-    </div>
-    <h2 class="c4w-card__title">{{ organisation.name }}</h2>
+  <a class="c4w-card__link" href="{{ h.c4w_url('organisation_detail', slug=organisation.slug) }}">
+    {{ ui.card_media(h.c4w_image_url(organisation, 'logo_url'), 'organisation', logo=true) }}
   </a>
-
-  <p class="c4w-card__meta">
-    {% if organisation.org_type %}
-      <a href="{{ h.c4w_url('organisation_list', org_type=organisation.org_type) }}"
-         class="c4w-card__status">{{ h.c4w_term_label('org_type', organisation.org_type) }}</a>
+  <div class="c4w-card__body">
+    <h2 class="c4w-card__title">
+      <a href="{{ h.c4w_url('organisation_detail', slug=organisation.slug) }}">{{ organisation.name }}</a>
+    </h2>
+    <p class="c4w-card__meta">
+      {% if organisation.org_type %}
+        <a href="{{ h.c4w_url('organisation_list', org_type=organisation.org_type) }}"
+           class="c4w-card__status">{{ h.c4w_term_label('org_type', organisation.org_type) }}</a>
+      {% endif %}
+      {% if organisation.country %}
+        <a class="c4w-card__countries" href="{{ h.c4w_url('organisation_list', country=organisation.country) }}">{{ ui.icon('map-pin', 'c4w-icon--sm') }} {{
+          h.c4w_country_name(organisation.country) }}</a>
+      {% endif %}
+    </p>
+    {% if organisation.description %}
+      <p class="c4w-card__excerpt">{{ organisation.description | striptags | truncate(140) }}</p>
     {% endif %}
-    {% if organisation.country %}
-      <a href="{{ h.c4w_url('organisation_list', country=organisation.country) }}">{{
-        h.c4w_country_name(organisation.country) }}</a>
-    {% endif %}
-  </p>
+  </div>
 </article>

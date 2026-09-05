@@ -1,0 +1,42 @@
+{#
+  Small UI macros shared by every C4W page.
+
+    {% import 'c4w/macros/ui.html' as ui with context %}
+    {{ ui.icon('search') }}
+    {{ ui.card_media(image_url, 'project') }}
+#}
+
+{# One glyph from snippets/icons.html. Decorative by default. #}
+{% macro icon(name, cls='', label=None) -%}
+  <svg class="c4w-icon{% if name in ('instagram', 'facebook', 'bluesky', 'linkedin') %} c4w-icon--fill{% endif %}{% if cls %} {{ cls }}{% endif %}"
+       {% if label %}role="img" aria-label="{{ label }}"{% else %}aria-hidden="true"{% endif %} focusable="false"><use href="#c4w-i-{{ name }}"/></svg>
+{%- endmacro %}
+
+{#
+  The media area of a card: the image when there is one, else a pale tile
+  with the entity's icon so a grid of cards never has a ragged top.
+  ``logo`` renders the image contained (organisation and platform logos).
+#}
+{% macro card_media(image, entity_type, logo=false) -%}
+  <div class="c4w-card__media{% if logo %} c4w-card__media--logo{% endif %}">
+    {% if image %}
+      <img src="{{ image }}" alt="" loading="lazy">
+    {% else %}
+      <span class="c4w-card__fallback">{{ icon(h.c4w_entity_icon(entity_type)) }}</span>
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+{# The calendar block that leads an event card. ``date`` is ISO text. #}
+{% macro date_block(date) -%}
+  {% if date %}
+    {% set d = date[:10] %}
+    <p class="c4w-card__date">
+      <time datetime="{{ d }}">
+        <span class="c4w-card__day">{{ d[8:10] | int }}</span>
+        <span class="c4w-card__month">{{ h.c4w_month_name(d[5:7]) }}</span>
+        <span class="c4w-card__year">{{ d[:4] }}</span>
+      </time>
+    </p>
+  {% endif %}
+{%- endmacro %}

@@ -1,7 +1,9 @@
 {% extends "c4w/base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
 
 {#
-  The shared skeleton for a detail page.
+  The shared skeleton for a detail page: a hero, a header, the body in a
+  card and a sticky rail with the facts and the actions.
 
   Every long-form field rendered through `detail_body` is stored HTML that was
   sanitised on the way IN (logic/sanitize.py). That is why those blocks may use
@@ -29,10 +31,12 @@
 
       <div class="c4w-detail__body">
         {% block detail_body %}{% endblock %}
-        <p class="c4w-detail__actions">{% block detail_actions %}{% endblock %}</p>
       </div>
 
-      <dl class="c4w-detail__facts">{% block detail_facts %}{% endblock %}</dl>
+      <aside class="c4w-detail__aside">
+        <p class="c4w-detail__actions">{% block detail_actions %}{% endblock %}</p>
+        <dl class="c4w-detail__facts">{% block detail_facts %}{% endblock %}</dl>
+      </aside>
     </article>
   </div>
 {% endblock %}

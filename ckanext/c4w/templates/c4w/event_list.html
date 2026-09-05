@@ -1,4 +1,5 @@
 {% extends "c4w/base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
 
 {#
   Events do not use the shared listing shell: the page is split into upcoming
@@ -10,13 +11,18 @@
 
 {% block c4w_content %}
   <div class="c4w-page c4w-events" id="c4w-main">
-    <header>
-      <h1>{{ _('Events') }}</h1>
+    <header class="c4w-listing__header">
+      <div>
+        <h1>{{ _('Events') }}</h1>
+        <p class="c4w-listing__count">{{ _('Meetings, campaigns and courses of the citizen science and water community.') }}</p>
+      </div>
       <form class="c4w-listing__controls" method="get"
             action="{{ h.c4w_url('event_list') }}">
-        <label for="c4w-q">{{ _('Search events') }}</label>
-        <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}">
-        <button type="submit" class="c4w-btn">{{ _('Apply') }}</button>
+        <div class="c4w-listing__search">
+          <label class="c4w-sr-only" for="c4w-q">{{ _('Search events') }}</label>
+          <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}" placeholder="{{ _('Search events') }}…">
+          <button type="submit" aria-label="{{ _('Search') }}">{{ ui.icon('search') }}</button>
+        </div>
       </form>
     </header>
 
@@ -29,15 +35,13 @@
           {% endfor %}
         </div>
       {% elif listing.upcoming_total %}
-        {# Counted across every page, so a page of past events does not claim
-           there is nothing coming. #}
-        <p class="c4w-empty">
+        <p class="c4w-quiet">{{ ui.icon('calendar') }}
           {{ ungettext('{n} upcoming event is on an earlier page.',
                        '{n} upcoming events are on earlier pages.',
                        listing.upcoming_total).format(n=listing.upcoming_total) }}
         </p>
       {% else %}
-        <p class="c4w-empty">{{ _('No upcoming events right now.') }}</p>
+        <p class="c4w-quiet">{{ ui.icon('calendar') }} {{ _('No upcoming events right now.') }}</p>
       {% endif %}
     </section>
 

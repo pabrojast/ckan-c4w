@@ -1,11 +1,12 @@
 {% extends "c4w/base.html" %}
 
-{% import 'c4w/macros/form.html' as form %}
+{% import 'c4w/macros/form.html' as form with context %}
 
 {% block subtitle %}{{ _('Resend the confirmation e-mail') }}{% endblock %}
 
 {% block c4w_content %}
   <div class="c4w-page c4w-auth" id="c4w-main">
+    <img class="c4w-auth__logo" src="{{ h.url_for_static('/c4w/img/Citizens4Water_Vertical.svg') }}" alt="" width="96" height="127">
     <h1>{{ _('Resend the confirmation e-mail') }}</h1>
     {% if sent %}
       <p class="c4w-auth__lede">{{ _('If an unconfirmed account exists for that address, a new link is on its way. Check your spam folder too.') }}</p>

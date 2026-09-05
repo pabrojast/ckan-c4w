@@ -4,6 +4,7 @@
 
 {% block c4w_content %}
   <div class="c4w-page c4w-auth" id="c4w-main">
+    <img class="c4w-auth__logo" src="{{ h.url_for_static('/c4w/img/Citizens4Water_Vertical.svg') }}" alt="" width="96" height="127">
     {% if state == 'ok' %}
       <h1>{{ _('Your account is active') }}</h1>
       <p class="c4w-auth__lede">{{ _('Thank you for confirming your e-mail. You can sign in and share your data.') }}</p>

@@ -13,4 +13,4 @@
   {% set _ = options.append({'term': term, 'label': h.c4w_country_name(term)}) %}
 {% endfor %}
 {% snippet 'c4w/snippets/facet_group.html', name=name or 'country',
-   title=_('Country'), options=options, counts=counts or {} %}
+   title=_('Country'), options=options, counts=counts or {}, icon='globe' %}

@@ -5,22 +5,23 @@
  * portal (--c4w-*) llegan desde c4w.css; cada var() lleva su fallback por si
  * el dashboard se monta fuera del portal.
  *
- * Lenguaje visual del portal: superficies blancas sobre hielo, reglas de 1px,
- * radio de 2px, IBM Plex, un solo azul. Lo único fuerte es el mapa. */
+ * Lenguaje visual del portal (alineado a IHP-WINS): superficies blancas,
+ * hairline teñida de azul, radio de 14px, sombra suave, Inter, azul UNESCO.
+ * Lo único fuerte es el mapa. */
 
 .c4w-dash {
-  --dash-ink: var(--c4w-ink, #0a1628);
-  --dash-muted: var(--c4w-muted, #5b6b7a);
-  --dash-rule: var(--c4w-rule, #c5d5e0);
-  --dash-ice: var(--c4w-ice, #e2eef3);
+  --dash-ink: var(--c4w-ink, #212529);
+  --dash-muted: var(--c4w-muted, #6c757d);
+  --dash-rule: var(--c4w-rule, rgba(0, 105, 180, 0.12));
+  --dash-ice: var(--c4w-band, #f5f8fa);
   --dash-white: var(--c4w-white, #ffffff);
-  --dash-blue: var(--c4w-blue, #0077d4);
-  --dash-deep: var(--c4w-deep, #005faa);
-  --dash-cyan: var(--c4w-cyan, #00d4c7);
-  --dash-radius: var(--c4w-radius, 2px);
-  --dash-sans: var(--c4w-sans, "IBM Plex Sans", "Noto Sans", "Segoe UI", sans-serif);
-  --dash-serif: var(--c4w-serif, "IBM Plex Serif", Georgia, serif);
-  --dash-tint: rgba(0, 119, 212, 0.08);
+  --dash-blue: var(--c4w-blue, #0069b4);
+  --dash-deep: var(--c4w-deep, #005a9e);
+  --dash-cyan: var(--c4w-cyan, #00b8e6);
+  --dash-radius: var(--c4w-radius-lg, 14px);
+  --dash-sans: var(--c4w-sans, "Inter", "Segoe UI", "Noto Sans", sans-serif);
+  --dash-serif: var(--c4w-sans, "Inter", "Segoe UI", sans-serif);
+  --dash-tint: rgba(0, 105, 180, 0.08);
   --dash-height: clamp(560px, calc(100vh - 14rem), 880px);
 
   position: relative;
@@ -31,6 +32,7 @@
   background: var(--dash-white);
   border: 1px solid var(--dash-rule);
   border-radius: var(--dash-radius);
+  box-shadow: var(--c4w-shadow-sm, 0 2px 6px rgba(15, 23, 42, 0.04));
   color: var(--dash-ink);
   font-family: var(--dash-sans);
   font-size: 0.95rem;
@@ -192,6 +194,7 @@
   background: var(--dash-white);
   border: 1px solid var(--dash-rule);
   border-radius: var(--dash-radius);
+  box-shadow: var(--c4w-shadow-sm, 0 2px 6px rgba(15, 23, 42, 0.04));
   color: var(--dash-ink);
   font-size: 0.92rem;
   line-height: 1.3;

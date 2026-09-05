@@ -7,7 +7,7 @@
   logic/forms.py::errors_for_template -- {field: [message, ...]}.
 
   Usage:
-    {% import 'c4w/macros/form.html' as form %}
+    {% import 'c4w/macros/form.html' as form with context %}
     {{ form.input('title', _('Title'), data.title, errors, required=true) }}
 #}
 
@@ -32,7 +32,8 @@
 {% macro _error(name, errors) -%}
   {% if errors and errors.get(name) %}
     <p class="c4w-field__error" id="c4w-f-{{ name }}-error" role="alert">
-      {{ errors.get(name) | join(' ') }}
+      <svg class="c4w-icon c4w-icon--sm" aria-hidden="true" focusable="false"><use href="#c4w-i-warning"/></svg>
+      <span>{{ errors.get(name) | join(' ') }}</span>
     </p>
   {% endif %}
 {%- endmacro %}

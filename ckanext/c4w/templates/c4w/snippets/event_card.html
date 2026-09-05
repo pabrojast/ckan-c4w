@@ -5,23 +5,24 @@
   dates go in a <time datetime> so the parsed value and the shown one cannot
   disagree.
 #}
+{% import 'c4w/macros/ui.html' as ui with context %}
 <article class="c4w-card c4w-card--event">
-  <p class="c4w-card__date">
-    {% if event.start_date %}
-      <time datetime="{{ event.start_date }}">{{ event.start_date[:10] }}</time>
-    {% endif %}
-    {% if event.place %}<span class="c4w-card__place">{{ event.place }}</span>{% endif %}
-  </p>
-  <h2 class="c4w-card__title">
-    <a href="{{ h.c4w_url('event_detail', slug=event.slug) }}">{{ event.title }}</a>
-  </h2>
-  {% if event.description %}
-    <p class="c4w-card__excerpt">{{ event.description | striptags | truncate(220) }}</p>
-  {% endif %}
-  {% if event.url %}
+  {{ ui.date_block(event.start_date) }}
+  <div class="c4w-card__body">
+    <h2 class="c4w-card__title">
+      <a href="{{ h.c4w_url('event_detail', slug=event.slug) }}">{{ event.title }}</a>
+    </h2>
     <p class="c4w-card__meta">
-      <a href="{{ event.url }}" rel="noopener noreferrer nofollow"
-         target="_blank">{{ _('Go to event page') }}</a>
+      {% if event.place %}<span class="c4w-card__place">{{ ui.icon('map-pin', 'c4w-icon--sm') }} {{ event.place }}</span>{% endif %}
+      {% if event.event_type %}<span class="c4w-card__status">{{ h.c4w_term_label('event_type', event.event_type) }}</span>{% endif %}
     </p>
-  {% endif %}
+    {% if event.description %}
+      <p class="c4w-card__excerpt">{{ event.description | striptags | truncate(200) }}</p>
+    {% endif %}
+    {% if event.url %}
+      <p class="c4w-card__meta">
+        <a href="{{ event.url }}" rel="noopener noreferrer nofollow" target="_blank">{{ _('Go to event page') }} {{ ui.icon('external', 'c4w-icon--sm') }}</a>
+      </p>
+    {% endif %}
+  </div>
 </article>

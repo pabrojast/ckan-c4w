@@ -3,48 +3,49 @@
 
   Expects: dataset -- a dictized c4w_dataset (listing shape, no files).
 #}
+{% import 'c4w/macros/ui.html' as ui with context %}
 <article class="c4w-card c4w-card--dataset">
   <a class="c4w-card__link" href="{{ h.c4w_url('dataset_detail', slug=dataset.slug) }}">
     <div class="c4w-card__media c4w-card__media--dataset" aria-hidden="true">
       <span class="c4w-card__glyph">
-        {% if dataset.processing_status == 'ready' %}{{ _('Dashboard') }}{% else %}{{ _('Data') }}{% endif %}
+        {% if dataset.processing_status == 'ready' %}{{ ui.icon('chart') }} {{ _('Dashboard') }}{% else %}{{ ui.icon('database') }} {{ _('Data') }}{% endif %}
       </span>
     </div>
-    <h2 class="c4w-card__title">{{ dataset.title }}</h2>
   </a>
-
-  <p class="c4w-card__meta">
-    {% set countries = h.c4w_terms(dataset, 'country') %}
-    {% if countries %}
-      <span class="c4w-card__countries">
-        {{ countries[:3] | map(attribute='label') | join(', ') }}{% if countries|length > 3 %}…{% endif %}
-      </span>
+  <div class="c4w-card__body">
+    <h2 class="c4w-card__title">
+      <a href="{{ h.c4w_url('dataset_detail', slug=dataset.slug) }}">{{ dataset.title }}</a>
+    </h2>
+    <p class="c4w-card__meta">
+      {% set countries = h.c4w_terms(dataset, 'country') %}
+      {% if countries %}
+        <span class="c4w-card__countries">{{ ui.icon('map-pin', 'c4w-icon--sm') }}
+          {{ countries[:3] | map(attribute='label') | join(', ') }}{% if countries|length > 3 %}…{% endif %}
+        </span>
+      {% endif %}
+      {% if dataset.temporal_start or dataset.temporal_end %}
+        <span class="c4w-card__date">{{ (dataset.temporal_start or '')[:4] }}{% if dataset.temporal_end %}–{{ dataset.temporal_end[:4] }}{% endif %}</span>
+      {% endif %}
+    </p>
+    {% if dataset.description %}
+      <p class="c4w-card__excerpt">{{ dataset.description | striptags | truncate(150) }}</p>
     {% endif %}
-    {% if dataset.temporal_start or dataset.temporal_end %}
-      <span class="c4w-card__date">{{ (dataset.temporal_start or '')[:4] }}{% if dataset.temporal_end %}–{{ dataset.temporal_end[:4] }}{% endif %}</span>
+    <p class="c4w-card__stats">
+      {% if dataset.parameter_count %}
+        <span>{{ ungettext('{n} parameter', '{n} parameters', dataset.parameter_count).format(n=dataset.parameter_count) }}</span>
+      {% endif %}
+      {% if dataset.site_count %}
+        <span>{{ ungettext('{n} site', '{n} sites', dataset.site_count).format(n=dataset.site_count) }}</span>
+      {% endif %}
+      {% if dataset.record_count %}
+        <span>{{ ungettext('{n} record', '{n} records', dataset.record_count).format(n=h.c4w_number(dataset.record_count)) }}</span>
+      {% endif %}
+    </p>
+    {% set water = h.c4w_terms(dataset, 'water_data_type') %}
+    {% if water %}
+      <ul class="c4w-card__tags">
+        {% for item in water[:3] %}<li>{{ item.label }}</li>{% endfor %}
+      </ul>
     {% endif %}
-  </p>
-
-  {% if dataset.description %}
-    <p class="c4w-card__excerpt">{{ dataset.description | striptags | truncate(160) }}</p>
-  {% endif %}
-
-  <p class="c4w-card__stats">
-    {% if dataset.parameter_count %}
-      <span>{{ ungettext('{n} parameter', '{n} parameters', dataset.parameter_count).format(n=dataset.parameter_count) }}</span>
-    {% endif %}
-    {% if dataset.site_count %}
-      <span>{{ ungettext('{n} site', '{n} sites', dataset.site_count).format(n=dataset.site_count) }}</span>
-    {% endif %}
-    {% if dataset.record_count %}
-      <span>{{ ungettext('{n} record', '{n} records', dataset.record_count).format(n=dataset.record_count) }}</span>
-    {% endif %}
-  </p>
-
-  {% set water = h.c4w_terms(dataset, 'water_data_type') %}
-  {% if water %}
-    <ul class="c4w-card__tags">
-      {% for item in water[:3] %}<li>{{ item.label }}</li>{% endfor %}
-    </ul>
-  {% endif %}
+  </div>
 </article>

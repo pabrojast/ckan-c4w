@@ -38,7 +38,9 @@ disappears inside CKAN, which already lives at that address.
 | `logic/uploads.py` | Byte-verified CSV/TSV and attachment uploads through CKAN's uploader (Azure Blob on IHP-WINS). |
 | `data/*` | The processing pipeline: sniff a table, map its columns, aggregate, build the dashboard bundle. **Imports no CKAN** except `data/jobs.py`. |
 | `dashboard/` | The dashboard front end (Vite + TypeScript, Chart.js + MapLibre). Built into `public/c4w/dashboard/`, which is committed. |
+| `assets/css/c4w.css`, `templates/c4w/snippets/icons.html`, `macros/ui.html` | The visual system: IHP-WINS tokens (UNESCO blue, 14px cards, soft shadows), a vendored Inter font, an inline SVG icon sprite. No CDN, ever. |
 | `migrate/*` | One-time import from the legacy Django database. |
+| `scripts/render_preview.py` | Renders the real templates with stub helpers into `build/preview/`, to iterate on the CSS and take screenshots without a CKAN site. |
 
 Two decisions are worth knowing before reading further.
 

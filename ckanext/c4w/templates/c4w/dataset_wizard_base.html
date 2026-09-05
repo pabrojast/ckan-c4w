@@ -8,7 +8,7 @@
   the very first page), data (values to echo), errors (dict), reachable.
 #}
 
-{% import 'c4w/macros/form.html' as form %}
+{% import 'c4w/macros/form.html' as form with context %}
 
 {% block subtitle %}{{ _(step.title) }} · {{ _('Share data') }}{% endblock %}
 

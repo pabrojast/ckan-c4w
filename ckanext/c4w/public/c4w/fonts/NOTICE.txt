@@ -1,4 +1,8 @@
-IBM Plex Sans and IBM Plex Serif
-Copyright © 2017 IBM Corp.
-Licensed under the SIL Open Font License, Version 1.1.
-https://github.com/IBM/plex
+Inter (variable, weights 400-700), by Rasmus Andersson.
+Licensed under the SIL Open Font License 1.1: https://openfontlicense.org/
+Source: https://github.com/rsms/inter (the latin and latin-ext woff2 subsets
+as served by fonts.googleapis.com, copied here so the portal never loads a
+font from a third-party origin at runtime).
+
+  inter-var.woff2      latin      unicode-range U+0000-00FF, U+0131, U+0152-0153, ...
+  inter-var-ext.woff2  latin-ext  unicode-range U+0100-02BA, U+02BD-02C5, ...

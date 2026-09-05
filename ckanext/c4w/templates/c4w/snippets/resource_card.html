@@ -1,25 +1,26 @@
 {# A library resource in a listing. #}
-{% set image = h.c4w_image_url(resource, 'image1_url') %}
+{% import 'c4w/macros/ui.html' as ui with context %}
 <article class="c4w-card">
-  <a class="c4w-card__link"
-     href="{{ h.c4w_url('resource_detail', slug=resource.slug) }}">
-    <div class="c4w-card__media">
-      {% if image %}<img src="{{ image }}" alt="" loading="lazy">{% endif %}
-    </div>
-    <h2 class="c4w-card__title">{{ resource.name }}</h2>
+  <a class="c4w-card__link" href="{{ h.c4w_url('resource_detail', slug=resource.slug) }}">
+    {{ ui.card_media(h.c4w_image_url(resource, 'image1_url'), 'training_resource' if resource.is_training_resource else 'resource') }}
   </a>
-  <p class="c4w-card__meta">
-    {% if resource.date_published %}<span>{{ resource.date_published }}</span>{% endif %}
-    {% if resource.in_language %}<span>{{ resource.in_language }}</span>{% endif %}
-    {% if resource.publisher %}<span>{{ resource.publisher }}</span>{% endif %}
-  </p>
-  {% if resource.abstract %}
-    <p class="c4w-card__excerpt">{{ resource.abstract | striptags | truncate(180) }}</p>
-  {% endif %}
-  {% set themes = h.c4w_terms(resource, 'theme') %}
-  {% if themes %}
-    <ul class="c4w-card__tags">
-      {% for theme in themes[:3] %}<li>{{ theme.label }}</li>{% endfor %}
-    </ul>
-  {% endif %}
+  <div class="c4w-card__body">
+    <h2 class="c4w-card__title">
+      <a href="{{ h.c4w_url('resource_detail', slug=resource.slug) }}">{{ resource.name }}</a>
+    </h2>
+    <p class="c4w-card__meta">
+      {% if resource.date_published %}<span>{{ resource.date_published }}</span>{% endif %}
+      {% if resource.in_language %}<span>{{ resource.in_language }}</span>{% endif %}
+      {% if resource.publisher %}<span>{{ resource.publisher }}</span>{% endif %}
+    </p>
+    {% if resource.abstract %}
+      <p class="c4w-card__excerpt">{{ resource.abstract | striptags | truncate(160) }}</p>
+    {% endif %}
+    {% set themes = h.c4w_terms(resource, 'theme') %}
+    {% if themes %}
+      <ul class="c4w-card__tags">
+        {% for theme in themes[:3] %}<li>{{ theme.label }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+  </div>
 </article>

@@ -9,17 +9,18 @@
   selected two topics found page 2 filtered by one of them -- a different
   result set, silently.
 #}
+{% import 'c4w/macros/ui.html' as ui with context %}
 {% if pages > 1 %}
   <nav class="c4w-pagination" aria-label="{{ label or _('Pagination') }}">
     <ul>
       {% if page > 1 %}
-        <li><a href="{{ h.c4w_page_url(page - 1) }}" rel="prev">{{ _('Previous') }}</a></li>
+        <li><a href="{{ h.c4w_page_url(page - 1) }}" rel="prev">{{ ui.icon('arrow-left', 'c4w-icon--sm') }} {{ _('Previous') }}</a></li>
       {% endif %}
       <li class="c4w-pagination__status">
         {{ _('Page {current} of {total}').format(current=page, total=pages) }}
       </li>
       {% if page < pages %}
-        <li><a href="{{ h.c4w_page_url(page + 1) }}" rel="next">{{ _('Next') }}</a></li>
+        <li><a href="{{ h.c4w_page_url(page + 1) }}" rel="next">{{ _('Next') }} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</a></li>
       {% endif %}
     </ul>
   </nav>

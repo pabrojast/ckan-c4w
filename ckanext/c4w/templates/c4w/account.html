@@ -13,7 +13,7 @@
       {% for group in groups %}
         <section class="c4w-queue">
           <h2>{{ _(group.entity_type | capitalize) }}</h2>
-          <table class="c4w-table">
+          <div class="c4w-table-wrap"><table class="c4w-table">
             <thead>
               <tr>
                 <th>{{ _('Title') }}</th>
@@ -61,7 +61,7 @@
                 </tr>
               {% endfor %}
             </tbody>
-          </table>
+          </table></div>
         </section>
       {% endfor %}
     {% else %}

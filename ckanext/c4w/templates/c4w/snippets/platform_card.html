@@ -1,20 +1,25 @@
 {# A platform or repository in the directory listing. #}
-{% set logo = h.c4w_image_url(platform, 'logo_url') %}
+{% import 'c4w/macros/ui.html' as ui with context %}
 <article class="c4w-card c4w-card--org">
   <a class="c4w-card__link" href="{{ h.c4w_url('platform_detail', slug=platform.slug) }}">
-    <div class="c4w-card__media c4w-card__media--logo">
-      {% if logo %}<img src="{{ logo }}" alt="" loading="lazy">{% endif %}
-    </div>
-    <h2 class="c4w-card__title">{{ platform.name }}</h2>
+    {{ ui.card_media(h.c4w_image_url(platform, 'logo_url'), 'platform', logo=true) }}
   </a>
-  <p class="c4w-card__meta">
-    {% if platform.geographic_extent %}
-      <span class="c4w-card__status">{{
-        h.c4w_term_label('geographic_extent', platform.geographic_extent) }}</span>
+  <div class="c4w-card__body">
+    <h2 class="c4w-card__title">
+      <a href="{{ h.c4w_url('platform_detail', slug=platform.slug) }}">{{ platform.name }}</a>
+    </h2>
+    <p class="c4w-card__meta">
+      {% if platform.geographic_extent %}
+        <span class="c4w-card__status">{{
+          h.c4w_term_label('geographic_extent', platform.geographic_extent) }}</span>
+      {% endif %}
+      {% set countries = h.c4w_terms(platform, 'country') %}
+      {% if countries %}
+        <span class="c4w-card__countries">{{ ui.icon('map-pin', 'c4w-icon--sm') }} {{ countries[:3] | map(attribute='label') | join(', ') }}{% if countries|length > 3 %}…{% endif %}</span>
+      {% endif %}
+    </p>
+    {% if platform.description %}
+      <p class="c4w-card__excerpt">{{ platform.description | striptags | truncate(140) }}</p>
     {% endif %}
-    {% set countries = h.c4w_terms(platform, 'country') %}
-    {% if countries %}
-      <span>{{ countries[:3] | map(attribute='label') | join(', ') }}{% if countries|length > 3 %}…{% endif %}</span>
-    {% endif %}
-  </p>
+  </div>
 </article>

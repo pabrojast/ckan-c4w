@@ -12,19 +12,21 @@
   An <ol> of links, not a script: it works with no JavaScript and reads as
   a numbered list to assistive tech. aria-current marks the open step.
 #}
+{% import 'c4w/macros/ui.html' as ui with context %}
 <ol class="c4w-wizard__steps" aria-label="{{ _('Steps') }}">
   {% for step in steps %}
     {% set n = step.step %}
     {% set state = 'is-current' if n == current else ('is-done' if n < current else '') %}
     <li class="c4w-wizard__step {{ state }}"{% if n == current %} aria-current="step"{% endif %}>
+      {% set num %}{% if n < current %}{{ ui.icon('check', 'c4w-icon--sm') }}{% else %}{{ n }}{% endif %}{% endset %}
       {% if dataset_id and n <= reachable and n != current %}
         <a href="{{ h.c4w_url('submit_data_step', dataset_id=dataset_id, step=n) }}">
-          <span class="c4w-wizard__num">{{ n }}</span>
+          <span class="c4w-wizard__num">{{ num }}</span>
           <span class="c4w-wizard__title">{{ _(step.title) }}</span>
         </a>
       {% else %}
         <span>
-          <span class="c4w-wizard__num">{{ n }}</span>
+          <span class="c4w-wizard__num">{{ num }}</span>
           <span class="c4w-wizard__title">{{ _(step.title) }}</span>
         </span>
       {% endif %}

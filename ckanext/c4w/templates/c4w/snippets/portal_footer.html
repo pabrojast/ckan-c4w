@@ -1,22 +1,21 @@
 {#
   C4W portal footer. Holds the contractual attribution (Scivil, Flanders,
-  CC BY-SA 4.0) that used to live in the credits strip, plus a way back to
-  IHP-WINS. Not the UNESCO site footer.
+  CC BY-SA 4.0) plus a way back to IHP-WINS. Light, like the IHP-WINS
+  footer, so the two sites read as one family. Not the UNESCO site footer.
 #}
+{% import 'c4w/macros/ui.html' as ui with context %}
 <footer class="c4w-footer">
   <div class="c4w-footer__inner">
     <div class="c4w-footer__brand">
+      <img class="c4w-footer__logo" src="{{ h.url_for_static('/c4w/img/Citizens4Water_Vertical.svg') }}"
+           alt="{{ _('Citizens4Water') }}" width="88" height="116" loading="lazy">
       <p class="c4w-footer__about">
         {% trans %}Citizens4Water is coordinated by Scivil and financed by the Flemish Government, within UNESCO's IHP-IX programme.{% endtrans %}
-      </p>
-      <p>
-        <a href="{{ h.url_for('home.index') }}">{{ _('Part of IHP-WINS') }}</a>
-        ·
-        <a href="{{ h.c4w_url('about') }}">{{ _('About') }}</a>
       </p>
     </div>
 
     <nav class="c4w-footer__nav" aria-label="{{ _('Catalogue') }}">
+      <h2 class="c4w-footer__title">{{ _('Explore') }}</h2>
       <ul>
         {% for item in h.c4w_nav() %}
           <li><a href="{{ item.url }}">{{ _(item.label) }}</a></li>
@@ -24,17 +23,37 @@
       </ul>
     </nav>
 
-    <div class="c4w-footer__social">
-      <p>{{ _('Follow us') }}</p>
+    <nav class="c4w-footer__nav" aria-label="{{ _('Take part') }}">
+      <h2 class="c4w-footer__title">{{ _('Take part') }}</h2>
       <ul>
-        <li><a href="https://instagram.com/citizens4water" rel="noopener noreferrer nofollow" target="_blank">Instagram</a></li>
-        <li><a href="https://www.facebook.com/people/Citizens4Water/61578103993188/" rel="noopener noreferrer nofollow" target="_blank">Facebook</a></li>
-        <li><a href="https://bsky.app/profile/citizens4water.bsky.social" rel="noopener noreferrer nofollow" target="_blank">Bluesky</a></li>
-        <li><a href="https://www.linkedin.com/company/citizens4water/" rel="noopener noreferrer nofollow" target="_blank">LinkedIn</a></li>
+        <li><a href="{{ h.c4w_url('submit') }}">{{ _('Share your data') }}</a></li>
+        {% if not c.userobj %}
+          <li><a href="{{ h.c4w_register_url() }}">{{ _('Register') }}</a></li>
+          <li><a href="{{ h.c4w_login_url() }}">{{ _('Log in') }}</a></li>
+        {% else %}
+          <li><a href="{{ h.c4w_url('account') }}">{{ _('My submissions') }}</a></li>
+        {% endif %}
+        <li><a href="{{ h.c4w_url('about') }}">{{ _('About Citizens4Water') }}</a></li>
+        <li><a href="{{ h.url_for('home.index') }}">{{ _('Part of IHP-WINS') }}</a></li>
+      </ul>
+    </nav>
+
+    <div class="c4w-footer__social">
+      <h2 class="c4w-footer__title">{{ _('Follow us') }}</h2>
+      <ul>
+        <li><a href="https://instagram.com/citizens4water" rel="noopener noreferrer nofollow" target="_blank" aria-label="Instagram">{{ ui.icon('instagram') }}</a></li>
+        <li><a href="https://www.facebook.com/people/Citizens4Water/61578103993188/" rel="noopener noreferrer nofollow" target="_blank" aria-label="Facebook">{{ ui.icon('facebook') }}</a></li>
+        <li><a href="https://bsky.app/profile/citizens4water.bsky.social" rel="noopener noreferrer nofollow" target="_blank" aria-label="Bluesky">{{ ui.icon('bluesky') }}</a></li>
+        <li><a href="https://www.linkedin.com/company/citizens4water/" rel="noopener noreferrer nofollow" target="_blank" aria-label="LinkedIn">{{ ui.icon('linkedin') }}</a></li>
       </ul>
       <p class="c4w-footer__licence">
-        <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="license noopener noreferrer" target="_blank">CC BY-SA 4.0</a>
+        {{ _('Content is published under') }}
+        <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="license noopener noreferrer" target="_blank">CC BY-SA 4.0</a>.
       </p>
     </div>
+  </div>
+  <div class="c4w-footer__bottom">
+    <p>Citizens4Water · {{ _('A UNESCO IHP-WINS portal') }}</p>
+    <p><a href="{{ h.url_for('home.index') }}">data.dev-wins.com</a></p>
   </div>
 </footer>

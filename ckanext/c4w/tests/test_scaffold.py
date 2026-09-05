@@ -464,3 +464,69 @@ def test_dashboard_build_is_committed():
     assert '.c4w-dash' in css
     template = _read('templates', 'c4w', 'dataset_dashboard.html')
     assert "h.c4w_dashboard_asset('c4w-dashboard.js')" in template
+
+
+# --------------------------------------------------------------------------- #
+# Visual system (IHP-WINS-aligned restyle)
+# --------------------------------------------------------------------------- #
+
+def test_icon_sprite_and_ui_macros_are_wired():
+    assert (PKG / 'templates' / 'c4w' / 'snippets' / 'icons.html').is_file()
+    assert (PKG / 'templates' / 'c4w' / 'macros' / 'ui.html').is_file()
+    base = _read('templates', 'c4w', 'base.html')
+    assert "c4w/snippets/icons.html" in base
+    sprite = _read('templates', 'c4w', 'snippets', 'icons.html')
+    for name in ('search', 'menu', 'drop', 'database', 'building', 'calendar',
+                 'newspaper', 'book', 'school', 'layers', 'map-pin',
+                 'instagram', 'facebook', 'bluesky', 'linkedin'):
+        assert 'id="c4w-i-%s"' % name in sprite, name
+
+
+def test_link_buttons_outrank_the_global_link_colour():
+    """`html.c4w-portal a` beats a bare `.c4w-btn`; the button rule must
+    name the anchor or every link-button renders blue on blue."""
+    css = _read('assets', 'css', 'c4w.css')
+    assert 'html.c4w-portal a.c4w-btn' in css
+    assert 'box-shadow' in css
+    assert 'transition' in css
+    assert '--c4w-radius-lg' in css
+
+
+def test_no_third_party_origins_in_templates_or_css():
+    """Fonts and icons are vendored; the portal must not call a CDN."""
+    offenders = []
+    for path in sorted((PKG / 'templates').rglob('*.html')):
+        text = path.read_text(encoding='utf-8')
+        for needle in ('fonts.googleapis.com', 'fonts.gstatic.com',
+                       'cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'unpkg.com'):
+            if needle in text and 'recaptcha' not in path.name:
+                offenders.append('%s: %s' % (path.name, needle))
+    css = _read('assets', 'css', 'c4w.css')
+    # Inline SVG data URIs name the W3C namespace; that is not a request.
+    assert 'googleapis' not in css and 'cdn' not in css
+    assert 'https://' not in css.replace('http://www.w3.org', '')
+    assert not offenders, offenders
+
+
+def test_vendored_fonts_and_hero_images_exist():
+    fonts = PKG / 'public' / 'c4w' / 'fonts'
+    assert (fonts / 'inter-var.woff2').is_file()
+    assert (fonts / 'inter-var-ext.woff2').is_file()
+    assert 'Open Font License' in (fonts / 'NOTICE.txt').read_text(encoding='utf-8')
+    img = PKG / 'public' / 'c4w' / 'img'
+    for name in ('hero-pc.webp', 'hero-tablet.webp', 'hero-mobile.webp',
+                 'Citizens4Water_Vertical.svg'):
+        assert (img / name).is_file(), name
+    css = _read('assets', 'css', 'c4w.css')
+    assert 'inter-var.woff2' in css
+    assert 'plex' not in css.lower()
+
+
+def test_every_card_uses_the_media_macro_or_a_fixed_media_box():
+    """An image-less card must never collapse to a zero-height media div."""
+    for name in ('project_card.html', 'post_card.html', 'resource_card.html',
+                 'organisation_card.html', 'platform_card.html'):
+        text = _read('templates', 'c4w', 'snippets', name)
+        assert 'ui.card_media(' in text, name
+    dataset = _read('templates', 'c4w', 'snippets', 'dataset_card.html')
+    assert 'c4w-card__media--dataset' in dataset
