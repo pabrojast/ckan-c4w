@@ -451,9 +451,7 @@ html.c4w-portal .c4w-topbar__login:focus-visible { background: var(--c4w-pale) !
   right: 0;
   bottom: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--c4w-cyan) 0%, rgba(0, 184, 230, 0.15) 45%, var(--c4w-cyan) 100%);
-  background-size: 200% 100%;
-  animation: c4w-shimmer 14s linear infinite;
+  background: linear-gradient(90deg, var(--c4w-cyan) 0%, var(--c4w-bright) 60%, var(--c4w-cyan) 100%);
   pointer-events: none;
 }
 
@@ -549,12 +547,14 @@ html.c4w-portal .c4w-footer__social a:active {
   opacity: 1 !important;
 }
 
-html.c4w-portal .c4w-topbar__login:link,
-html.c4w-portal .c4w-topbar__login:visited,
-html.c4w-portal .c4w-topbar__login:hover,
-html.c4w-portal .c4w-topbar__login:focus,
-html.c4w-portal .c4w-topbar__login:active {
+html.c4w-portal .c4w-topbar a.c4w-topbar__login,
+html.c4w-portal .c4w-topbar a.c4w-topbar__login:link,
+html.c4w-portal .c4w-topbar a.c4w-topbar__login:visited,
+html.c4w-portal .c4w-topbar a.c4w-topbar__login:hover,
+html.c4w-portal .c4w-topbar a.c4w-topbar__login:focus,
+html.c4w-portal .c4w-topbar a.c4w-topbar__login:active {
   color: var(--c4w-blue) !important;
+  background: var(--c4w-white) !important;
 }
 
 html.c4w-portal .c4w-nav__link:focus-visible {
@@ -2389,11 +2389,6 @@ html.c4w-portal .c4w-footer__bottom p { margin: 0 !important; color: var(--c4w-m
 @keyframes c4w-float {
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(-1.5rem, 1.25rem, 0); }
-}
-
-@keyframes c4w-shimmer {
-  from { background-position: 0% 0; }
-  to { background-position: 200% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
