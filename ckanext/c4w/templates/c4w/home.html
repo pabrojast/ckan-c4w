@@ -39,10 +39,19 @@
         </p>
       {% endif %}
     </div>
+    {# Two drifting waves fold the photo into the page. Decorative only. #}
+    <div class="c4w-hero__waves" aria-hidden="true">
+      <svg viewBox="0 0 2880 120" preserveAspectRatio="none" class="c4w-hero__wave--back">
+        <path fill="#FFFFFF" d="M0 78c120-30 240-46 360-46s240 16 360 34 240 30 360 30 240-18 360-40 240-34 360-34 240 22 360 44 240 34 360 34 240-24 360-46V120H0Z"/>
+      </svg>
+      <svg viewBox="0 0 2880 120" preserveAspectRatio="none" class="c4w-hero__wave--front">
+        <path fill="#FFFFFF" d="M0 92c140-24 280-36 420-36s280 12 420 26 280 24 420 24 280-14 420-28 280-22 420-22 280 14 420 28 280 22 420 22 280-16 420-34V120H0Z"/>
+      </svg>
+    </div>
   </section>
 
   {% if nav %}
-    <div class="c4w-band">
+    <div class="c4w-band c4w-band--first">
       <div class="c4w-page">
         <section class="c4w-section" aria-label="{{ _('Sections') }}">
           <header class="c4w-section__head">
@@ -55,7 +64,7 @@
                   <span class="c4w-stat__icon">{{ ui.icon(h.c4w_entity_icon(item.stat)) }}</span>
                   <span>
                     {% if stats.get(item.stat) is not none %}
-                      <span class="c4w-stat__value">{{ h.c4w_number(stats.get(item.stat)) }}</span>
+                      <span class="c4w-stat__value" data-count="{{ stats.get(item.stat) }}">{{ h.c4w_number(stats.get(item.stat)) }}</span>
                     {% endif %}
                     <span class="c4w-stat__label">{{ _(item.label) }}</span>
                   </span>

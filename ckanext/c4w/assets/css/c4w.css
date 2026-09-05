@@ -230,9 +230,10 @@ html.c4w-portal a.c4w-btn {
   justify-content: center;
   gap: 0.45rem;
   padding: 0.6rem 1.15rem;
-  border: 1px solid var(--c4w-blue);
+  border: 1px solid transparent;
   border-radius: var(--c4w-radius);
-  background: var(--c4w-blue);
+  background: linear-gradient(135deg, var(--c4w-blue) 0%, var(--c4w-bright) 100%);
+  background-size: 150% 150%;
   color: var(--c4w-white);
   font: inherit;
   font-size: 0.95rem;
@@ -240,7 +241,7 @@ html.c4w-portal a.c4w-btn {
   line-height: 1.3;
   text-decoration: none;
   cursor: pointer;
-  transition: background var(--c4w-motion), box-shadow var(--c4w-motion),
+  transition: background-position var(--c4w-motion), box-shadow var(--c4w-motion),
               transform var(--c4w-motion), color var(--c4w-motion);
 }
 
@@ -248,12 +249,11 @@ html.c4w-portal .c4w-btn:hover,
 html.c4w-portal a.c4w-btn:hover,
 html.c4w-portal .c4w-btn:focus-visible,
 html.c4w-portal a.c4w-btn:focus-visible {
-  background: var(--c4w-deep);
-  border-color: var(--c4w-deep);
+  background-position: 100% 100%;
   color: var(--c4w-white);
   text-decoration: none;
   transform: translateY(-1px);
-  box-shadow: var(--c4w-shadow);
+  box-shadow: 0 6px 16px rgba(0, 105, 180, 0.3);
 }
 
 html.c4w-portal .c4w-btn--quiet,
@@ -435,12 +435,29 @@ html.c4w-portal .c4w-topbar__login:focus-visible { background: var(--c4w-pale) !
 .c4w-account ul a:focus-visible { background: var(--c4w-pale); color: var(--c4w-deep); }
 
 .c4w-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 100;
-  background: var(--c4w-blue);
+  background: linear-gradient(90deg, var(--c4w-deep) 0%, var(--c4w-blue) 55%, var(--c4w-bright) 100%);
   color: var(--c4w-white);
   box-shadow: 0 2px 8px rgba(0, 40, 80, 0.18);
+  transition: box-shadow var(--c4w-motion);
 }
+
+.c4w-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--c4w-cyan) 0%, rgba(0, 184, 230, 0.15) 45%, var(--c4w-cyan) 100%);
+  background-size: 200% 100%;
+  animation: c4w-shimmer 14s linear infinite;
+  pointer-events: none;
+}
+
+.c4w-header.is-stuck { box-shadow: 0 6px 18px rgba(0, 40, 80, 0.28); }
 
 .c4w-header__inner {
   display: flex;
@@ -589,7 +606,7 @@ html.c4w-portal .c4w-topbar__login:focus-visible { background: var(--c4w-pale) !
 .c4w-hero {
   position: relative;
   isolation: isolate;
-  min-height: 26rem;
+  min-height: 29rem;
   display: flex;
   align-items: center;
   color: var(--c4w-white);
@@ -608,18 +625,58 @@ html.c4w-portal .c4w-topbar__login:focus-visible { background: var(--c4w-pale) !
   z-index: -2;
 }
 
+.c4w-hero__media img {
+  transform-origin: 60% 40%;
+  animation: c4w-kenburns 32s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
 .c4w-hero::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(90deg, rgba(0, 74, 133, 0.94) 0%, rgba(0, 90, 158, 0.78) 45%, rgba(0, 105, 180, 0.35) 100%);
+  background:
+    radial-gradient(60rem 26rem at 88% 18%, rgba(0, 184, 230, 0.28), transparent 62%),
+    linear-gradient(90deg, rgba(0, 60, 110, 0.95) 0%, rgba(0, 90, 158, 0.76) 42%, rgba(0, 105, 180, 0.28) 100%);
 }
+
+.c4w-hero__waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 5.5rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.c4w-hero__waves svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+}
+
+.c4w-hero__wave--back { animation: c4w-drift 26s linear infinite; opacity: 0.55; }
+.c4w-hero__wave--front { animation: c4w-drift 17s linear infinite; }
+
+.c4w-hero h1,
+.c4w-hero__lede,
+.c4w-hero__search,
+.c4w-hero__counts {
+  animation: c4w-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.c4w-hero__lede { animation-delay: 0.12s; }
+.c4w-hero__search { animation-delay: 0.24s; }
+.c4w-hero__counts { animation-delay: 0.36s; }
 
 .c4w-hero__inner {
   width: min(100% - 2.5rem, var(--c4w-page));
   margin: 0 auto;
-  padding: 3.25rem 0;
+  padding: 3.5rem 0 6rem;
 }
 
 .c4w-hero h1 {
@@ -647,6 +704,12 @@ html.c4w-portal .c4w-hero__lede {
   border-radius: var(--c4w-radius-lg);
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 30, 60, 0.28);
+  transition: box-shadow var(--c4w-motion), transform var(--c4w-motion);
+}
+
+.c4w-hero__search:focus-within {
+  box-shadow: 0 0 0 4px rgba(0, 184, 230, 0.35), 0 12px 32px rgba(0, 30, 60, 0.32);
+  transform: translateY(-1px);
 }
 
 .c4w-hero__search input {
@@ -690,6 +753,8 @@ html.c4w-portal .c4w-hero__counts {
   border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: var(--c4w-white);
   font-size: 0.9rem;
   text-decoration: none;
@@ -704,7 +769,8 @@ html.c4w-portal .c4w-hero__counts {
 /* --- home: bands and sections ------------------------------------------- */
 
 .c4w-band { padding: 3rem 0; }
-.c4w-band--alt { background: var(--c4w-band); }
+.c4w-band--alt { background: linear-gradient(180deg, #F5F8FA 0%, #EAF2F7 100%); }
+.c4w-band--first { padding-top: 1.5rem; }
 .c4w-band > .c4w-page { padding: 0; }
 
 .c4w-section + .c4w-section { margin-top: 2.5rem; }
@@ -788,6 +854,7 @@ html.c4w-portal .c4w-section__lede {
   transform: translateY(-3px);
   box-shadow: var(--c4w-shadow-hover);
   border-color: var(--c4w-rule-strong);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F3F9FC 100%);
   text-decoration: none;
   color: inherit;
 }
@@ -802,14 +869,15 @@ html.c4w-portal .c4w-section__lede {
   width: 3rem;
   height: 3rem;
   border-radius: 12px;
-  background: var(--c4w-pale);
-  color: var(--c4w-blue);
-  transition: transform var(--c4w-motion);
+  background: linear-gradient(135deg, var(--c4w-blue) 0%, var(--c4w-cyan) 100%);
+  color: var(--c4w-white);
+  box-shadow: 0 4px 10px rgba(0, 105, 180, 0.22);
+  transition: transform var(--c4w-motion), box-shadow var(--c4w-motion);
 }
 
 .c4w-stat__icon .c4w-icon { width: 1.5rem; height: 1.5rem; }
 
-.c4w-stat:hover .c4w-stat__icon { transform: scale(1.06) rotate(-3deg); }
+.c4w-stat:hover .c4w-stat__icon { transform: scale(1.08) rotate(-4deg); box-shadow: 0 8px 18px rgba(0, 105, 180, 0.3); }
 
 .c4w-stat__value {
   display: block;
@@ -905,17 +973,33 @@ html.c4w-portal .c4w-quiet {
   align-items: center;
 }
 
-.c4w-cta::before {
+.c4w-cta::before,
+.c4w-cta::after {
   content: "";
   position: absolute;
-  right: -6rem;
-  top: -6rem;
-  width: 18rem;
-  height: 18rem;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
   pointer-events: none;
 }
+
+.c4w-cta::before {
+  right: -6rem;
+  top: -7rem;
+  width: 20rem;
+  height: 20rem;
+  background: radial-gradient(circle at 30% 30%, rgba(0, 184, 230, 0.35), rgba(255, 255, 255, 0.05) 70%);
+  animation: c4w-float 14s ease-in-out infinite alternate;
+}
+
+.c4w-cta::after {
+  left: 38%;
+  bottom: -9rem;
+  width: 14rem;
+  height: 14rem;
+  background: rgba(255, 255, 255, 0.07);
+  animation: c4w-float 19s ease-in-out infinite alternate-reverse;
+}
+
+.c4w-cta > * { position: relative; z-index: 1; }
 
 .c4w-cta h2 { margin: 0 0 0.4rem; color: var(--c4w-white); font-size: 1.6rem; }
 
@@ -2154,10 +2238,12 @@ html.c4w-portal .c4w-choice p { margin: 0 !important; color: var(--c4w-muted) !i
 /* --- footer -------------------------------------------------------------- */
 
 .c4w-footer {
+  position: relative;
   margin-top: 3rem;
   padding: 2.75rem 0 2rem;
-  background: #F1F4F6;
-  border-top: 3px solid var(--c4w-blue);
+  background: linear-gradient(180deg, #F1F4F6 0%, #E9EFF3 100%);
+  border-top: 3px solid transparent;
+  border-image: linear-gradient(90deg, var(--c4w-blue), var(--c4w-cyan)) 1;
   color: var(--c4w-ink);
   font-size: 0.92rem;
 }
@@ -2227,8 +2313,33 @@ html.c4w-portal .c4w-footer__bottom p { margin: 0 !important; color: var(--c4w-m
 
 /* --- motion -------------------------------------------------------------- */
 
+@keyframes c4w-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes c4w-kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.09) translate(-1.5%, 1%); }
+}
+
+@keyframes c4w-drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes c4w-float {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-1.5rem, 1.25rem, 0); }
+}
+
+@keyframes c4w-shimmer {
+  from { background-position: 0% 0; }
+  to { background-position: 200% 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  html.c4w-portal * { transition: none !important; }
+  html.c4w-portal * { transition: none !important; animation: none !important; }
   html.c4w-portal .c4w-card:hover,
   html.c4w-portal .c4w-stat:hover,
   html.c4w-portal .c4w-choice:hover,
