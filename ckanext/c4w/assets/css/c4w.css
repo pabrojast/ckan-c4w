@@ -1195,7 +1195,7 @@ html.c4w-portal .c4w-card__date {
 .c4w-card--event .c4w-card__title { font-size: 1.02rem; }
 
 html.c4w-portal .c4w-empty {
-  padding: 1.5rem;
+  padding: 2.5rem 1.5rem;
   border: 1px dashed var(--c4w-rule-strong);
   border-radius: var(--c4w-radius-lg);
   background: var(--c4w-band);
@@ -1222,6 +1222,12 @@ html.c4w-portal .c4w-empty {
   .c4w-listing__header  { grid-area: header; }
   .c4w-listing__results { grid-area: results; }
   .c4w-facets           { grid-area: facets; }
+  .c4w-listing--wide {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "header"
+      "results";
+  }
 }
 
 .c4w-listing__header {
@@ -1633,8 +1639,13 @@ html.c4w-portal .c4w-detail__actions--top { margin: 0 0 1.25rem !important; }
 .c4w-events section + section { margin-top: 2.5rem; }
 .c4w-events header { margin-bottom: 1.5rem; }
 .c4w-events h2 { margin-bottom: 1rem; }
-.c4w-event-list { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-@media (min-width: 56rem) { .c4w-event-list { grid-template-columns: 1fr 1fr; } }
+/* auto-fit, not a fixed pair: a lone event spans the row instead of
+   leaving an empty column beside it. */
+.c4w-event-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: 1rem;
+}
 .c4w-event-list--past { opacity: 0.85; }
 
 /* --- account / admin ----------------------------------------------------- */

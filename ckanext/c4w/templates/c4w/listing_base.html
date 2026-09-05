@@ -18,7 +18,14 @@
 {% block subtitle %}{{ self.listing_title() }}{% endblock %}
 
 {% block c4w_content %}
-  <div class="c4w-page c4w-listing" id="c4w-main">
+  {#
+    A listing without facets (news) must not reserve the sidebar column:
+    the block is rendered once here, and the aside only exists when it
+    produced something.
+  #}
+  {% set facets_html %}{% block listing_facets %}{% endblock %}{% endset %}
+  {% set has_facets = facets_html | trim %}
+  <div class="c4w-page c4w-listing{% if not has_facets %} c4w-listing--wide{% endif %}" id="c4w-main">
     <header class="c4w-listing__header">
       <div>
         <h1>{% block listing_title %}{% endblock %}</h1>
@@ -80,11 +87,13 @@
       {% endif %}
     </div>
 
-    <aside class="c4w-facets" aria-label="{{ _('Filters') }}">
-      <details open>
-        <summary class="c4w-facets__toggle">{{ ui.icon('filter') }} {{ _('Filters') }}</summary>
-        {% block listing_facets %}{% endblock %}
-      </details>
-    </aside>
+    {% if has_facets %}
+      <aside class="c4w-facets" aria-label="{{ _('Filters') }}">
+        <details open>
+          <summary class="c4w-facets__toggle">{{ ui.icon('filter') }} {{ _('Filters') }}</summary>
+          {{ facets_html }}
+        </details>
+      </aside>
+    {% endif %}
   </div>
 {% endblock %}

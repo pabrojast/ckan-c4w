@@ -264,4 +264,6 @@ render('c4w/dataset_step_5.html', 'wizard5.html', step=constants.DATASET_FORM_ST
 render('c4w/login.html', 'login.html', data={}, errors={}, came_from='/')
 render('c4w/register_choose.html', 'register_choose.html', user=None)
 render('c4w/admin.html', 'admin.html', groups=[{'entity_type': 'dataset', 'rows': [dict(DATASET, approved=False, mapping_json='{}')], 'can_hide': True, 'can_feature': True, 'can_process': True}], managers=[{'user_id': 'u2', 'fullname': 'Pedro Silva', 'name': 'pedro', 'email': 'pedro@example.org', 'job_title': 'Coordinator', 'country': 'CL', 'org_choice': 'new', 'org_name_requested': 'Río Vivo', 'org_type': 'non-governmental', 'org_url': 'https://riovivo.cl', 'created': '2026-09-02'}], c=USER)
+render('c4w/post_list.html', 'post_list_empty.html', listing={'results': [], 'count': 0, 'page': 1, 'pages': 1, 'order': 'modified', 'facets': {}}, orderings=None, params={})
+render('c4w/event_list.html', 'event_list_single.html', listing={'upcoming': [event(0)], 'past': [event(1)], 'upcoming_total': 1, 'page': 1, 'pages': 1}, params={})
 render('c4w/event_list.html', 'event_list.html', listing={'upcoming': [event(0), event(1)], 'past': [event(0)], 'upcoming_total': 2, 'page': 1, 'pages': 1}, params={})
