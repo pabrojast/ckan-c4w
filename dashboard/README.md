@@ -69,8 +69,10 @@ Root data attributes (all read by `src/config.ts`):
 
 `full=True` (embed page) adds `c4w-dash--full`: the dashboard fills the
 viewport and drops its frame. The portal page keeps a fixed workspace height
-(`clamp(560px, 100vh - 14rem, 880px)`); below 900px the notebook stacks under
-the map with fixed chart heights.
+(`clamp(560px, 100vh - 14rem, 880px)`). The chart column scrolls when needed,
+with minimum panel heights of 210 / 250 / 360px to keep the axes and country
+labels readable. Below 900px the charts stack under the map and the page
+scrolls as a whole.
 
 Every element the code touches carries a `data-role`; the code only queries
 inside its root, so several dashboards can live on one page. The full role list

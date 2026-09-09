@@ -44,7 +44,7 @@ export function createHistogram(
         scales: {
           x: {
             grid: { display: false },
-            ticks: { maxRotation: 30, minRotation: 0, autoSkip: false, font: { size: 9 }, padding: 2 },
+            ticks: { maxRotation: 60, minRotation: 45, autoSkip: false, padding: 6 },
           },
           y: {
             beginAtZero: true,

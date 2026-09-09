@@ -86,7 +86,7 @@ export function createComparison(
           y: {
             grid: { display: false },
             // Sin esto Chart.js salta etiquetas y quedan barras sin nombre.
-            ticks: { font: { size: 10 }, autoSkip: false },
+            ticks: { autoSkip: false, padding: 6 },
           },
         },
       };

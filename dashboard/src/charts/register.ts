@@ -33,8 +33,8 @@ export const ACCENT = "#005FAA";
 export const ACCENT_WASH = "rgba(0, 119, 212, 0.10)";
 export const SURFACE = "#FFFFFF";
 
-Chart.defaults.font.family = '"IBM Plex Sans", "Noto Sans", "Segoe UI", sans-serif';
-Chart.defaults.font.size = 11;
+Chart.defaults.font.family = '"Inter", "Segoe UI", "Noto Sans", sans-serif';
+Chart.defaults.font.size = 12;
 Chart.defaults.color = MUTED;
 Chart.defaults.borderColor = RULE;
 Chart.defaults.maintainAspectRatio = false;

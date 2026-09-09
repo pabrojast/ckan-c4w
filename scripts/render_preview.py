@@ -1,6 +1,7 @@
 # encoding: utf-8
 """Render the real C4W templates with stub helpers, for visual review.
 
+    npm run dev-data --prefix dashboard  # optional: include the dashboard demo
     python3 scripts/render_preview.py [--out build/preview]
     python3 -m http.server 8765 --bind 127.0.0.1 --directory build/preview
 
@@ -34,6 +35,9 @@ if os.path.isdir(os.path.join(OUT, 'c4w')):
     shutil.rmtree(os.path.join(OUT, 'c4w'))
 shutil.copytree(PUBLIC, os.path.join(OUT, 'c4w'))
 shutil.copy(CSS, os.path.join(OUT, 'c4w.css'))
+DEV_DATA = os.path.join(REPO, 'dashboard', 'public', 'dev-data')
+if os.path.isdir(DEV_DATA):
+    shutil.copytree(DEV_DATA, os.path.join(OUT, 'dev-data'), dirs_exist_ok=True)
 sys.path.insert(0, REPO)
 from ckanext.c4w import constants  # noqa: E402
 
@@ -68,10 +72,10 @@ class SnippetExtension(Extension):
             name = parser.stream.expect('name').value
             parser.stream.expect('assign')
             kwargs.append(nodes.Keyword(name, parser.parse_expression()))
-        return nodes.Output([self.call_method('_render', args, kwargs)]).set_lineno(lineno)
+        return nodes.Output([self.call_method('_render', [nodes.ContextReference(), *args], kwargs)]).set_lineno(lineno)
 
-    def _render(self, path, **kw):
-        ctx = dict(BASE_CTX)
+    def _render(self, context, path, **kw):
+        ctx = dict(context.get_all())
         ctx.update(kw)
         return Markup(self.environment.get_template(path).render(**ctx))
 
@@ -157,7 +161,9 @@ DATASET = {
     'data_files': [{'id': 'f1', 'original_name': 'maipo-2021-2024.csv', 'size_bytes': 1834000}],
     'attachments': [{'id': 'f2', 'original_name': 'protocol-v3.pdf', 'size_bytes': 402000}],
     'project': {'name': 'Lake Guardians Chile', 'slug': 'project-1'}, 'organisation': None,
-    'license_id': 'cc-by', 'frequency': 'monthly', 'language': 'es', 'source_url': None, 'doi': '10.1234/maipo.2024',
+    'license_id': 'cc-by', 'frequency': 'monthly', 'language': 'es',
+    'source_url': 'https://example.org/ArcGIS/rest/services/Global_Data_Set_%28water_quality_observations%29/FeatureServer/0',
+    'doi': '10.1234/maipo.2024',
     'citation': None, 'author': 'Colegio San Ignacio', 'attribution_text': 'Funded by the Chilean Ministry of Science.',
     'related_urls': [], 'contact_name': 'Ana Rojas', 'contact_email': 'ana@example.org', 'processed_at': '2026-09-04T12:00:00',
     'term_labels': TERMS(country=[('cl', 'Chile')], water_data_type=[('chemical-water-quality', 'Chemical water quality')],
@@ -258,8 +264,26 @@ render('c4w/home.html', 'index.html', stats=STATS, featured_project=project(0), 
 render('c4w/project_list.html', 'project_list.html', listing=LISTING, orderings=constants.PROJECT_ORDERINGS, params={'q': ''})
 render('c4w/project_detail.html', 'project_detail.html', project=project(0))
 render('c4w/dataset_detail.html', 'dataset_detail.html', dataset=DATASET, c=USER)
+render('c4w/dataset_list.html', 'dataset_list.html', listing={
+    'results': [DATASET, dict(DATASET, title='FreshWater Watch', temporal_start='2012-05-12', temporal_end='2026-08-28'),
+                dict(DATASET, title='UNEP GEMS/Water Global Freshwater Quality Archive', temporal_start='1906-01-01', temporal_end='2023-12-31')],
+    'count': 3, 'page': 1, 'pages': 1, 'order': 'modified', 'facets': {'grain': {'month': 3}},
+}, orderings=constants.DEFAULT_ORDERINGS, params={}, c=USER)
+render('c4w/resource_list.html', 'resource_list.html', listing={
+    'results': [{'slug': 'resource-%d' % i, 'name': name, 'date_published': '2026', 'in_language': 'en',
+                 'publisher': 'Citizens4Water', 'abstract': 'A practical guide to collecting and sharing water-quality observations with citizen science projects.',
+                 'term_labels': TERMS(theme=[('best-practices', 'Best practices')])}
+                for i, name in enumerate(['School projects', 'Recommendation on Open Science', 'Data charter and guide for citizen science',
+                                          'Communication in citizen science', 'Open Hydrology', 'Citizen Science Scan'])],
+    'count': 6, 'page': 1, 'pages': 1, 'order': 'modified',
+    'facets': {v: {term: 2 for term, _ in constants.VOCABULARIES[v]} for v in ('theme', 'audience')},
+}, orderings=constants.DEFAULT_ORDERINGS, params={}, c=USER)
+if os.path.isdir(DEV_DATA):
+    render('c4w/dataset_dashboard.html', 'dataset_dashboard.html', dataset=DATASET,
+           bundle_base='/dev-data/', basemap_style='', lang='en', c=USER)
 render('c4w/organisation_list.html', 'organisation_list.html', listing={'results': [organisation(0, logo=True), organisation(1), organisation(2)], 'count': 61, 'page': 1, 'pages': 1, 'order': 'name', 'facets': {'org_type': {'academic': 20, 'non-governmental': 30}, 'country': {'BE': 12, 'CL': 4}}}, orderings=constants.DEFAULT_ORDERINGS, params={})
 render('c4w/dataset_step_1.html', 'wizard1.html', step=constants.DATASET_FORM_STEPS[0], step_number=1, dataset=None, data={'language': 'en'}, errors={}, reachable=1, is_new=True, project_options=[('p1', 'Lake Guardians Chile')], organisation_options=[('o1', 'Scivil')], c=USER)
+render('c4w/dataset_step_1.html', 'wizard1_edit.html', step=constants.DATASET_FORM_STEPS[0], step_number=1, dataset=DATASET, data=DATASET, errors={}, reachable=5, is_new=False, project_options=[('p1', 'Lake Guardians Chile')], organisation_options=[('o1', 'Scivil')], c=USER)
 render('c4w/dataset_step_5.html', 'wizard5.html', step=constants.DATASET_FORM_STEPS[4], step_number=5, dataset=DATASET, data={'contact_name': 'Ana Rojas', 'contact_email': 'ana@example.org', 'terms_accepted': True}, errors={'contact_url': ['Not a web address']}, reachable=5, is_new=False, missing=[], missing_by_step=[], steps=constants.DATASET_FORM_STEPS, c=USER)
 render('c4w/login.html', 'login.html', data={}, errors={}, came_from='/')
 render('c4w/register_choose.html', 'register_choose.html', user=None)

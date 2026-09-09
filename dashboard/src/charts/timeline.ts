@@ -55,7 +55,7 @@ export function createTimeline(
         scales: {
           x: {
             grid: { display: false },
-            ticks: { maxTicksLimit: 7, maxRotation: 0, font: { size: 10 } },
+            ticks: { maxTicksLimit: 4, maxRotation: 0, autoSkipPadding: 12, padding: 6 },
           },
           y: {
             beginAtZero: false,
