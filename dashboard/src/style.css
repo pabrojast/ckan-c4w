@@ -26,6 +26,7 @@
 
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   height: var(--dash-height);
   min-height: 0;
@@ -45,6 +46,15 @@
 .c4w-dash *::before,
 .c4w-dash *::after {
   box-sizing: border-box;
+}
+
+.c4w-dash > *,
+.c4w-dash__workspace > * {
+  min-width: 0;
+}
+
+.c4w-dash__field::after {
+  content: none;
 }
 
 /* Página embed: ocupa la ventana entera, sin marco. */
@@ -176,6 +186,7 @@
 
 .c4w-dash__field {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.25rem;
   min-width: 9rem;
 }
@@ -630,7 +641,7 @@
   }
 
   .c4w-dash__workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 52vh auto;
   }
 
@@ -655,6 +666,17 @@
 
   .c4w-dash__field {
     flex: 1 1 calc(50% - 0.5rem);
+    min-width: 0;
+  }
+
+  .c4w-dash__field--wide,
+  .c4w-dash__period {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .c4w-dash__field--period input {
+    width: 100%;
     min-width: 0;
   }
 

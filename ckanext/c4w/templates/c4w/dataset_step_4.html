@@ -7,7 +7,7 @@
 
     <div class="c4w-form__section">
       <h2>{{ _('Licence') }}</h2>
-      {{ form.select('license_id', _('Licence'), h.c4w_license_options(), data.license_id, errors, required=true,
+      {{ form.select('license_id', _('Licence'), h.c4w_license_options(data.license_id), data.license_id, errors, required=true,
            hint=_('CC BY 4.0 lets anyone reuse the data with attribution; CC0 waives attribution.')) }}
       {{ form.select('frequency', _('Update frequency'), h.c4w_option_list('frequency'), data.frequency or '', errors, empty_label=_('Not given')) }}
     </div>

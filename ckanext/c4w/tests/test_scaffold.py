@@ -530,3 +530,21 @@ def test_every_card_uses_the_media_macro_or_a_fixed_media_box():
         assert 'ui.card_media(' in text, name
     dataset = _read('templates', 'c4w', 'snippets', 'dataset_card.html')
     assert 'c4w-card__media--dataset' in dataset
+
+
+def test_translated_template_placeholders_receive_values():
+    """CKAN enables Jinja newstyle gettext, which interpolates immediately."""
+    pytest.importorskip('ckan')
+    from ckan.lib.jinja_extensions import _get_extensions
+    from jinja2 import Environment, nodes
+    env = Environment(extensions=_get_extensions())
+    for path in (PKG / 'templates').rglob('*.html'):
+        tree = env.parse(path.read_text())
+        for call in tree.find_all(nodes.Call):
+            if not isinstance(call.node, nodes.Name) or call.node.name != '_':
+                continue
+            if not call.args or not isinstance(call.args[0], nodes.Const):
+                continue
+            required = set(re.findall(r'%\((\w+)\)s', str(call.args[0].value)))
+            supplied = {kw.key for kw in call.kwargs}
+            assert required <= supplied, '%s: missing gettext arguments %s' % (path, required-supplied)

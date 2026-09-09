@@ -6,6 +6,7 @@ one that returns bytes: it streams a gzip blob the action already
 visibility-checked, with the caching headers a same-origin fetch expects.
 """
 import gzip
+import json
 import re
 
 from flask import Response, redirect, request
@@ -65,6 +66,16 @@ def dataset_detail(slug):
     return tk.render('c4w/dataset_detail.html', extra_vars={
         'dataset': dataset,
     })
+
+
+def dataset_status(slug):
+    dataset = _show(slug)
+    if not dataset.get('can_edit'):
+        return tk.abort(404, tk._('Dataset not found'))
+    return Response(json.dumps({
+        'status': dataset['processing_status'],
+        'generation': dataset.get('bundle_generation') or 0,
+    }), mimetype='application/json', headers={'Cache-Control': 'private, no-store'})
 
 
 def _dashboard_vars(dataset):

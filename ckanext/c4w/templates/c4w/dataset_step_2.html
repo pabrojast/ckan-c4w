@@ -73,7 +73,7 @@
       <input type="hidden" name="op" value="upload">
       <input type="hidden" name="kind" value="data">
       {{ form.file('upload', _('Add a data file') if data_files else _('Data file'), errors,
-           hint=_('CSV or TSV, up to %(mb)s MB. Spreadsheets: export as CSV first.') | replace('%(mb)s', max_upload_mb | string),
+           hint=_('CSV or TSV, up to %(mb)s MB. Spreadsheets: export as CSV first.', mb=max_upload_mb),
            accept='.csv,.tsv,.txt,text/csv,text/tab-separated-values', required=(not data_files)) }}
       <div class="c4w-form__actions">
         <button type="submit" class="c4w-btn{% if data_files %} c4w-btn--quiet{% endif %}">{{ _('Upload') }}</button>
@@ -83,7 +83,7 @@
 
   <div class="c4w-form__section">
     <h2>{{ _('Documents') }} <span class="c4w-badge c4w-badge--muted">{{ _('optional') }}</span></h2>
-    <p class="c4w-form__lede">{{ _('A protocol, a field sheet or a codebook that explains the columns. PDF, CSV or text, up to %(mb)s MB each, five at most.') | replace('%(mb)s', max_attachment_mb | string) }}</p>
+    <p class="c4w-form__lede">{{ _('A protocol, a field sheet or a codebook that explains the columns. PDF, CSV or text, up to %(mb)s MB each, five at most.', mb=max_attachment_mb) }}</p>
     {% if attachments %}
       <ul class="c4w-plain-list">
         {% for file in attachments %}
@@ -106,7 +106,7 @@
         {{ h.csrf_input() }}
         <input type="hidden" name="op" value="upload">
         <input type="hidden" name="kind" value="attachment">
-        {{ form.file('upload', _('Add a document'), errors, accept='.pdf,.csv,.tsv,.txt,.md,application/pdf,text/plain,text/csv') }}
+        {{ form.file('attachment_upload', _('Add a document'), errors, accept='.pdf,.csv,.tsv,.txt,.md,application/pdf,text/plain,text/csv') }}
         <div class="c4w-form__actions">
           <button type="submit" class="c4w-btn c4w-btn--quiet">{{ _('Upload document') }}</button>
         </div>

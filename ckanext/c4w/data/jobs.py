@@ -72,15 +72,19 @@ def dispatch(dataset_id, force=False):
 
     db.ensure_mappers()
     row = Session.query(db.C4wDataset).filter(
-        db.C4wDataset.id == dataset_id).first()
+        db.C4wDataset.id == dataset_id).populate_existing().with_for_update().first()
     if row is None:
+        Session.rollback()
         return None
-    if row.processing_status == u'processing' and not force:
-        return u'processing'
+    if row.processing_status in (u'processing', u'queued'):
+        status = row.processing_status
+        Session.rollback()
+        return status
     files = _data_files(Session, dataset_id)
     total = sum(f.size_bytes or 0 for f in files)
     inline_max = _int('ckanext.c4w.data_inline_max_mb', 20) * MB
     if total <= inline_max:
+        Session.commit()
         process_dataset(dataset_id, force=force)
         row = Session.query(db.C4wDataset).filter(
             db.C4wDataset.id == dataset_id).first()
@@ -89,23 +93,33 @@ def dispatch(dataset_id, force=False):
     row.processing_status = u'queued'
     row.processing_error = None
     Session.add(row)
-    Session.commit()
     if tk.asbool(tk.config.get('ckanext.c4w.async_processing', False)):
         try:
             tk.enqueue_job(
                 process_dataset_job, [dataset_id],
                 title=u'c4w: process dataset %s' % dataset_id,
-                queue=u'default',
-                rq_kwargs={'timeout': _int('ckanext.c4w.job_timeout', 3600)})
+                queue=tk.config.get('ckanext.c4w.job_queue') or u'c4w',
+                rq_kwargs={'timeout': _int('ckanext.c4w.job_timeout', 3600),
+                           'on_failure': processing_job_failed})
         except Exception:
-            # Stays 'queued': an operator or the CLI can still run it.
             log.error("ckanext-c4w: could not enqueue the processing job")
+            return _fail(row, tk._('Processing could not be queued. Please try again.'))
+    Session.commit()
     return u'queued'
 
 
 def process_dataset_job(dataset_id):
     """RQ entry point."""
     process_dataset(dataset_id)
+
+
+def processing_job_failed(job, connection, exc_type, exc_value, traceback):
+    """RQ also calls this when the work process exceeds its time limit."""
+    from ckan.model.meta import Session
+    Session.rollback()
+    row = Session.query(db.C4wDataset).filter_by(id=job.args[0]).first()
+    if row is not None and row.processing_status in ('processing', 'queued'):
+        _fail(row, tk._('Processing stopped before completion. Please try again.'))
 
 
 def process_dataset(dataset_id, force=False, progress=None):
@@ -121,9 +135,14 @@ def process_dataset(dataset_id, force=False, progress=None):
 
     db.ensure_mappers()
     row = Session.query(db.C4wDataset).filter(
-        db.C4wDataset.id == dataset_id).first()
+        db.C4wDataset.id == dataset_id).populate_existing().with_for_update().first()
     if row is None:
+        Session.rollback()
         return None
+    if row.processing_status == 'processing' or (row.processing_status == 'ready' and not force):
+        status = row.processing_status
+        Session.rollback()
+        return status
     files = _data_files(Session, dataset_id)
     spec = load_extras(row.mapping_json)
     if not files:
@@ -155,8 +174,13 @@ def process_dataset(dataset_id, force=False, progress=None):
             'generatedAt': datetime.datetime.utcnow().replace(
                 microsecond=0).isoformat() + 'Z',
         }
+        options = _options()
+        reference = load_extras(row.extras).get('reference_source')
+        if reference in ('gemswater', 'freshwater'):
+            from ckanext.c4w.data.references import processing_options
+            options.update(processing_options(reference))
         result = pipeline.run(paths, spec, meta, limits=_limits(),
-                              options=_options(), workdir=workdir,
+                              options=options, workdir=workdir,
                               progress=progress)
         _store_bundle(row, result)
         return row.processing_status

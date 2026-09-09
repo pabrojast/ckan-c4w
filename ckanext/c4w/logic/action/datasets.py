@@ -431,7 +431,10 @@ def c4w_dataset_update(context, data_dict):
         step = 0
     if step not in _STEP_APPLY:
         raise tk.ValidationError({'step': [tk._('Unknown step')]})
-    data = _validate(data_dict, schemas.dataset_step_schema(step), context)
+    validation_context = dict(context, _c4w_preserve_reference_license=bool(
+        row.license_id == 'notspecified' and
+        load_extras(row.extras).get('reference_source') in ('gemswater', 'freshwater')))
+    data = _validate(data_dict, schemas.dataset_step_schema(step), validation_context)
     wanted = _STEP_APPLY[step](row, data)
     labels = _write_terms(row, wanted)
     # Labels of the vocabularies this step did not touch still belong in

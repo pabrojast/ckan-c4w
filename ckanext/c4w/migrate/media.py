@@ -94,15 +94,33 @@ class MediaImporter(object):
 
         existing = self._existing(legacy_path)
         if existing:
-            self.reused += 1
-            self._cache[legacy_path] = existing
-            return existing
+            # A resumed migration may reference changed bytes at the same path.
+            # Reuse an original only when its saved content hash still matches.
+            source = os.path.realpath(os.path.join(self.media_root, legacy_path)) if self.media_root else None
+            if source and os.path.commonpath([source, os.path.realpath(self.media_root)]) != os.path.realpath(self.media_root):
+                self.failed.append((legacy_path, 'path_outside_media_root'))
+                return None
+            changed = False
+            if source and os.path.isfile(source):
+                from ckan.model.meta import Session
+                from ckanext.c4w import db
+                row = Session.query(db.C4wMediaMap).filter_by(legacy_path=legacy_path).first()
+                with open(source, 'rb') as handle:
+                    digest = hashlib.sha256(handle.read()).hexdigest()
+                changed = not row or row.sha256 != digest
+            if not changed:
+                self.reused += 1
+                self._cache[legacy_path] = existing
+                return existing
 
         if not self.media_root:
             self.missing.append(legacy_path)
             return None
 
-        source = os.path.join(self.media_root, legacy_path)
+        source = os.path.realpath(os.path.join(self.media_root, legacy_path))
+        if os.path.commonpath([source, os.path.realpath(self.media_root)]) != os.path.realpath(self.media_root):
+            self.failed.append((legacy_path, 'path_outside_media_root'))
+            return None
         if not os.path.isfile(source):
             self.missing.append(legacy_path)
             return None
@@ -176,7 +194,7 @@ class MediaImporter(object):
             target = self._cache.get(original) or self._existing(original)
             if not target:
                 continue
-            if self._existing(derivative):
+            if self._existing(derivative) == target:
                 continue
             if not self.dry_run:
                 self._record(derivative, target)

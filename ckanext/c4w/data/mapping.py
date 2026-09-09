@@ -367,6 +367,7 @@ def normalise(spec):
             'source': text_or_none(item.get('source')) or u'',
             'label': (text_or_none(item.get('label')) or text_or_none(item.get('source')) or u''),
             'unit': (text_or_none(item.get('unit')) or u'').strip(),
+            'expected_unit': text_or_none(item.get('expected_unit')),
             'family': text_or_none(item.get('family')),
             'normalise': 'none' if item.get('normalise') == 'none' else 'auto',
             'bins': bins,
@@ -511,8 +512,8 @@ def validate_mapping(spec, sniffed):
             if exists(path, param['source'], required=True):
                 if param['include']:
                     numeric(path, param['source'])
-                reserved.add(param['source'])
-            if param['source'] in (site['lat'], site['lon'], date['column']):
+                    reserved.add(param['source'])
+            if param['include'] and param['source'] in (site['lat'], site['lon'], date['column']):
                 err(path, u'Column "%s" is already used elsewhere.' % param['source'])
 
     for i, param in enumerate(spec['parameters']):

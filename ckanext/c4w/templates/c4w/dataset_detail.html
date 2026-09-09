@@ -50,8 +50,9 @@
     </ul>
   {% endif %}
 
-  {% if dataset.can_edit and not dataset.bundle_ready %}
-    <div class="c4w-note c4w-note--warn">
+  {% if dataset.can_edit and dataset.processing_status != 'ready' %}
+    <div class="c4w-note c4w-note--warn"
+         {% if dataset.processing_status in ['queued', 'processing'] %}data-c4w-processing="{{ h.c4w_url('dataset_status', slug=dataset.slug) }}"{% endif %}>
       {{ ui.icon('info') }}
       <p>
         {% if dataset.processing_status == 'failed' %}
@@ -65,6 +66,12 @@
         {% endif %}
       </p>
     </div>
+    {% if dataset.processing_status == 'failed' %}
+      <form method="post" action="{{ h.c4w_url('submit_data_process', dataset_id=dataset.id) }}">
+        {{ h.csrf_input() }}
+        <button class="c4w-btn c4w-btn--primary" type="submit">{{ _('Retry processing') }}</button>
+      </form>
+    {% endif %}
   {% endif %}
 
   {% if dataset.description %}

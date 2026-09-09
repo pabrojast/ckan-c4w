@@ -124,7 +124,7 @@
           {% set d = spec.dimensions[i] if spec.dimensions | length > i else {} %}
           <div>
             <input type="hidden" name="dim__{{ i }}__key" value="{{ d.key or '' }}">
-            {{ col_select('dim__' ~ i ~ '__column', _('Filter %(n)s') | replace('%(n)s', (i + 1) | string), d.column) }}
+            {{ col_select('dim__' ~ i ~ '__column', _('Filter %(n)s', n=i + 1), d.column) }}
             {{ form.input('dim__' ~ i ~ '__label', _('Label'), d.label or '', errors) }}
           </div>
         {% endfor %}

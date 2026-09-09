@@ -53,7 +53,8 @@ All options are optional; the extension works with none of them set.
 | `ckanext.c4w.data_max_upload_mb` | `256` | Largest data file (CSV/TSV). Must stay below the ingress body limit and what uwsgi's `harakiri` allows to receive. |
 | `ckanext.c4w.attachment_max_upload_mb` | `25` | Largest protocol / field-sheet attachment. |
 | `ckanext.c4w.data_inline_max_mb` | `20` | Datasets up to this size (sum of data files) are processed inside the request; larger ones are **queued**. |
-| `ckanext.c4w.async_processing` | `false` | Enqueue queued datasets as CKAN background jobs. Needs `ckan jobs worker`; the IHP-WINS cluster runs none today, so leave it off and use the CLI. |
+| `ckanext.c4w.async_processing` | `false` | Enqueue queued datasets as CKAN background jobs. Needs the dedicated `ckan c4w worker` on the C4W queue. Enable it for interactive uploads larger than the inline limit. |
+| `ckanext.c4w.job_queue` | `c4w` | Dedicated queue consumed by `ckan c4w worker`. |
 | `ckanext.c4w.job_timeout` | `3600` | Seconds a background job may run (`ckan.jobs.timeout` is 180 on IHP-WINS, too short). |
 | `ckanext.c4w.data_max_rows` / `data_max_sites` / `data_max_parameters` | `10000000` / `200000` / `300` | Hard caps of the pipeline. |
 | `ckanext.c4w.bundle_min_records` / `bundle_min_distinct` | `20` / `5` | A parameter below either is left out of the dashboard. |
@@ -89,8 +90,9 @@ uploads will fail if that extension is removed.
 ## 6. Data processing
 
 A submitted dataset is processed inside the request when its files total
-at most `data_inline_max_mb`; otherwise it is marked **queued** and an
-operator runs it:
+at most `data_inline_max_mb`; otherwise it is marked **queued**. With `ckanext.c4w.async_processing = true`,
+the dedicated C4W worker processes it automatically. The owner sees live status and can
+retry a failed job. Operator commands also remain available:
 
 ```bash
 ckan -c /srv/app/production.ini c4w process-pending           # every queued dataset
@@ -102,10 +104,45 @@ A cron entry calling `process-pending` is enough on a deployment without a
 jobs worker. A reviewer can also press **Process** in the queue, which uses
 the same inline/queued rule.
 
-Large existing datasets (GEMStat: 39 CSVs, ~500 MB) are loaded the same
-way: create the dataset in the wizard, upload the files (same header), map
-the columns with **Include every parameter code found in the file** on, and
-run `process-dataset` from the CLI.
+Reference snapshots have explicit, reproducible profiles. They use the same
+processor as uploaded data, keep source CSVs downloadable, and preserve the
+source's unspecified licence instead of assigning a new one:
+
+```bash
+ckan -c /srv/app/production.ini c4w load-reference --source gemswater \
+  --directory /snapshots/GemsWater --owner EXISTING_SYSADMIN --dry-run \
+  --json-report /private/gemstat-preview.json
+ckan -c /srv/app/production.ini c4w load-reference --source gemswater \
+  --directory /snapshots/GemsWater --owner EXISTING_SYSADMIN --process --publish \
+  --json-report /private/gemstat-import.json
+# FreshWater uses --source freshwater --directory /snapshots/FreshWater
+```
+
+Only an existing active sysadmin can own a reference import. A matching source
+fingerprint reuses the dataset and files. Changed source files are identified
+by SHA-256; superseded file records are detached, with old blobs retained for
+recovery. Existing unrelated slugs are never adopted.
+
+GEMStat processes 38 measurement CSVs by station/year/parameter and retains its
+station inventory CSV as an attachment. FreshWater uses site name and
+coordinates, daily medians, seven measured variables, and preserves interval
+categories in the original file. Nitrate/phosphate values are interval
+midpoints; colours describe distributions, not regulatory compliance.
+
+On the dev Kubernetes deployment, set `CKANEXT__C4W__ASYNC_PROCESSING=true`.
+The dev image starts a supervised `c4w-worker` alongside the existing CKAN worker.
+It avoids initialising all CKAN extensions a second time after forking, which
+can abort jobs before they start on this installation. Verify both workers with:
+
+```bash
+supervisorctl -c /etc/supervisor/conf.d/ckan-worker.conf status
+```
+
+Use an immutable image derived from the current dev image to keep the plugin
+available after pod replacement. Back up `c4w_*` tables and save the current
+deployment before importing; do not restore the entire shared CKAN database
+to undo a Citizens4Water-only migration. See `docs/migration-runbook.md` for
+source backup and media checks.
 
 ## 7. The dashboard build
 

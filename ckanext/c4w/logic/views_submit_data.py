@@ -218,7 +218,8 @@ def file(dataset_id):
             tk.h.flash_success(tk._('File removed.'))
         else:
             kind = request.form.get('kind') or 'data'
-            uploads = [f for f in request.files.getlist('upload')
+            field = 'attachment_upload' if kind == 'attachment' and 'attachment_upload' in request.files else 'upload'
+            uploads = [f for f in request.files.getlist(field)
                        if f and f.filename]
             if not uploads:
                 tk.h.flash_error(tk._('Choose a file first.'))

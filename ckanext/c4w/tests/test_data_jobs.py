@@ -142,6 +142,48 @@ def test_process_dataset_marks_failure_with_a_readable_message(
     assert row.bundle_generation == 0
 
 
+def test_repeated_dispatch_does_not_duplicate_queued_or_running_work(session, fake_storage, monkeypatch):
+    import ckan.plugins.toolkit as tk
+    from ckanext.c4w.data import jobs
+    dataset, _ = _seed(session, 'freshwater_wide_sample.csv')
+    session.query(db.C4wDatasetFile).one().size_bytes = 50 * 1024 * 1024
+    session.commit()
+    monkeypatch.setitem(tk.config, 'ckanext.c4w.async_processing', True)
+    calls = []
+    monkeypatch.setattr(tk, 'enqueue_job', lambda *a, **k: calls.append(k))
+    assert jobs.dispatch(dataset.id) == 'queued'
+    assert jobs.dispatch(dataset.id, force=True) == 'queued'
+    assert len(calls) == 1
+    assert calls[0]['rq_kwargs']['on_failure'] is jobs.processing_job_failed
+    dataset.processing_status = 'processing'; session.commit()
+    assert jobs.process_dataset(dataset.id, force=True) == 'processing'
+
+
+def test_queue_failure_is_visible_and_can_be_retried(session, fake_storage, monkeypatch):
+    import ckan.plugins.toolkit as tk
+    from ckanext.c4w.data import jobs
+    dataset, _ = _seed(session, 'freshwater_wide_sample.csv')
+    session.query(db.C4wDatasetFile).one().size_bytes = 50 * 1024 * 1024
+    session.commit()
+    monkeypatch.setitem(tk.config, 'ckanext.c4w.async_processing', True)
+    def unavailable(*a, **k):
+        raise RuntimeError('queue unavailable')
+    monkeypatch.setattr(tk, 'enqueue_job', unavailable)
+    assert jobs.dispatch(dataset.id) == 'failed'
+    assert session.query(db.C4wDataset).one().processing_error
+    monkeypatch.setattr(tk, 'enqueue_job', lambda *a, **k: None)
+    assert jobs.dispatch(dataset.id) == 'queued'
+
+
+def test_worker_failure_marks_interrupted_job_for_retry(session):
+    from ckanext.c4w.data import jobs
+    from types import SimpleNamespace
+    dataset, _ = _seed(session, 'freshwater_wide_sample.csv')
+    dataset.processing_status = 'processing'; session.commit()
+    jobs.processing_job_failed(SimpleNamespace(args=[dataset.id]), None, None, None, None)
+    assert session.query(db.C4wDataset).one().processing_status == 'failed'
+
+
 def test_dispatch_runs_small_files_inline_and_queues_large_ones(
         session, fake_storage, monkeypatch):
     import ckan.plugins.toolkit as tk

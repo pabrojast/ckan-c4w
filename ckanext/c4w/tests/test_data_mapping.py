@@ -179,3 +179,12 @@ def test_discovered_parameters_respects_discover_off():
 def test_mapping_error_is_a_data_error():
     from ckanext.c4w.data.errors import DataError
     assert issubclass(MappingError, DataError)
+
+
+def test_excluded_measurement_can_be_reassigned_as_coordinate(fresh_sniff):
+    import copy
+    spec = copy.deepcopy(fresh_sniff['proposal'])
+    spec['parameters'].append({'source': spec['site']['lat'], 'include': False})
+    assert mapping.validate_mapping(spec, fresh_sniff) == {}
+    spec['parameters'][-1]['include'] = True
+    assert any('already used' in msg for messages in mapping.validate_mapping(spec, fresh_sniff).values() for msg in messages)

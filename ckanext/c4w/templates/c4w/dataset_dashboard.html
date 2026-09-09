@@ -30,6 +30,10 @@
       {% endif %}
     </header>
 
+    {% if dataset.reference_source and dataset.data_quality_note %}
+      <p class="c4w-note">{{ dataset.data_quality_note }}</p>
+    {% endif %}
+
     {% if dataset.bundle_ready %}
       {% snippet 'c4w/snippets/dashboard_shell.html', dataset=dataset,
          bundle_base=bundle_base, basemap_style=basemap_style, lang=lang %}

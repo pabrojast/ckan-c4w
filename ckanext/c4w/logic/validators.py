@@ -114,7 +114,12 @@ def passwords_match(confirm_key='password_confirm'):
 
 def license_id():
     """A licence the portal offers. Labels come from CKAN; ids from us."""
-    return choice(constants.DATASET_LICENSES)
+    offered = choice(constants.DATASET_LICENSES)
+    def validator(value, context):
+        if value == 'notspecified' and context.get('_c4w_preserve_reference_license'):
+            return value
+        return offered(value)
+    return validator
 
 
 def existing(entity_type):

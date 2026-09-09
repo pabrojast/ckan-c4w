@@ -138,6 +138,11 @@ def dataset_dashboard(slug):
     return views_datasets.dataset_dashboard(slug)
 
 
+def dataset_status(slug):
+    from ckanext.c4w.logic import views_datasets
+    return views_datasets.dataset_status(slug)
+
+
 def dataset_embed(slug):
     from ckanext.c4w.logic import views_datasets
     return views_datasets.dataset_embed(slug)
@@ -285,6 +290,8 @@ def _register(bp):
     bp.add_url_rule('/data/<slug>/download/<file_id>', 'dataset_download',
                     dataset_download, methods=['GET'])
     bp.add_url_rule('/data/<slug>/edit', 'dataset_edit', dataset_edit,
+                    methods=['GET'])
+    bp.add_url_rule('/data/<slug>/status', 'dataset_status', dataset_status,
                     methods=['GET'])
     bp.add_url_rule('/data/<slug>/delete', 'dataset_delete', dataset_delete,
                     methods=['POST'])

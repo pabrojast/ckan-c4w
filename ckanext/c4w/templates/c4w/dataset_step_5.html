@@ -40,7 +40,7 @@
           <p><strong>{{ _('Before submitting, complete:') }}</strong></p>
           <ul>
             {% for step_no, names in missing_by_step %}
-              <li><a href="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=step_no) }}">{{ _('Step %(n)s') | replace('%(n)s', step_no | string) }}</a>:
+              <li><a href="{{ h.c4w_url('submit_data_step', dataset_id=dataset.id, step=step_no) }}">{{ _('Step %(n)s', n=step_no) }}</a>:
                 {{ names | map('replace', '_', ' ') | join(', ') }}</li>
             {% endfor %}
           </ul>

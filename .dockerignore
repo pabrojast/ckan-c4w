@@ -1,0 +1,10 @@
+.git
+**/__pycache__
+**/*.pyc
+.pytest_cache
+build
+dist
+*.egg-info
+dashboard/node_modules
+dashboard/public/dev-data
+output

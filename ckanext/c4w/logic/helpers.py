@@ -462,7 +462,7 @@ def c4w_license_title(license_id):
     return license_id
 
 
-def c4w_license_options():
+def c4w_license_options(current=None):
     """``[(id, title)]`` for the licences the wizard offers."""
     titles = {}
     try:
@@ -470,7 +470,10 @@ def c4w_license_options():
             titles[item.get('id')] = item.get('title') or item.get('id')
     except Exception:
         pass
-    return [(lid, titles.get(lid, lid)) for lid in constants.DATASET_LICENSES]
+    ids = list(constants.DATASET_LICENSES)
+    if current == 'notspecified':
+        ids.append(current)
+    return [(lid, titles.get(lid, lid)) for lid in ids]
 
 
 def c4w_language_options():

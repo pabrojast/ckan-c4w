@@ -206,10 +206,12 @@ def ingest(paths, spec, workdir, limits, progress=None):
                 u'More than %d parameters; raise the limit or list fewer.' % max_parameters)
         path = os.path.join(param_dir, u'%d.bin' % len(result.params))
         spool = ParamSpool(param, path)
-        # Without a unit column the typed unit is the unit of every row and
-        # can be fixed up front; with one, the rows decide (see convert).
-        if spool.typed_unit and not has_unit_column:
-            canon, _factor, reason = units.canonical(spool.typed_unit)
+        # Reference profiles may constrain the expected physical unit, so an
+        # incompatible first row cannot reject the entire intended series.
+        # Ordinary uploads continue to prefer their per-row unit column.
+        expected = param.get('expected_unit') or (spool.typed_unit if not has_unit_column else None)
+        if expected:
+            canon, _factor, reason = units.canonical(expected)
             if reason is None:
                 spool.unit = canon if spool.normalise != 'none' else spool.typed_unit
         result.params[source] = spool

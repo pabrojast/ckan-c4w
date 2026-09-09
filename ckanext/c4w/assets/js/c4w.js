@@ -65,4 +65,22 @@
       observer.observe(counters[j]);
     }
   }
+  // Follow processing without posting actions or counting repeated page views.
+  var processing = document.querySelector('[data-c4w-processing]');
+  if (processing && window.fetch) {
+    var checkProcessing = function () {
+      if (document.hidden) { window.setTimeout(checkProcessing, 5000); return; }
+      fetch(processing.getAttribute('data-c4w-processing'), {
+        credentials: 'same-origin', headers: { Accept: 'application/json' }
+      }).then(function (response) {
+        if (!response.ok) { throw new Error('Status unavailable'); }
+        return response.json();
+      }).then(function (data) {
+        if (data.status !== 'queued' && data.status !== 'processing') {
+          window.location.reload();
+        } else { window.setTimeout(checkProcessing, 5000); }
+      }).catch(function () { window.setTimeout(checkProcessing, 15000); });
+    };
+    window.setTimeout(checkProcessing, 3000);
+  }
 })();

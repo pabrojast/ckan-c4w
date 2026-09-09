@@ -226,6 +226,40 @@ def link_organisations(threshold, apply_, unlink):
 # Datasets
 # --------------------------------------------------------------------------- #
 
+@c4w.command(name='worker')
+@click.option('--burst', is_flag=True, help='Exit when the C4W queue is empty.')
+def worker(burst):
+    """Process C4W uploads in a dedicated, supervised worker."""
+    from ckanext.c4w.worker import run
+    run(burst=burst)
+
+
+@c4w.command(name='load-reference')
+@click.option('--source', type=click.Choice(['gemswater', 'freshwater']), required=True)
+@click.option('--directory', type=click.Path(exists=True, file_okay=False), required=True,
+              help='Local GemsWater or FreshWater project snapshot.')
+@click.option('--owner', required=True, help='Existing CKAN sysadmin username.')
+@click.option('--dry-run', is_flag=True)
+@click.option('--process', 'process_', is_flag=True, help='Process after uploading.')
+@click.option('--publish', is_flag=True, help='Publish only after successful processing.')
+@click.option('--json-report', type=click.Path(), default=None)
+def load_reference(source, directory, owner, dry_run, process_, publish, json_report):
+    """Import a reference dataset without duplicating its files or URL."""
+    from ckanext.c4w.migrate import references
+    if publish and not process_:
+        raise click.ClickException('--publish requires --process')
+    try:
+        result = references.load(source, directory, owner, dry_run=dry_run,
+                                 process=process_, publish=publish)
+    except ValueError as exc:
+        raise click.ClickException(str(exc))
+    if json_report:
+        with open(json_report, 'w') as f:
+            json.dump(result, f, indent=2, default=str)
+    click.echo(json.dumps({k: result.get(k) for k in (
+        'source', 'dry_run', 'slug', 'dataset_id', 'uploaded', 'reused',
+        'status', 'approved', 'unchanged')}, sort_keys=True))
+
 def _dataset(reference):
     from ckanext.c4w import db
     from ckanext.c4w.logic.action import _common
