@@ -21,3 +21,4 @@ c4w-js:
       - base/main
   contents:
     - js/c4w.js
+    - js/forms.js

@@ -20,6 +20,7 @@
 
 {% block scripts %}
   {{ super() }}
+  {% snippet 'c4w/snippets/form_messages.html' %}
   {% asset 'c4w/c4w-js' %}
 {% endblock %}
 

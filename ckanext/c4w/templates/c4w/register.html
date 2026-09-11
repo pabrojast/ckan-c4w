@@ -40,9 +40,9 @@
       <h1>{{ self.subtitle() }}</h1>
       <p class="c4w-auth__lede">
         {% if is_manager %}
-          {% trans %}For people who coordinate a monitoring project on behalf of an organisation. The request is reviewed by the Citizens4Water team.{% endtrans %}
+          {% trans %}For people who represent an organisation. Confirm your email to propose projects and share data. Organisation permissions are reviewed separately.{% endtrans %}
         {% else %}
-          {% trans %}For anyone who measures, observes or samples water. Your account is active as soon as you confirm your e-mail.{% endtrans %}
+          {% trans %}Create your IHP-WINS account to propose projects and share water data. Confirm your email to get started.{% endtrans %}
         {% endif %}
         <a href="{{ h.c4w_url('register_choose') }}">{{ _('Not you? Choose the other profile.') }}</a>
       </p>
@@ -59,7 +59,10 @@
 
         <div class="c4w-form__section">
           <h2>{{ _('About you') }}</h2>
-          {{ form.input('fullname', _('Full name'), data.fullname, errors, required=true, autocomplete='name', maxlength=200) }}
+          {% call form.row() %}
+            {{ form.input('given_name', _('First name'), data.given_name, errors, required=true, autocomplete='given-name', maxlength=100) }}
+            {{ form.input('surname', _('Last name'), data.surname, errors, required=true, autocomplete='family-name', maxlength=100) }}
+          {% endcall %}
           {{ form.input('email', _('E-mail'), data.email, errors, required=true, type='email', autocomplete='email',
                hint=_('We send the confirmation link here. Never shown publicly.')) }}
           {{ form.input('username', _('Username'), data.username, errors, autocomplete='username',
@@ -80,21 +83,27 @@
           <div class="c4w-form__section">
             <h2>{{ _('Your organisation') }}</h2>
             {{ form.radios('org_choice', _('The organisation is'), [('existing', _('already on IHP-WINS')), ('new', _('new to IHP-WINS'))], data.org_choice or 'existing', errors, required=true) }}
-            {{ form.select('ckan_org_id', _('Existing organisation'), organisation_options, data.ckan_org_id or '', errors, empty_label=_('Choose…'),
-                 hint=_('You will be made an editor of it once approved.')) }}
-            {{ form.input('org_name_requested', _('New organisation name'), data.org_name_requested, errors,
-                 hint=_('Only if the organisation is not listed above. You will be its first administrator.')) }}
-            {% call form.row() %}
-              {{ form.select('org_type', _('Organisation type'), org_type_options, data.org_type or '', errors, empty_label=_('Choose…')) }}
-              {{ form.input('org_url', _('Organisation website'), data.org_url, errors, type='url', placeholder='https://') }}
-            {% endcall %}
+            <div data-org-existing>
+              {{ form.lookup('ckan_org_id', _('Find your organisation'), 'ckan_organisation', data.ckan_org_id or '', errors, required=true) }}
+              <button type="button" class="c4w-btn c4w-btn--quiet" data-new-org>{{ _('My organisation is not listed') }}</button>
+            </div>
+            <div data-org-new>
+              {{ form.input('org_name_requested', _('New organisation name'), data.org_name_requested, errors) }}
+              <p data-org-similar role="status"></p>
+              {% call form.row() %}
+                {{ form.select('org_type', _('Organisation type'), org_type_options, data.org_type or '', errors, empty_label=_('Choose…')) }}
+                {{ form.input('org_url', _('Organisation website'), data.org_url, errors, type='url', placeholder='https://') }}
+              {% endcall %}
+              <button type="button" class="c4w-btn c4w-btn--quiet" data-existing-org>{{ _('Search existing organisations') }}</button>
+            </div>
             {{ form.input('job_title', _('Your role there'), data.job_title, errors, placeholder=_('e.g. monitoring coordinator')) }}
             {{ form.checkbox('responsibilities', _('I confirm I am authorised to represent this organisation and to publish its data.'), data.responsibilities, errors, required=true) }}
           </div>
         {% endif %}
 
         <div class="c4w-form__section">
-          <h2>{{ _('Terms') }}</h2>
+          <h2>{{ _('Privacy and terms') }}</h2>
+          {{ form.checkbox('profile_visible', _('Show my contributor profile in Citizens4Water'), data.profile_visible, errors, hint=_('Optional. Display your name and affiliation with your projects in C4W. You can change this in My account. Your CKAN profile has its own settings.')) }}
           {{ form.checkbox('terms', _('I accept the terms of use of IHP-WINS and the publication of what I submit under the licence I choose for it.'), data.terms, errors, required=true) }}
         </div>
 

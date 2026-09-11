@@ -1,0 +1,24 @@
+<section class="c4w-project-summary">
+  <h2>{{ _('Project summary') }}</h2>
+  {% for group in steps %}
+    <details {% if loop.first %}open{% endif %}>
+      <summary>{{ _(group.title) }}</summary>
+      <dl>
+        {% for f in group.fields %}
+          {% set value = data.get(f.name) %}
+          {% if value or f.kind in ['image', 'bool'] %}
+            {% if f.kind != 'image' or data.get(f.name ~ '_url') %}
+              <dt>{{ _(f.label) }}</dt>
+              <dd>
+                {% if f.kind == 'rich' %}{{ h.literal(value) }}
+                {% elif f.kind == 'image' %}<img src="{{ data.get(f.name ~ '_url') }}" alt="{{ _(f.label) }}" loading="lazy">
+                {% elif f.kind == 'geometry' %}{{ _('Project area provided') }}
+                {% else %}{{ h.c4w_project_field_value(f, value) }}{% endif %}
+              </dd>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      </dl>
+    </details>
+  {% endfor %}
+</section>

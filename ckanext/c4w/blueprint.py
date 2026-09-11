@@ -229,6 +229,26 @@ def admin_manager(user_id, operation):
 # Route registration
 # --------------------------------------------------------------------------- #
 
+def submit_project_start():
+    from ckanext.c4w.logic import views_submit_project
+    return views_submit_project.start()
+
+
+def submit_project_step(project_id, step):
+    from ckanext.c4w.logic import views_submit_project
+    return views_submit_project.step(project_id, step)
+
+
+def project_review(project_id):
+    from ckanext.c4w.logic import views_submit_project
+    return views_submit_project.review(project_id)
+
+
+def lookup(kind):
+    from ckanext.c4w.logic import views_submit_project
+    return views_submit_project.lookup(kind)
+
+
 def _register(bp):
     """Attach every rule to a blueprint.
 
@@ -237,7 +257,7 @@ def _register(bp):
     bp.add_url_rule('/', 'index', index, methods=['GET'])
     bp.add_url_rule('/about', 'about', about, methods=['GET'],
                     strict_slashes=False)
-    bp.add_url_rule('/account', 'account', account, methods=['GET'],
+    bp.add_url_rule('/account', 'account', account, methods=['GET', 'POST'],
                     strict_slashes=False)
     bp.add_url_rule('/submit', 'submit', submit, methods=['GET'],
                     strict_slashes=False)
@@ -265,6 +285,14 @@ def _register(bp):
                     methods=['GET'])
     bp.add_url_rule('/login', 'login', login, methods=['GET', 'POST'],
                     strict_slashes=False)
+
+    bp.add_url_rule('/lookup/<kind>', 'lookup', lookup, methods=['GET'])
+    bp.add_url_rule('/submit/project', 'submit_project_start', submit_project_start,
+                    methods=['GET', 'POST'], strict_slashes=False)
+    bp.add_url_rule('/submit/project/<project_id>/<int:step>', 'submit_project_step',
+                    submit_project_step, methods=['GET', 'POST'])
+    bp.add_url_rule('/submit/project/<project_id>/review', 'project_review',
+                    project_review, methods=['GET', 'POST'])
 
     # Data: the wizard first (static prefix), then the public catalogue.
     bp.add_url_rule('/submit/data', 'submit_data_start', submit_data_start,

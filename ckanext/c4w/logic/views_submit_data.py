@@ -63,19 +63,6 @@ def _reachable(dataset):
     return max(1, min(step, LAST_STEP))
 
 
-def _options(action, extra):
-    """``[(id, name)]`` for a select of visible rows, fail-soft."""
-    try:
-        listing = tk.get_action(action)(_context(), dict(
-            {'page_size': 100, 'order': 'name'}, **extra))
-        return [(row['id'], row.get('name') or row.get('title') or row['id'])
-                for row in listing.get('results') or []]
-    except Exception:
-        log.debug("ckanext-c4w: could not list options for %s", action,
-                  exc_info=True)
-        return []
-
-
 def _render(step, dataset, data, errors, extra=None):
     """Render one step with everything the templates share."""
     spec = next(s for s in STEPS if s['step'] == step)
@@ -88,10 +75,6 @@ def _render(step, dataset, data, errors, extra=None):
         'reachable': _reachable(dataset) if dataset else 1,
         'is_new': dataset is None,
     }
-    if step == 1:
-        extra_vars['project_options'] = _options('c4w_project_list', {})
-        extra_vars['organisation_options'] = _options(
-            'c4w_organisation_list', {})
     extra_vars.update(extra or {})
     return tk.render('c4w/dataset_step_%d.html' % step, extra_vars=extra_vars)
 
@@ -148,12 +131,14 @@ def start():
     if bounced is not None:
         return bounced
     if request.method == 'GET':
-        return _render(1, None, {'language': u'en'}, {})
+        return _render(1, None, {'language': u'en', 'project_id': request.args.get('project_id') or ''}, {})
     data = _form_data()
     try:
         dataset = tk.get_action('c4w_dataset_create')(_context(), data)
     except tk.ValidationError as exc:
         return _render(1, None, forms.echo_values(data), exc.error_dict)
+    if data.get('action') == 'propose_project':
+        return redirect(c4w_helpers.c4w_url('submit_project_start', return_dataset=dataset['id']))
     tk.h.flash_success(tk._('Draft saved. Now add the file.'))
     return redirect(_step_url(dataset['id'], 2))
 
@@ -178,7 +163,7 @@ def step(dataset_id, step):
 
 def _step_navl(dataset, step):
     if request.method == 'GET':
-        return _render(step, dataset, _dataset_as_form(dataset), {})
+        return _render(step, dataset, dict(_dataset_as_form(dataset), **({'project_id': request.args['project_id']} if step == 1 and request.args.get('project_id') else {})), {})
     data = _form_data()
     data.update({'id': dataset['id'], 'step': step})
     try:
@@ -186,6 +171,8 @@ def _step_navl(dataset, step):
     except tk.ValidationError as exc:
         return _render(step, dataset, forms.echo_values(data), exc.error_dict)
     tk.h.flash_success(tk._('Saved.'))
+    if request.form.get('action') == 'propose_project':
+        return redirect(c4w_helpers.c4w_url('submit_project_start', return_dataset=dataset['id']))
     if request.form.get('action') == 'save':
         return redirect(_step_url(dataset['id'], step))
     return redirect(_step_url(dataset['id'], step + 1))

@@ -1,5 +1,7 @@
 {% extends "c4w/base.html" %}
 
+{% import 'c4w/macros/form.html' as form with context %}
+
 {% block subtitle %}{{ _('My submissions') }}{% endblock %}
 
 {% block c4w_content %}
@@ -19,22 +21,25 @@
                 <th>{{ _('Title') }}</th>
                 <th>{{ _('Status') }}</th>
                 <th>{{ _('Updated') }}</th>
-                {% if group.entity_type == 'dataset' %}<th></th>{% endif %}
+                {% if group.entity_type in ['dataset', 'project'] %}<th>{{ _('Actions') }}</th>{% endif %}
               </tr>
             </thead>
             <tbody>
               {% for item in group.rows %}
                 <tr>
                   <td>
-                    {% set url = h.c4w_detail_url(item) %}
+                    {% set url = h.c4w_url('project_review', project_id=item.id) if item.entity_type == 'project' else h.c4w_detail_url(item) %}
                     {% if url %}
-                      <a href="{{ url }}">{{ h.c4w_entity_title(item) }}</a>
+                      <a href="{{ url }}">{{ item.proposal.name if item.entity_type == 'project' else h.c4w_entity_title(item) }}</a>
                     {% else %}
-                      {{ h.c4w_entity_title(item) }}
+                      {{ item.proposal.name if item.entity_type == 'project' else h.c4w_entity_title(item) }}
                     {% endif %}
                   </td>
                   <td>
-                    {% if item.approved is not none %}
+                    {% if item.entity_type == 'project' %}
+                      <span class="c4w-badge">{{ _(item.proposal.status | replace('_', ' ') | capitalize) }}</span>
+                      {% if item.proposal.review_note %}<p>{{ item.proposal.review_note }}</p>{% endif %}
+                    {% elif item.approved is not none %}
                       {% if item.approved %}<span class="c4w-badge c4w-badge--approved">{{ _('Approved') }}</span>
                       {% elif item.submitted_at is defined and item.entity_type == 'dataset' and not item.submitted_at %}<span class="c4w-badge c4w-badge--draft">{{ _('Draft') }}</span>
                       {% else %}<span class="c4w-badge c4w-badge--pending">{{ _('Pending') }}</span>{% endif %}
@@ -47,7 +52,12 @@
                     {% endif %}
                   </td>
                   <td>{% if item.modified %}{{ item.modified[:10] }}{% endif %}</td>
-                  {% if group.entity_type == 'dataset' %}
+                  {% if group.entity_type == 'project' %}
+                    <td class="c4w-table__actions">
+                      <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_project_step', project_id=item.id, step=item.proposal.wizard_step or 1) }}">{{ _('Edit') if item.approved else _('Continue') }}</a>
+                      <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_start', project_id=item.id) }}">{{ _('Add data') }}</a>
+                    </td>
+                  {% elif group.entity_type == 'dataset' %}
                     <td class="c4w-table__actions">
                       {% set target = [item.wizard_step or 1, 5] | min %}
                       <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_step', dataset_id=item.id, step=target) }}">
@@ -70,5 +80,14 @@
         <a href="{{ h.c4w_url('submit') }}">{{ _('Start a submission') }}</a>
       </p>
     {% endif %}
+    <details class="c4w-note">
+      <summary>{{ _('My C4W profile') }}</summary>
+      <p>{{ _('Your account and login are managed by CKAN. This preference applies to your contributor information in Citizens4Water.') }}</p>
+      <form class="c4w-form" method="post">
+        {{ h.csrf_input() }}
+        {{ form.checkbox('profile_visible', _('Show my contributor profile in Citizens4Water'), profile.profile_visible if profile else false) }}
+        <button class="c4w-btn c4w-btn--quiet">{{ _('Save preference') }}</button>
+      </form>
+    </details>
   </div>
 {% endblock %}

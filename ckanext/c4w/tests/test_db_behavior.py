@@ -277,9 +277,18 @@ def test_ensure_indexes_is_idempotent(session):
     db._ensure_indexes(session.get_bind())
 
 
-def test_ensure_columns_is_a_noop_while_the_whitelist_is_empty(session):
-    db._ensure_columns(session.get_bind())
-    assert db._AUTO_HEAL_COLUMNS == []
+def test_profile_columns_upgrade_an_existing_table_without_losing_rows():
+    engine = sa.create_engine('sqlite://')
+    with engine.begin() as conn:
+        conn.execute(sa.text('CREATE TABLE c4w_user_profile (id TEXT, user_id TEXT)'))
+        conn.execute(sa.text("INSERT INTO c4w_user_profile VALUES ('p', 'u')"))
+    db._ensure_columns(engine)
+    db._ensure_columns(engine)
+    columns = {c['name'] for c in sa.inspect(engine).get_columns('c4w_user_profile')}
+    assert {'given_name', 'surname', 'profile_visible'} <= columns
+    with engine.connect() as conn:
+        assert conn.execute(sa.text('SELECT user_id, profile_visible FROM c4w_user_profile')).fetchone() == ('u', 0)
+    engine.dispose()
 
 
 # --------------------------------------------------------------------------- #

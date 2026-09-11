@@ -21,6 +21,7 @@ def admin_index():
     return tk.render('c4w/admin.html', extra_vars={
         'groups': listing.get('groups') or [],
         'managers': managers or [],
+        'project_requests': listing.get('project_requests') or [],
     })
 
 
@@ -41,6 +42,9 @@ def admin_moderate(entity, item_id, operation):
         return tk.abort(404, tk._('Not found'))
     except tk.NotAuthorized:
         return tk.abort(403, tk._('Not authorized'))
+    except tk.ValidationError:
+        tk.h.flash_error(tk._('Open the project review to approve its changes.'))
+        return redirect(c4w_helpers.c4w_url('admin_index'))
     if operation == 'process':
         status = result.get('processing_status')
         if status == 'ready':

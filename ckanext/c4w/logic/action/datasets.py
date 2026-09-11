@@ -786,8 +786,9 @@ def get_actions():
 
 @tk.auth_allow_anonymous_access
 def _signed_in(context, data_dict):
-    """Any signed-in user may call; the action decides ownership."""
-    if _common.is_authenticated(context):
+    """Verified CKAN accounts may contribute; the action decides ownership."""
+    from ckanext.c4w.logic.action.project_write import verified
+    if verified(context):
         return {'success': True}
     return {'success': False, 'msg': tk._('Not authorized')}
 

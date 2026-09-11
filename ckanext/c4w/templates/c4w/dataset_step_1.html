@@ -28,9 +28,11 @@
       <h2>{{ _('Belongs to') }}</h2>
       <p class="c4w-form__lede">{{ _('Optional. Link the data to a project or organisation already in Citizens4Water.') }}</p>
       {% call form.row() %}
-        {{ form.select('project_id', _('Project'), project_options, data.project_id, errors, empty_label=_('None')) }}
-        {{ form.select('organisation_id', _('Organisation'), organisation_options, data.organisation_id, errors, empty_label=_('None')) }}
+        {{ form.lookup('project_id', _('Project'), 'project', data.project_id or '', errors) }}
+        {{ form.lookup('organisation_id', _('Organisation'), 'organisation', data.organisation_id or '', errors) }}
       {% endcall %}
+      <p>{{ _('Project not listed? Save these details and start a project proposal. Your data draft will be kept.') }}</p>
+      <button class="c4w-btn c4w-btn--quiet" type="submit" name="action" value="propose_project">{{ _('Save and propose a project') }}</button>
     </div>
 
     <div class="c4w-form__actions">

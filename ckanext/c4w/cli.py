@@ -57,6 +57,31 @@ def report():
         click.echo(u'  %-16s %6d' % (label, Session.query(model_cls).count()))
 
 
+@c4w.command()
+@click.option('--apply', is_flag=True, help='Activate verified managers awaiting organisation review.')
+def activate_verified_managers(apply):
+    """One-time compatibility update; deleted and active CKAN accounts are excluded."""
+    import ckan.model as model
+    from ckan.model.meta import Session
+    from ckanext.c4w import db
+    db.ensure_mappers()
+    rows = Session.query(model.User).join(db.C4wUserProfile,
+        db.C4wUserProfile.user_id == model.User.id).filter(
+        model.User.state == 'pending', db.C4wUserProfile.email_verified.is_(True),
+        db.C4wUserProfile.profile_type == 'manager',
+        sa_or_unreviewed(db.C4wUserProfile.manager_decision)).all()
+    if apply:
+        for user in rows:
+            user.activate()
+        Session.commit()
+    click.echo('%d verified manager accounts %s.' % (len(rows), 'activated' if apply else 'eligible'))
+
+
+def sa_or_unreviewed(column):
+    from sqlalchemy import or_
+    return or_(column.is_(None), column == '', column == 'rejected')
+
+
 @c4w.command(name='import')
 @click.option('--dsn', required=True,
               help='libpq DSN of the legacy Django database (read-only).')

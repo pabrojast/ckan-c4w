@@ -55,6 +55,10 @@ project listing has eleven faceted vocabularies *with counts* plus ~100
 countries; filtering that from a JSON column means scanning and filtering in
 Python, and produces no counts at all.
 
+## Contributions
+
+Registration, six-step project proposals, public-version-preserving review and linked data uploads are described in [Contribution workflows](docs/contribution-workflows.md). Accounts use CKAN; all verified users can propose projects.
+
 ## The data flow
 
 Registered people share tables of water measurements; each becomes a

@@ -28,7 +28,7 @@ def _spec():
         # The Django search box matched the project name or any of its
         # keywords; keywords now live in c4w_term_link, so the aim and
         # description carry the free-text weight instead.
-        search_columns=('name', 'description', 'aim'),
+        search_columns=('name', 'search_text', 'description', 'aim'),
         native_filters={
             'status': 'status',
             'difficulty_level': 'difficulty_level',
@@ -152,8 +152,20 @@ def c4w_project_show(context, data_dict):
     project = _get_project(data_dict.get('id') or data_dict.get('slug'))
     if project is None or not _visible_to(project, context):
         raise tk.ObjectNotFound(tk._('Project not found'))
-    return _dictize_detail(
-        project, include_contact=_common.is_authenticated(context))
+    out = _dictize_detail(project, include_contact=_common.is_authenticated(context))
+    out['can_edit'] = _common.can_edit('project', project, context)
+    from ckan.model.meta import Session
+    related = Session.query(db.C4wDataset).filter_by(project_id=project.id).order_by(db.C4wDataset.modified.desc()).all()
+    out['datasets'] = [db.entity_dictize('dataset', row) for row in related
+                       if _common.is_visible('dataset', row, context)]
+    profile = Session.query(db.C4wUserProfile).filter_by(user_id=project.created_by, profile_visible=True).first()
+    if profile:
+        import ckan.model as model
+        author = model.User.get(project.created_by)
+        if author and author.state == 'active':
+            out['contributor'] = dict(name=author.fullname or author.name,
+                                      affiliation=profile.organisation_text or '')
+    return out
 
 
 @tk.side_effect_free

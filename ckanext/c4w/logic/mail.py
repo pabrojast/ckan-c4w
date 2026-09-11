@@ -51,7 +51,7 @@ def send_verification(fullname, email, url, profile_type='citizen'):
             u'their decision.'))
     else:
         lines.append(tk._(
-            u'Once confirmed you can sign in and share your data.'))
+            u'Once confirmed you can sign in, propose projects and share your data.'))
     lines += [u'', tk._(u'If you did not register, ignore this message.')]
     return _send(fullname, email, subject, u'\n'.join(lines))
 
@@ -63,8 +63,8 @@ def send_manager_decision(fullname, email, approved, note=None,
         lines = [
             tk._(u'Hello %s,') % (fullname or email),
             u'',
-            tk._(u'Your project manager account has been approved. '
-                 u'You can now sign in:'),
+            tk._(u'Your organisation permissions have been approved. '
+                 u'You can manage your organisation after signing in:'),
             u'',
             login_url or u'',
         ]

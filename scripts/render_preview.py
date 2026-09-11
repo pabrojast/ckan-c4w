@@ -54,7 +54,7 @@ PAGE = '''<!DOCTYPE html>
 {% block header %}{% endblock %}
 {% block content %}{% endblock %}
 {% block footer %}{% endblock %}
-{% block scripts %}{% endblock %}
+{% block scripts %}<script src="/c4w/forms.js"></script>{% endblock %}
 </body></html>'''
 
 
@@ -198,6 +198,9 @@ H = SimpleNamespace(
     c4w_nav=lambda: NAV,
     c4w_stats=lambda: STATS,
     c4w_terms=c4w_terms,
+    c4w_lookup_options=lambda kind, values=None: [{'id': 'p1' if kind == 'project' else 'o1', 'title': 'Lake Guardians' if kind == 'project' else 'Scivil', 'name': 'example'}],
+    c4w_project_field_value=lambda f, value: ', '.join(value) if isinstance(value, list) else value,
+    c4w_project_language_options=lambda: [('en', 'English'), ('es', 'Spanish'), ('fr', 'French')],
     c4w_term_label=lambda v, t, stored=None: LABELS.get((v, t), stored or t),
     c4w_image_url=lambda e, field='image1_url': (e or {}).get(field),
     c4w_country_name=lambda code: {'BE': 'Belgium', 'GB': 'United Kingdom', 'CL': 'Chile', 'be': 'Belgium', 'nl': 'Netherlands', 'cl': 'Chile'}.get(code, code),
@@ -291,3 +294,15 @@ render('c4w/admin.html', 'admin.html', groups=[{'entity_type': 'dataset', 'rows'
 render('c4w/post_list.html', 'post_list_empty.html', listing={'results': [], 'count': 0, 'page': 1, 'pages': 1, 'order': 'modified', 'facets': {}}, orderings=None, params={})
 render('c4w/event_list.html', 'event_list_single.html', listing={'upcoming': [event(0)], 'past': [event(1)], 'upcoming_total': 1, 'page': 1, 'pages': 1}, params={})
 render('c4w/event_list.html', 'event_list.html', listing={'upcoming': [event(0), event(1)], 'past': [event(0)], 'upcoming_total': 2, 'page': 1, 'pages': 1}, params={})
+
+from ckanext.c4w.logic.project_fields import STEPS
+shutil.copy(os.path.join(REPO, 'ckanext/c4w/assets/js/forms.js'), os.path.join(OUT, 'c4w/forms.js'))
+for kind in ('citizen', 'manager'):
+    render('c4w/register.html', 'register_' + kind + '.html', kind=kind, data={}, errors={}, pending_verification=False,
+           country_options=H.c4w_country_options(), org_type_options=H.c4w_option_list('org_type'))
+DRAFT = dict(id='p1', slug='lake-guardians', name='Lake Guardians', status='draft', version=1, wizard_step=6, published=False)
+PAYLOAD = dict(name='Lake Guardians', status='active', description='<p>Local communities monitoring lake water quality.</p>', aim='Understand seasonal changes', keywords='water, lakes', country=['CL'])
+for step in STEPS:
+    render('c4w/project_form.html', 'project_step_%s.html' % step['step'], steps=STEPS, step=step, step_number=step['step'],
+           draft=DRAFT, data=PAYLOAD, errors={}, review=False, return_dataset='', image_limit=2,
+           map_style='https://tiles.openfreemap.org/styles/positron', c=USER)

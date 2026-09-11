@@ -8,6 +8,18 @@
       <h1>{{ _('Moderation') }}</h1>
     </header>
 
+    {% if project_requests %}
+      <section class="c4w-queue">
+        <h2>{{ _('Project proposals') }} <span class="c4w-directory__count">{{ project_requests | length }}</span></h2>
+        <div class="c4w-table-wrap"><table class="c4w-table">
+          <thead><tr><th>{{ _('Project') }}</th><th>{{ _('Request') }}</th><th>{{ _('Actions') }}</th></tr></thead>
+          <tbody>{% for proposal in project_requests %}<tr>
+            <td>{{ proposal.name }}</td><td>{{ _('Changes to a published project') if proposal.published else _('New project') }}</td>
+            <td><a class="c4w-btn" href="{{ h.c4w_url('project_review', project_id=proposal.id) }}">{{ _('Review proposal') }}</a></td>
+          </tr>{% endfor %}</tbody>
+        </table></div>
+      </section>
+    {% endif %}
     {% if managers %}
       <section class="c4w-queue">
         <h2>{{ _('Account requests') }}
@@ -137,7 +149,7 @@
           </section>
         {% endif %}
       {% endfor %}
-    {% else %}
+    {% elif not project_requests %}
       <p class="c4w-empty">{{ _('Nothing waiting for review.') }}</p>
     {% endif %}
   </div>

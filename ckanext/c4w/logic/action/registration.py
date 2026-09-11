@@ -25,6 +25,7 @@ import ckan.plugins.toolkit as tk
 
 from ckanext.c4w import constants, db
 from ckanext.c4w.logic.action import _common
+from ckanext.c4w.logic import checks
 from ckanext.c4w.text import slugify
 
 log = logging.getLogger(__name__)
@@ -135,6 +136,9 @@ def _profile_dict(profile, user=None):
         'profile_type': profile.profile_type,
         'country': profile.country,
         'organisation_text': profile.organisation_text,
+        'given_name': profile.given_name,
+        'surname': profile.surname,
+        'profile_visible': bool(profile.profile_visible),
         'email_verified': bool(profile.email_verified),
         'verified_at': profile.verified_at.isoformat()
         if profile.verified_at else None,
@@ -182,6 +186,14 @@ def _register(context, data_dict, profile_type):
     schema = (schemas.registration_manager_schema()
               if profile_type == 'manager'
               else schemas.registration_citizen_schema())
+    data_dict = dict(data_dict)
+    if 'given_name' in data_dict or 'surname' in data_dict:
+        names = [(data_dict.get(key) or '').strip() for key in ('given_name', 'surname')]
+        missing = {key: [tk._('This field is required.')] for key, val in
+                   zip(('given_name', 'surname'), names) if not val}
+        if missing:
+            raise tk.ValidationError(missing)
+        data_dict['fullname'] = ' '.join(names)
     data, errors = schemas.validate(data_dict, schema, context)
     if errors:
         raise tk.ValidationError(errors)
@@ -193,8 +205,8 @@ def _register(context, data_dict, profile_type):
     org_id = None
     if profile_type == 'manager':
         if data.get('org_choice') == 'existing':
-            choices = _organization_choices()
-            org_id = choices.get((data.get('ckan_org_id') or u'').strip())
+            org = model.Group.get((data.get('ckan_org_id') or '').strip())
+            org_id = org.id if org and org.type == 'organization' and org.state == 'active' else None
             if not org_id:
                 raise tk.ValidationError(
                     {'ckan_org_id': [tk._(u'Choose an organisation')]})
@@ -203,6 +215,7 @@ def _register(context, data_dict, profile_type):
                 {'org_name_requested': [tk._(u'Name the organisation')]})
 
     anon = _anon_context()
+    anon['defer_commit'] = True
     try:
         tk.check_access('user_create', anon, {})
     except tk.NotAuthorized:
@@ -235,6 +248,9 @@ def _register(context, data_dict, profile_type):
         profile_type=profile_type,
         country=data.get('country') or None,
         organisation_text=data.get('organisation_text') or None,
+        given_name=data.get('given_name') or None,
+        surname=data.get('surname') or None,
+        profile_visible=checks.is_truthy(data.get('profile_visible')),
         terms_accepted_at=now,
         email_verified=False,
         verification_token_hash=_hash(token),
@@ -250,7 +266,12 @@ def _register(context, data_dict, profile_type):
     )
     Session.add(user_obj)
     Session.add(profile)
-    Session.commit()
+    try:
+        Session.commit()
+    except Exception:
+        Session.rollback()
+        log.exception('ckanext-c4w: could not save the CKAN account and C4W profile')
+        raise _generic()
 
     url = c4w_helpers.c4w_url('verify_email', token=token, qualified=True)
     sent = mail.send_verification(data['fullname'], data['email'], url,
@@ -280,8 +301,8 @@ def c4w_verify_email(context, data_dict):
     """Consume a verification token.
 
     Returns ``{'state': ok | manager_pending | expired | invalid}``. A
-    citizen is activated on the spot; a manager only becomes
-    ``email_verified`` and waits for the reviewers.
+    verified account is activated immediately. Organisation privileges
+    remain subject to the separate manager review.
     """
     tk.check_access('c4w_verify_email', context, data_dict)
     from ckan.model.meta import Session
@@ -310,13 +331,9 @@ def c4w_verify_email(context, data_dict):
     profile.verification_token_hash = None
     profile.modified = _now()
     state = 'ok'
-    if profile.profile_type == 'manager':
-        if profile.manager_decision == 'approved':
-            user.activate()
-        else:
-            state = 'manager_pending'
-    else:
-        user.activate()
+    user.activate()
+    if profile.profile_type == 'manager' and profile.manager_decision != 'approved':
+        state = 'manager_pending'
     Session.add(profile)
     Session.add(user)
     Session.commit()
@@ -581,8 +598,24 @@ def _common_user_id(context):
 # Registries
 # --------------------------------------------------------------------------- #
 
+def c4w_profile_preferences_update(context, data_dict):
+    tk.check_access('c4w_profile_preferences_update', context, data_dict)
+    from ckan.model.meta import Session
+    user = context['auth_user_obj']
+    profile = _profile_by_user(user.id)
+    if profile is None:
+        profile = db.C4wUserProfile(user_id=user.id, profile_type='citizen',
+                                   email_verified=user.state == 'active')
+        Session.add(profile)
+    profile.profile_visible = checks.is_truthy(data_dict.get('profile_visible'))
+    profile.modified = _now()
+    Session.commit()
+    return _profile_dict(profile, user)
+
+
 def get_actions():
     return {
+        'c4w_profile_preferences_update': c4w_profile_preferences_update,
         'c4w_register_citizen': c4w_register_citizen,
         'c4w_register_manager': c4w_register_manager,
         'c4w_verify_email': c4w_verify_email,
@@ -616,6 +649,7 @@ def _sysadmin(context, data_dict):
 
 def get_auth_functions():
     return {
+        'c4w_profile_preferences_update': _signed_in,
         'c4w_register_citizen': _anyone,
         'c4w_register_manager': _anyone,
         'c4w_verify_email': _anyone,

@@ -4,5 +4,7 @@ FROM ${BASE_IMAGE}
 USER root
 COPY --chown=ckan:ckan . /app/src/ckanext-c4w/
 RUN pip install --no-deps --no-build-isolation -e /app/src/ckanext-c4w
-RUN cat /app/src/ckanext-c4w/deploy/c4w-worker.conf >> /etc/supervisor/conf.d/ckan-worker.conf
+RUN if ! grep -q '^\[program:c4w-worker\]' /etc/supervisor/conf.d/ckan-worker.conf; then \
+      cat /app/src/ckanext-c4w/deploy/c4w-worker.conf >> /etc/supervisor/conf.d/ckan-worker.conf; \
+    fi
 USER ckan

@@ -96,9 +96,23 @@
       </ul>
     </section>
   {% endif %}
+  <section>
+    <h2>{{ _('Project data') }}</h2>
+    {% if project.datasets %}
+      <ul class="c4w-orglist">{% for dataset in project.datasets %}<li>
+        <a href="{{ h.c4w_url('dataset_detail', slug=dataset.slug) }}">{{ dataset.title }}</a>
+        {% if dataset.approved and dataset.processing_status == 'ready' %} · <a href="{{ h.c4w_url('dataset_dashboard', slug=dataset.slug) }}">{{ _('Dashboard') }}</a>{% endif %}
+        {% if not dataset.approved %}<span class="c4w-badge">{{ _('Not yet published') }}</span>{% endif %}
+      </li>{% endfor %}</ul>
+    {% else %}<p>{{ _('No published data has been added to this project yet.') }}</p>{% endif %}
+  </section>
 {% endblock %}
 
 {% block detail_actions %}
+  {% if project.can_edit %}
+    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_project_step', project_id=project.id, step=1) }}">{{ _('Edit project') }}</a>
+  {% endif %}
+  <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_start', project_id=project.id) }}">{{ _('Add data') }}</a>
   {% if project.url %}
     <a class="c4w-btn" href="{{ project.url }}"
        rel="noopener noreferrer nofollow" target="_blank">{{ _('Go to project') }} {{ ui.icon('external', 'c4w-icon--sm') }}</a>
@@ -110,6 +124,7 @@
 {% endblock %}
 
 {% block detail_facts %}
+  {% if project.contributor %}<div class="c4w-detail__facts-row"><dt>{{ _('Contributor') }}</dt><dd>{{ project.contributor.name }}{% if project.contributor.affiliation %} · {{ project.contributor.affiliation }}{% endif %}</dd></div>{% endif %}
   {{ terms('country', _('Countries')) }}
   {{ terms('topic', _('Science topics')) }}
   {{ terms('water_type', _('Water type')) }}

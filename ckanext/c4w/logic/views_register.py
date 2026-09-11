@@ -24,17 +24,6 @@ def _too_many(retry):
     return response
 
 
-def _organisation_options():
-    """``[(id, title)]`` of CKAN organisations, for the manager form."""
-    try:
-        rows = tk.get_action('organization_list')(
-            {'ignore_auth': True}, {'all_fields': True, 'limit': 1000})
-    except Exception:
-        return []
-    return sorted(((r['id'], r.get('title') or r['name']) for r in rows),
-                  key=lambda pair: pair[1].casefold())
-
-
 def _render(kind, data, errors, pending=False, mail_sent=True):
     from ckanext.c4w.logic.action import registration as reg
     extra_vars = {
@@ -47,8 +36,6 @@ def _render(kind, data, errors, pending=False, mail_sent=True):
                                 if reg.recaptcha_configured() else None),
         'country_options': c4w_helpers.c4w_country_options(),
         'org_type_options': c4w_helpers.c4w_option_list('org_type'),
-        'organisation_options': (_organisation_options()
-                                 if kind == 'manager' else []),
     }
     return tk.render('c4w/register.html', extra_vars=extra_vars)
 

@@ -173,3 +173,31 @@
 {% macro row() %}
   <div class="c4w-form__row">{{ caller() }}</div>
 {% endmacro %}
+
+{% macro lookup(name, label, kind, value='', errors={}, multiple=false, required=false) %}
+  {% set selected = value if value is iterable and value is not string else [value] %}
+  <div class="{{ _wrap_class(name, errors) }} c4w-picker" data-picker
+       data-url="{{ h.c4w_url('lookup', kind=kind) }}"
+       data-empty="{{ _('No matches found.') }}" data-error="{{ _('Search unavailable. Try again.') }}"
+       data-loading="{{ _('Searching…') }}" data-remove="{{ _('Remove') }}">
+    {{ _label(name, label, required) }}
+    <select class="c4w-input" name="{{ name }}" id="c4w-f-{{ name }}" {% if multiple %}multiple{% endif %} {% if required %}required{% endif %} {{ _describe(name, none, errors) }}>
+      {% if not multiple %}<option value="">{{ _('Choose…') }}</option>{% endif %}
+      {% for option in h.c4w_lookup_options(kind, value) %}
+        <option value="{{ option.id }}" {% if option.id in selected %}selected{% endif %}>{{ option.title }}</option>
+      {% endfor %}
+    </select>
+    <div class="c4w-picker__enhanced" hidden>
+      <div class="c4w-picker__selected"></div>
+      <input class="c4w-input" type="search" role="combobox" aria-expanded="false"
+             aria-autocomplete="list" aria-controls="c4w-options-{{ name }}"
+             aria-label="{{ label }}" placeholder="{{ _('Search by name or keyword…') }}"
+             autocomplete="off">
+      <div class="c4w-picker__dropdown" hidden>
+        <ul id="c4w-options-{{ name }}" role="listbox"></ul>
+        <p class="c4w-picker__status" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+    {{ _error(name, errors) }}
+  </div>
+{% endmacro %}

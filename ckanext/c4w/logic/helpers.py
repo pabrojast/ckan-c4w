@@ -535,8 +535,51 @@ def c4w_month_name(month):
         return u'%s' % month
 
 
+def c4w_lookup_options(kind, values=None):
+    from ckanext.c4w.logic.checks import as_list
+    ids = as_list(values)
+    result = tk.get_action('c4w_lookup')({}, {'kind': kind})['results']
+    present = {row['id'] for row in result}
+    # Search pages contain 20 results; every saved selection must survive
+    # rendering, including projects with more than 20 partner organisations.
+    for offset in range(0, len(ids), 20):
+        selected = tk.get_action('c4w_lookup')({}, {'kind': kind, 'ids': ','.join(ids[offset:offset + 20])})['results']
+        result += [row for row in selected if row['id'] not in present]
+        present.update(row['id'] for row in selected)
+    return result
+
+
+def c4w_project_language_options():
+    from babel import Locale
+    locale = Locale.parse(tk.request.environ.get('CKAN_LANG') or 'en')
+    return sorted([(code, label) for code, label in locale.languages.items()
+                   if code.isalpha() and len(code) in (2, 3)], key=lambda pair: pair[1])
+
+
+def c4w_project_field_value(field, value):
+    from ckanext.c4w.logic.checks import as_list
+    kind = field['kind']
+    if kind == 'bool':
+        return tk._('Yes') if value else tk._('No')
+    if kind in ('multi', 'select'):
+        return ', '.join(c4w_term_label(field['vocabulary'], v) for v in as_list(value))
+    if kind == 'countries':
+        return ', '.join(c4w_country_name(v) for v in as_list(value))
+    if kind == 'languages':
+        return ', '.join(c4w_language_name(v) for v in as_list(value))
+    if kind in ('organisation', 'organisations'):
+        selected = set(as_list(value))
+        return ', '.join(row['title'] for row in c4w_lookup_options('organisation', value) if row['id'] in selected)
+    if isinstance(value, list):
+        return ', '.join(str(v) for v in value)
+    return value or ''
+
+
 def get_helpers():
     return {
+        'c4w_lookup_options': c4w_lookup_options,
+        'c4w_project_language_options': c4w_project_language_options,
+        'c4w_project_field_value': c4w_project_field_value,
         'c4w_entity_icon': c4w_entity_icon,
         'c4w_avatar_initial': c4w_avatar_initial,
         'c4w_month_name': c4w_month_name,
