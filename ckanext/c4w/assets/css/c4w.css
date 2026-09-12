@@ -861,9 +861,46 @@ html.c4w-portal .c4w-section__lede {
   color: var(--c4w-muted) !important;
 }
 
+/* The home shows a preview of each catalogue, with a clear way to continue. */
+html.c4w-portal .c4w-home-section__count {
+  margin: 0 0 1rem;
+  color: var(--c4w-blue) !important;
+  font-size: 0.88rem !important;
+  font-weight: 600;
+}
+
+.c4w-home-section .c4w-home-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
+}
+
+.c4w-home-section__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: var(--c4w-pale);
+  border: 1px solid var(--c4w-rule);
+  border-radius: var(--c4w-radius-lg);
+}
+
+html.c4w-portal .c4w-home-section__footer p {
+  flex: 1 1 18rem;
+  margin: 0;
+}
+
+.c4w-home-section__footer .c4w-btn { flex: 0 1 auto; }
+
+@media (max-width: 39.999rem) {
+  .c4w-home-section__footer .c4w-btn { width: 100%; }
+}
+
 .c4w-explore {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
   margin: 0;
   padding: 0;
@@ -872,6 +909,11 @@ html.c4w-portal .c4w-section__lede {
 
 @media (min-width: 40rem) { .c4w-explore { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 62rem) { .c4w-explore { grid-template-columns: repeat(4, 1fr); } }
+
+@media (max-width: 39.999rem) {
+  .c4w-explore .c4w-stat { flex-direction: column; align-items: flex-start; gap: 0.6rem; padding: 0.85rem; }
+  .c4w-explore .c4w-stat__label { overflow-wrap: anywhere; }
+}
 
 .c4w-stat {
   position: relative;
@@ -995,6 +1037,20 @@ html.c4w-portal .c4w-section__lede {
 .c4w-featured__body h2 { margin: 0 0 0.4rem; font-size: 1.35rem; color: var(--c4w-ink); }
 
 html.c4w-portal .c4w-featured__body p { margin: 0 !important; color: var(--c4w-muted) !important; }
+
+.c4w-featured--home { margin-bottom: 1.25rem; }
+.c4w-featured--home .c4w-featured__body h3 { margin: 0 0 0.5rem; font-size: 1.5rem; }
+.c4w-featured__action { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 1rem; font-weight: 600; }
+
+@media (min-width: 48rem) {
+  .c4w-featured--home .c4w-featured__link {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    align-items: stretch;
+  }
+  .c4w-featured--home .c4w-card__media { aspect-ratio: auto; min-height: 17rem; }
+  .c4w-featured--home .c4w-featured__body { align-self: center; padding: 1.75rem 2rem; }
+}
 
 html.c4w-portal .c4w-quiet {
   display: flex;
@@ -1883,6 +1939,22 @@ html.c4w-portal .c4w-form__section > .c4w-form__lede {
 }
 
 .c4w-field { margin: 0 0 1.15rem; }
+
+/* Shared label, hint, control and error rows keep both passwords aligned,
+   including wrapped translations, validation errors and the JS Show buttons.
+   When the columns stack, each field gets its own set of rows. */
+.c4w-form__row--passwords > .c4w-field {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 4;
+  align-items: start;
+  min-width: 0;
+}
+.c4w-form__row--passwords .c4w-field__label { grid-row: 1; }
+.c4w-form__row--passwords .c4w-field__hint { grid-row: 2; }
+.c4w-form__row--passwords .c4w-field > .c4w-input,
+.c4w-form__row--passwords .c4w-password { grid-row: 3; }
+.c4w-form__row--passwords .c4w-field__error { grid-row: 4; }
 
 .c4w-field__label {
   display: block;

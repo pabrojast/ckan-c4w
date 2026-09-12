@@ -9,9 +9,9 @@
 <article class="c4w-card c4w-card--event">
   {{ ui.date_block(event.start_date) }}
   <div class="c4w-card__body">
-    <h2 class="c4w-card__title">
+    <{{ heading_tag | default('h2') }} class="c4w-card__title">
       <a href="{{ h.c4w_url('event_detail', slug=event.slug) }}">{{ event.title }}</a>
-    </h2>
+    </{{ heading_tag | default('h2') }}>
     <p class="c4w-card__meta">
       {% if event.place %}<span class="c4w-card__place">{{ ui.icon('map-pin', 'c4w-icon--sm') }} {{ event.place }}</span>{% endif %}
       {% if event.event_type %}<span class="c4w-card__status">{{ h.c4w_term_label('event_type', event.event_type) }}</span>{% endif %}

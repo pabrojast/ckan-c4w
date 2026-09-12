@@ -5,9 +5,9 @@
     {{ ui.card_media(h.c4w_image_url(post, 'image_url'), 'post') }}
   </a>
   <div class="c4w-card__body">
-    <h2 class="c4w-card__title">
+    <{{ heading_tag | default('h2') }} class="c4w-card__title">
       <a href="{{ h.c4w_url('post_detail', slug=post.slug) }}">{{ post.title }}</a>
-    </h2>
+    </{{ heading_tag | default('h2') }}>
     <p class="c4w-card__meta">
       {% if post.created_on %}
         <time datetime="{{ post.created_on }}">{{ post.created_on[:10] }}</time>

@@ -9,9 +9,9 @@
     {{ ui.card_media(h.c4w_image_url(project, 'image1_url'), 'project') }}
   </a>
   <div class="c4w-card__body">
-    <h2 class="c4w-card__title">
+    <{{ heading_tag | default('h2') }} class="c4w-card__title">
       <a href="{{ h.c4w_url('project_detail', slug=project.slug) }}">{{ project.name }}</a>
-    </h2>
+    </{{ heading_tag | default('h2') }}>
     <p class="c4w-card__meta">
       {% if project.status %}
         <span class="c4w-card__status">{{ h.c4w_term_label('status', project.status) }}</span>

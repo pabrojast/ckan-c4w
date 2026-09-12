@@ -67,10 +67,10 @@
                hint=_('We send the confirmation link here. Never shown publicly.')) }}
           {{ form.input('username', _('Username'), data.username, errors, autocomplete='username',
                hint=_('Optional. Letters, numbers and dashes. We suggest one from your name if you leave it empty.')) }}
-          {% call form.row() %}
+          <div class="c4w-form__row c4w-form__row--passwords">
             {{ form.input('password', _('Password'), '', errors, required=true, type='password', autocomplete='new-password', hint=_('At least 8 characters.')) }}
             {{ form.input('password_confirm', _('Repeat the password'), '', errors, required=true, type='password', autocomplete='new-password') }}
-          {% endcall %}
+          </div>
           {{ form.select('country', _('Country'), country_options, data.country or '', errors, empty_label=_('Choose…'),
                hint=_('Where you mostly take part. Used for the portal\'s statistics only.')) }}
           {% if not is_manager %}

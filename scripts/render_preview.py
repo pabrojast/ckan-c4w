@@ -262,8 +262,12 @@ LISTING = {'results': [project(0), project(1, image=False), project(2), project(
                       'topic': {'water': 40, 'biodiversity': 12, 'education': 8}, 'water_type': {'surface-water': 35, 'groundwater': 7},
                       'water_data_type': {'chemical-water-quality': 20, 'biological-water-quality': 11}}}
 
-render('c4w/home.html', 'index.html', stats=STATS, featured_project=project(0), latest_projects=[project(1, image=False), project(2), project(3, image=False)],
-       latest_posts=[post(0), post(1, image=True)], upcoming_events=[event(0), event(1)])
+HOME_POSTS = [post(0), post(1, image=True), dict(post(2), title='Community monitoring: stories from the field')]
+render('c4w/home.html', 'index.html', stats=STATS, featured_project=project(0), latest_projects=[project(i, image=i % 2 == 0) for i in range(1, 6)],
+       latest_posts=HOME_POSTS, upcoming_events=[event(0), event(1)])
+render('c4w/home.html', 'home_no_upcoming.html', stats=STATS, featured_project=project(0), latest_projects=[project(1)],
+       latest_posts=HOME_POSTS, upcoming_events=[])
+render('c4w/home.html', 'home_empty.html', stats={}, featured_project=None, latest_projects=[], latest_posts=[], upcoming_events=[])
 render('c4w/project_list.html', 'project_list.html', listing=LISTING, orderings=constants.PROJECT_ORDERINGS, params={'q': ''})
 render('c4w/project_detail.html', 'project_detail.html', project=project(0))
 render('c4w/dataset_detail.html', 'dataset_detail.html', dataset=DATASET, c=USER)
@@ -292,6 +296,7 @@ render('c4w/login.html', 'login.html', data={}, errors={}, came_from='/')
 render('c4w/register_choose.html', 'register_choose.html', user=None)
 render('c4w/admin.html', 'admin.html', groups=[{'entity_type': 'dataset', 'rows': [dict(DATASET, approved=False, mapping_json='{}')], 'can_hide': True, 'can_feature': True, 'can_process': True}], managers=[{'user_id': 'u2', 'fullname': 'Pedro Silva', 'name': 'pedro', 'email': 'pedro@example.org', 'job_title': 'Coordinator', 'country': 'CL', 'org_choice': 'new', 'org_name_requested': 'Río Vivo', 'org_type': 'non-governmental', 'org_url': 'https://riovivo.cl', 'created': '2026-09-02'}], c=USER)
 render('c4w/post_list.html', 'post_list_empty.html', listing={'results': [], 'count': 0, 'page': 1, 'pages': 1, 'order': 'modified', 'facets': {}}, orderings=None, params={})
+render('c4w/post_list.html', 'post_list.html', listing={'results': HOME_POSTS, 'count': 31, 'page': 1, 'pages': 2, 'order': 'created', 'facets': {}}, orderings=None, params={})
 render('c4w/event_list.html', 'event_list_single.html', listing={'upcoming': [event(0)], 'past': [event(1)], 'upcoming_total': 1, 'page': 1, 'pages': 1}, params={})
 render('c4w/event_list.html', 'event_list.html', listing={'upcoming': [event(0), event(1)], 'past': [event(0)], 'upcoming_total': 2, 'page': 1, 'pages': 1}, params={})
 

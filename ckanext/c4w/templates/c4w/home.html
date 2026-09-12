@@ -6,6 +6,8 @@
 {% block c4w_content %}
   {% set stats = stats or {} %}
   {% set nav = h.c4w_nav() %}
+  {% set home_projects = (latest_projects or [])[:3] %}
+  {% set projects_shown = home_projects | length + (1 if featured_project else 0) %}
 
   <section class="c4w-hero" id="c4w-main">
     <picture class="c4w-hero__media" aria-hidden="true">
@@ -79,81 +81,103 @@
 
   <div class="c4w-band c4w-band--alt">
     <div class="c4w-page">
-      <section class="c4w-section">
+      <section class="c4w-section c4w-home-section" aria-labelledby="c4w-home-projects">
         <header class="c4w-section__head">
-          <h2>{{ _('Projects') }}</h2>
+          <h2 id="c4w-home-projects">{{ _('Discover projects') }}</h2>
           <a href="{{ h.c4w_url('project_list') }}">{{ _('All projects') }} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</a>
         </header>
+        <p class="c4w-section__lede">{{ _('Discover how communities around the world monitor freshwater. Browse the full directory by place, topic or activity.') }}</p>
+        {% if projects_shown and stats.get('projects', 0) >= projects_shown %}
+          <p class="c4w-home-section__count">{{ ungettext('{shown} of {total} project shown', '{shown} of {total} projects shown', stats.projects).format(shown=projects_shown, total=h.c4w_number(stats.projects)) }}</p>
+        {% endif %}
 
         {% if featured_project %}
-          <article class="c4w-featured">
+          <article class="c4w-featured c4w-featured--home">
             <a class="c4w-featured__link" href="{{ h.c4w_url('project_detail', slug=featured_project.slug) }}">
               {{ ui.card_media(h.c4w_image_url(featured_project, 'image3_url') or h.c4w_image_url(featured_project, 'image1_url'), 'project') }}
               <div class="c4w-featured__body">
                 <span class="c4w-featured__kicker">{{ _('Featured project') }}</span>
-                <h2>{{ featured_project.name }}</h2>
+                <h3>{{ featured_project.name }}</h3>
                 {% if featured_project.description %}
                   <p>{{ featured_project.description | striptags | truncate(260) }}</p>
                 {% endif %}
+                <span class="c4w-featured__action">{{ _('Explore this project') }} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</span>
               </div>
             </a>
           </article>
         {% endif %}
 
-        {% if latest_projects %}
-          <div class="c4w-card-grid" style="margin-top: 1.25rem">
-            {% for project in latest_projects %}
-              {% if not featured_project or project.id != featured_project.id %}
-                {% snippet 'c4w/snippets/project_card.html', project=project %}
-              {% endif %}
+        {% if home_projects %}
+          <div class="c4w-card-grid c4w-home-grid">
+            {% for project in home_projects %}
+              {% snippet 'c4w/snippets/project_card.html', project=project, heading_tag='h3' %}
             {% endfor %}
           </div>
         {% elif not featured_project %}
           <p class="c4w-quiet">{{ ui.icon('drop') }} {{ _('No projects yet.') }}</p>
         {% endif %}
+        <footer class="c4w-home-section__footer">
+          <p>{{ _('Find a project near you or explore a new area of interest.') }}</p>
+          <a class="c4w-btn" href="{{ h.c4w_url('project_list') }}">{{ _('Explore all projects') }}{% if stats.get('projects') %} ({{ h.c4w_number(stats.projects) }}){% endif %} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</a>
+        </footer>
       </section>
     </div>
   </div>
 
   <div class="c4w-band">
     <div class="c4w-page">
-      <div class="c4w-split">
-        <section class="c4w-section">
-          <header class="c4w-section__head">
-            <h2>{{ _('News') }}</h2>
-            <a href="{{ h.c4w_url('post_list') }}">{{ _('All news') }} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</a>
-          </header>
-          {% if latest_posts %}
-            <div class="c4w-card-grid">
-              {% for post in latest_posts %}
-                {% snippet 'c4w/snippets/post_card.html', post=post %}
-              {% endfor %}
-            </div>
-          {% else %}
-            <p class="c4w-quiet">{{ ui.icon('newspaper') }} {{ _('No news yet.') }}</p>
-          {% endif %}
-        </section>
-
-        <section class="c4w-section">
-          <header class="c4w-section__head">
-            <h2>{{ _('Upcoming events') }}</h2>
-            <a href="{{ h.c4w_url('event_list') }}">{{ _('All events') }} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</a>
-          </header>
-          {% if upcoming_events %}
-            <div class="c4w-event-list" style="grid-template-columns: 1fr">
-              {% for event in upcoming_events %}
-                {% snippet 'c4w/snippets/event_card.html', event=event %}
-              {% endfor %}
-            </div>
-          {% else %}
-            <p class="c4w-quiet">{{ ui.icon('calendar') }} {{ _('No upcoming events right now.') }}</p>
-          {% endif %}
-        </section>
-      </div>
+      <section class="c4w-section c4w-home-section" aria-labelledby="c4w-home-news">
+        <header class="c4w-section__head">
+          <h2 id="c4w-home-news">{{ _('Latest news') }}</h2>
+          <a href="{{ h.c4w_url('post_list') }}">{{ _('All news') }} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</a>
+        </header>
+        <p class="c4w-section__lede">{{ _('The latest stories and updates from the Citizens4Water community. Visit all news for earlier stories.') }}</p>
+        {% if latest_posts and stats.get('posts', 0) >= latest_posts | length %}
+          <p class="c4w-home-section__count">{{ ungettext('{shown} of {total} story shown', '{shown} of {total} stories shown', stats.posts).format(shown=latest_posts | length, total=h.c4w_number(stats.posts)) }}</p>
+        {% endif %}
+        {% if latest_posts %}
+          <div class="c4w-card-grid c4w-home-grid">
+            {% for post in latest_posts %}
+              {% snippet 'c4w/snippets/post_card.html', post=post, heading_tag='h3' %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="c4w-quiet">{{ ui.icon('newspaper') }} {{ _('No news yet.') }}</p>
+        {% endif %}
+        <footer class="c4w-home-section__footer">
+          <p>{{ _('Explore stories, project updates and community news.') }}</p>
+          <a class="c4w-btn" href="{{ h.c4w_url('post_list') }}">{{ _('Browse all news') }}{% if stats.get('posts') %} ({{ h.c4w_number(stats.posts) }}){% endif %} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</a>
+        </footer>
+      </section>
     </div>
   </div>
 
   <div class="c4w-band c4w-band--alt">
+    <div class="c4w-page">
+      <section class="c4w-section c4w-home-section" aria-labelledby="c4w-home-events">
+        <header class="c4w-section__head">
+          <h2 id="c4w-home-events">{{ _('Upcoming events') }}</h2>
+          <a href="{{ h.c4w_url('event_list') }}">{{ _('All events') }} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</a>
+        </header>
+        <p class="c4w-section__lede">{{ _('Meet, learn and take part in citizen science. The full calendar includes upcoming and past events.') }}</p>
+        {% if upcoming_events %}
+          <div class="c4w-event-list c4w-home-grid">
+            {% for event in upcoming_events %}
+              {% snippet 'c4w/snippets/event_card.html', event=event, heading_tag='h3' %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="c4w-quiet">{{ ui.icon('calendar') }} {{ _('No upcoming events right now.') }}</p>
+        {% endif %}
+        <footer class="c4w-home-section__footer">
+          <p>{{ _('Browse the full calendar, including past events.') }}</p>
+          <a class="c4w-btn" href="{{ h.c4w_url('event_list') }}">{{ _('Browse all events') }}{% if stats.get('events') %} ({{ h.c4w_number(stats.events) }}){% endif %} {{ ui.icon('arrow-right', 'c4w-icon--sm') }}</a>
+        </footer>
+      </section>
+    </div>
+  </div>
+
+  <div class="c4w-band">
     <div class="c4w-page">
       <section class="c4w-cta">
         <div>
