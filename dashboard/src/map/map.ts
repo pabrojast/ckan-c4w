@@ -12,6 +12,7 @@ import { bboxOfSites } from "../data/filter";
 import { MISSING, clusterColorExpression, formatValue, pointColorExpression } from "../config/scale";
 import type { I18n } from "../i18n";
 import { escapeHtml, formatCount } from "../util/format";
+import { basemapStyle } from "./basemap";
 
 // Worker como archivo real (c4w-dashboard-worker.js) y no como blob: una CSP
 // sin `worker-src blob:` rompería el mapa en silencio.
@@ -59,7 +60,7 @@ export function createMap(container: HTMLElement, options: MapOptions): MapHandl
 
   const map = new MapLibreMap({
     container,
-    style: styleUrl,
+    style: basemapStyle(styleUrl),
     center: [12, 20],
     zoom: 1.3,
     attributionControl: false,

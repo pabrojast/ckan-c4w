@@ -162,3 +162,16 @@ Periods are compact integers by grain: `2019` (year), `201903` (month),
   is the portal's blue-grey.
 - Chart marks follow the dataviz specs: 2px lines, 4px rounded data-ends,
   ≤ 24px bars, ink tooltips.
+
+## Borderless basemap
+
+The dashboard and project-area editor use the same local Positron style from
+Ofform, stored at `ckanext/c4w/public/c4w/maps/positron-borderless.json` in the
+repository root. It omits national and disputed borders and retains regional
+boundaries, geographic labels, physical geography and attribution.
+
+An empty basemap setting or the original OpenFreeMap Positron URL selects this
+style; other `ckanext.c4w.basemap_style` URLs remain supported. Rebuild the
+dashboard after changing the style. Each dashboard map gets an independent copy.
+The unused `ne2_shaded` raster source is omitted so MapLibre can finish loading
+the basemap; all visible layers match the Ofform style.

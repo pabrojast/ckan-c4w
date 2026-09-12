@@ -4,6 +4,8 @@ const messages = JSON.parse(document.getElementById('c4w-form-messages')?.textCo
 const t = key => messages[key] || key;
 
 maplibre.setWorkerUrl(new URL('./vendor/maplibre-gl-worker.mjs', import.meta.url).href);
+const defaultBasemap = 'https://tiles.openfreemap.org/styles/positron';
+const borderlessBasemap = new URL('./maps/positron-borderless.json', import.meta.url).href;
 document.querySelectorAll('[data-project-map]').forEach(root => {
   const field = root.querySelector('textarea');
   const status = root.querySelector('[data-map-status]');
@@ -19,7 +21,9 @@ document.querySelectorAll('[data-project-map]').forEach(root => {
   try { if (field.value) geometry = normalize(JSON.parse(field.value)); } catch (_) { status.textContent = t("Check the GeoJSON coordinates below."); }
   let map;
   try {
-    map = new maplibre.Map({container: root.querySelector('.c4w-project-map'), style: root.dataset.style,
+    const style = root.dataset.style;
+    map = new maplibre.Map({container: root.querySelector('.c4w-project-map'),
+      style: !style || style === defaultBasemap ? borderlessBasemap : style,
       center: [0, 15], zoom: 1, attributionControl: true});
   } catch (_) { status.textContent = t("Map unavailable. You can still import or edit GeoJSON below."); return; }
   map.addControl(new maplibre.NavigationControl());
@@ -39,7 +43,8 @@ document.querySelectorAll('[data-project-map]').forEach(root => {
     map.fitBounds(bounds, {padding: 35, maxZoom: 12, duration: 0});
   }
   function clearMarkers() { markers.forEach(m => m.remove()); markers = []; }
-  map.on('load', () => {
+  // Attach the editable area when the style is ready, without waiting for tiles.
+  map.on('style.load', () => {
     map.addSource('areas', {type: 'geojson', data: features()});
     map.addLayer({id: 'area-fill', type: 'fill', source: 'areas', filter: ['==', '$type', 'Polygon'], paint: {'fill-color': '#0077b8', 'fill-opacity': .2}});
     map.addLayer({id: 'area-line', type: 'line', source: 'areas', paint: {'line-color': '#0077b8', 'line-width': 3}});
