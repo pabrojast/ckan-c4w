@@ -54,6 +54,8 @@ export const es: Record<MessageKey, string> = {
   "popup.periods": "{n} periodos con dato",
 
   "map.aria": "Mapa de sitios",
+  "map.scrollHelp": "Mantén {key} y desplázate para acercar o alejar el mapa",
+  "map.touchHelp": "Usa dos dedos para mover el mapa",
   "map.attribution": "OpenFreeMap · colaboradores de OpenStreetMap",
 
   "csv.site": "site_id",

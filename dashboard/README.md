@@ -67,12 +67,19 @@ Root data attributes (all read by `src/config.ts`):
 | `data-title` | dataset title |
 | `data-source-url` | fallback for the source link when `meta.dataset.source` is empty |
 
-`full=True` (embed page) adds `c4w-dash--full`: the dashboard fills the
-viewport and drops its frame. The portal page keeps a fixed workspace height
-(`clamp(560px, 100vh - 14rem, 880px)`). The chart column scrolls when needed,
-with minimum panel heights of 210 / 250 / 360px to keep the axes and country
-labels readable. Below 900px the charts stack under the map and the page
-scrolls as a whole.
+The dashboard grows with its charts, using the page's scroll instead of a
+separate scrollbar inside the chart column. On desktop the map is 600–960px
+high (based on the viewport) and stays visible while scrolling the charts.
+Trend and distribution canvases are 280px high; the comparison starts at
+320px and grows by 32px per group plus space for the axis. All countries with
+enough sites are shown; other dimensions retain their top-ten summary.
+Below 900px the charts stack under a 360–600px map, keeping the same readable
+chart heights. `full=True` (embed page) adds `c4w-dash--full`: the dashboard
+is at least one viewport tall, drops its frame and lets the document scroll
+to show all the charts even inside a short iframe.
+The map also lets normal scrolling pass through: Ctrl/⌘ + scroll zooms,
+and two fingers move the map on touchscreens. Gesture hints follow the
+dashboard language.
 
 Every element the code touches carries a `data-role`; the code only queries
 inside its root, so several dashboards can live on one page. The full role list

@@ -52,6 +52,8 @@ export const en = {
   "popup.periods": "{n} periods with data",
 
   "map.aria": "Site map",
+  "map.scrollHelp": "Use {key} + scroll to zoom the map",
+  "map.touchHelp": "Use two fingers to move the map",
   "map.attribution": "OpenFreeMap · OpenStreetMap contributors",
 
   "csv.site": "site_id",

@@ -64,6 +64,13 @@ export function createMap(container: HTMLElement, options: MapOptions): MapHandl
     center: [12, 20],
     zoom: 1.3,
     attributionControl: false,
+    // El mapa alto forma parte de una página que se desplaza verticalmente.
+    cooperativeGestures: true,
+    locale: {
+      "CooperativeGesturesHandler.WindowsHelpText": t("map.scrollHelp", { key: "Ctrl" }),
+      "CooperativeGesturesHandler.MacHelpText": t("map.scrollHelp", { key: "⌘" }),
+      "CooperativeGesturesHandler.MobileHelpText": t("map.touchHelp"),
+    },
   });
   map.addControl(new NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new AttributionControl({ compact: true, customAttribution: attribution }), "bottom-right");

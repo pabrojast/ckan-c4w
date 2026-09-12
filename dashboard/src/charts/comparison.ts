@@ -42,7 +42,10 @@ export function createComparison(
           ? (id: string) => i18n.countryName(id)
           : (id: string) => mode.dimension.values.find((v) => String(v.id) === id)?.label ?? id;
 
-      const rows = medianByGroup(series, records, keyOf);
+      // Todos los países con datos suficientes deben poder leerse; las otras
+      // dimensiones conservan el resumen de los diez grupos principales.
+      const rows = medianByGroup(series, records, keyOf, mode.kind === "country" ? Infinity : 10);
+      canvas.parentElement?.style.setProperty("--comparison-height", `${Math.max(320, rows.length * 32 + 64)}px`);
       if (rows.length < 2) {
         // Con un solo grupo el gráfico no compara nada; el panel muestra el
         // mensaje vacío en su lugar.
