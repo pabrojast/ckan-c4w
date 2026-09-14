@@ -239,7 +239,8 @@ def test_detail_endpoints_cover_every_entity_type():
 
 def test_submit_choices_are_moderated_types():
     keys = [key for key, _title, _hint in constants.SUBMIT_CHOICES]
-    assert set(keys) <= set(constants.MODERATED_ENTITY_TYPES)
+    # News proposals use the revision review queue rather than generic approval.
+    assert set(keys) <= set(constants.MODERATED_ENTITY_TYPES) | {'post'}
     assert 'project' in keys
 
 

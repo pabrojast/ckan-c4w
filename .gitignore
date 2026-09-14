@@ -12,4 +12,6 @@ htmlcov/
 dashboard/node_modules/
 dashboard/public/dev-data/
 output/playwright/
+output/backups/
+output/verification/
 .playwright-cli/

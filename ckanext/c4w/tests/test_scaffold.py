@@ -429,7 +429,7 @@ def test_portal_chrome_points_at_the_c4w_login_and_register_pages():
     assert 'h.c4w_register_url()' in header
     helpers = _read('logic', 'helpers.py')
     assert "c4w_url('login'" in helpers
-    assert "c4w_url('register_choose')" in helpers
+    assert "c4w_url('register_choose'" in helpers
     assert "'/colab'" in helpers    # the fallback while the route is absent
 
 

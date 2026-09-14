@@ -17,7 +17,7 @@
         <li{% if endpoint %} class="c4w-chooser__item--open"{% endif %}>
           <span class="c4w-choice__icon">{{ ui.icon(h.c4w_entity_icon(key)) }}</span>
           {% if endpoint %}
-            <h2><a href="{{ h.c4w_url(endpoint) }}">{{ _('Propose a project') if key == 'project' else _('Share water data') }}</a></h2>
+            <h2><a href="{{ h.c4w_url(endpoint) }}">{{ _('Propose a project') if key == 'project' else _('Share water data') if key == 'dataset' else _('Share news') if key == 'post' else _('Share an event') }}</a></h2>
             <p>{{ _(hint) }}</p>
             <a class="c4w-btn" href="{{ h.c4w_url(endpoint) }}">{{ _('Start') }}</a>
           {% else %}

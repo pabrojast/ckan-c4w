@@ -179,19 +179,22 @@
 
   <div class="c4w-band">
     <div class="c4w-page">
-      <section class="c4w-cta">
-        <div>
-          <h2>{{ _('Share the water data you collect') }}</h2>
-          <p>{% trans %}Upload a table of measurements and Citizens4Water turns it into an interactive dashboard with a map, trends and comparisons, published under the licence you choose.{% endtrans %}</p>
+      <section class="c4w-contribute" aria-labelledby="c4w-contribute-title">
+        <h2 id="c4w-contribute-title">{{ _('Contribute to Citizens4Water') }}</h2>
+        <p>{{ _('Share your project, water data, news or events with the community. Create an account or sign in to get started.') }}</p>
+        <div class="c4w-contribute__grid">
+          {% for endpoint, icon, title, hint, label in [
+            ('submit_project_start', 'project', 'Have a citizen science project?', 'Share it with the community in a few steps.', 'Submit a new project'),
+            ('submit_data_start', 'upload', 'Collecting water measurements?', 'Turn your measurements into a map and interactive dashboard.', 'Share the water data you collect'),
+            ('submit_news_events', 'newspaper', 'Have something to share?', 'Tell the community about your news or an upcoming event.', 'Share news and events')] %}
+            <div class="c4w-contribute__item">
+              <h3>{{ _(title) }}</h3>
+              <p>{{ _(hint) }}</p>
+              <a class="c4w-btn" href="{{ h.c4w_contribution_url(endpoint) }}">{{ _(label) }}</a>
+            </div>
+          {% endfor %}
         </div>
-        <div class="c4w-cta__actions">
-          {% if c.userobj %}
-            <a class="c4w-btn c4w-btn--ghost c4w-btn--lg" href="{{ h.c4w_url('submit_data_start') }}">{{ ui.icon('upload') }} {{ _('Share your data') }}</a>
-          {% else %}
-            <a class="c4w-btn c4w-btn--ghost c4w-btn--lg" href="{{ h.c4w_register_url() }}">{{ _('Create an account') }}</a>
-            <a class="c4w-btn c4w-btn--ghost c4w-btn--lg" href="{{ h.c4w_url('dataset_list') }}">{{ _('See the data') }}</a>
-          {% endif %}
-        </div>
+        <p class="c4w-contribute__note">{{ _('Anyone with a verified account can contribute. The team reviews submissions before publication.') }}</p>
       </section>
     </div>
   </div>

@@ -45,13 +45,12 @@ def send_verification(fullname, email, url, profile_type='citizen'):
     ]
     if profile_type == 'manager':
         lines.append(tk._(
-            u'Because you asked for a project manager account, the '
-            u'Citizens4Water team will review your request once your '
-            u'e-mail is confirmed. You will receive a second message with '
-            u'their decision.'))
+            u'Confirm your email to start contributing. The Citizens4Water '
+            u'team reviews your organisation permissions separately and '
+            u'will email you their decision.'))
     else:
         lines.append(tk._(
-            u'Once confirmed you can sign in, propose projects and share your data.'))
+            u'Once confirmed you can sign in, propose projects, share water data, news and events.'))
     lines += [u'', tk._(u'If you did not register, ignore this message.')]
     return _send(fullname, email, subject, u'\n'.join(lines))
 

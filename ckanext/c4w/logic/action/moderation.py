@@ -84,6 +84,10 @@ def c4w_my_submissions(context, data_dict):
             if entity_type == 'project':
                 from ckanext.c4w.logic.action.project_write import _revision, _dict
                 item['proposal'] = _dict(row, _revision(row))
+            if entity_type in ('post', 'event'):
+                from ckanext.c4w.logic.action import content_write
+                item['proposal'] = content_write.dictize(entity_type, row, content_write.revision(entity_type, row))
+                item['modified'] = item['proposal']['modified'] or item.get('modified')
             items.append(item)
         # 'rows', never 'items': Jinja treats dict.items as the method.
         out.append({'entity_type': entity_type, 'rows': items})
@@ -102,6 +106,15 @@ def c4w_moderation_list(context, data_dict):
     out = []
     revisions = {r.project_id: r for r in Session.query(db.C4wProjectRevision).all()}
     from ckanext.c4w.logic.action.project_write import _dict
+    from ckanext.c4w.logic.action import content_write
+    content_revisions = Session.query(db.C4wContentRevision).all()
+    content_keys = {(r.entity_type, r.entity_id) for r in content_revisions}
+    content_requests = []
+    for rev in content_revisions:
+        if rev.status == 'pending' and rev.entity_type in content_write.FIELDS:
+            row = Session.query(models[rev.entity_type]).filter_by(id=rev.entity_id).first()
+            if row is not None:
+                content_requests.append(content_write.dictize(rev.entity_type, row, rev))
     project_requests = [_dict(p, revisions[p.id]) for p in Session.query(db.C4wProject).filter(
         db.C4wProject.id.in_([key for key, r in revisions.items() if r.status == 'pending'])).all()]
     for entity_type in constants.MODERATED_ENTITY_TYPES:
@@ -115,6 +128,8 @@ def c4w_moderation_list(context, data_dict):
                 .all())
         items = []
         for row in rows:
+            if (entity_type, row.id) in content_keys:
+                continue
             if entity_type == 'project' and row.id in revisions and not row.approved:
                 continue
             item = db.entity_dictize(entity_type, row, include_private=True)
@@ -127,7 +142,7 @@ def c4w_moderation_list(context, data_dict):
             'can_feature': entity_type in constants.ENTITY_HAS_FEATURED,
             'can_process': entity_type in constants.ENTITY_HAS_PROCESS,
         })
-    return {'groups': out, 'project_requests': project_requests}
+    return {'groups': out, 'project_requests': project_requests, 'content_requests': content_requests}
 
 
 def c4w_entity_moderate(context, data_dict):
@@ -154,6 +169,8 @@ def c4w_entity_moderate(context, data_dict):
     from ckan.model.meta import Session
 
     if operation == 'approve':
+        if entity_type in ('post', 'event') and Session.query(db.C4wContentRevision).filter_by(entity_type=entity_type, entity_id=row.id).first():
+            raise tk.ValidationError({'message': [tk._('Review the submitted contribution before approving it.')]})
         if entity_type == 'project' and Session.query(db.C4wProjectRevision).filter_by(project_id=row.id).first():
             raise tk.ValidationError({'message': [tk._('Review and approve the submitted project revision.')]})
         row.approved = True

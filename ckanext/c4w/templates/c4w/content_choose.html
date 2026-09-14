@@ -1,0 +1,12 @@
+{% extends "c4w/base.html" %}
+{% block subtitle %}{{ _('Share news and events') }}{% endblock %}
+{% block c4w_content %}
+<div class="c4w-page" id="c4w-main">
+  <header class="c4w-pagehead"><h1>{{ _('Share news and events') }}</h1></header>
+  <p>{{ _('Share a story or invite the community to an event. The team reviews your submission before publication.') }}</p>
+  <div class="c4w-choice-grid">
+    <a class="c4w-choice" href="{{ h.c4w_url('submit_news') }}"><h2>{{ _('News') }}</h2><p>{{ _('Share a project update, a story or a community achievement.') }}</p><span class="c4w-btn">{{ _('Share news') }}</span></a>
+    <a class="c4w-choice" href="{{ h.c4w_url('submit_event') }}"><h2>{{ _('Event') }}</h2><p>{{ _('Invite people to a workshop, meeting or citizen science activity.') }}</p><span class="c4w-btn">{{ _('Share an event') }}</span></a>
+  </div>
+</div>
+{% endblock %}

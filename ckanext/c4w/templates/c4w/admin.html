@@ -20,6 +20,13 @@
         </table></div>
       </section>
     {% endif %}
+    {% if content_requests %}
+      <section class="c4w-queue"><h2>{{ _('News and event proposals') }} <span class="c4w-directory__count">{{ content_requests | length }}</span></h2>
+        <div class="c4w-table-wrap"><table class="c4w-table"><thead><tr><th>{{ _('Title') }}</th><th>{{ _('Type') }}</th><th>{{ _('Actions') }}</th></tr></thead><tbody>
+        {% for proposal in content_requests %}<tr><td>{{ proposal.title }}{% if proposal.published %}<br>{{ _('Changes to published content') }}{% endif %}</td><td>{{ _('News') if proposal.entity_type == 'post' else _('Event') }}</td><td><a class="c4w-btn" href="{{ h.c4w_url('content_review', entity=proposal.entity_type, content_id=proposal.id) }}">{{ _('Review proposal') }}</a></td></tr>{% endfor %}
+        </tbody></table></div>
+      </section>
+    {% endif %}
     {% if managers %}
       <section class="c4w-queue">
         <h2>{{ _('Account requests') }}
@@ -149,7 +156,7 @@
           </section>
         {% endif %}
       {% endfor %}
-    {% elif not project_requests %}
+    {% elif not project_requests and not content_requests %}
       <p class="c4w-empty">{{ _('Nothing waiting for review.') }}</p>
     {% endif %}
   </div>

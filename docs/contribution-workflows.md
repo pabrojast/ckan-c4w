@@ -18,7 +18,7 @@ project contact information. It is off by default.
 
 ## Project workflow
 
-`/citizens4water/submit` offers projects and water datasets.
+`/citizens4water/submit` offers projects, water datasets, news and events.
 `/submit/project` creates a draft; `/submit/project/<id>/<step>` saves each of
 six steps. `logic/project_fields.py` declares the fields, based on the legacy
 `ProjectForm`; required content is checked on submission. The first save needs
@@ -126,3 +126,37 @@ Production context `ckan` is outside this delivery.
 
 Browser captures are under ignored `output/playwright/`. Real SMTP delivery
 was not exercised; deployed CAPTCHA and mail configuration were unchanged.
+
+
+## News, events and entry from the home page
+
+The home page always offers project, data, and news/event contributions.
+Anonymous visitors enter registration with a local `came_from`; existing users
+can sign in with that same destination. `registration_next` on the private
+C4W profile keeps the destination through email confirmation, including when
+confirmation happens in another browser and when the email is resent.
+Only local portal submission paths are retained. Account and organisation
+approval remain separate: any verified contributor may propose content.
+
+`/submit/news-events` selects news or events. `/submit/news` and `/submit/event`
+create drafts, and `/submit/content/<entity>/<id>` edits them. The `/review`
+suffix provides an author/admin preview and admin decisions. Actions
+`c4w_content_create`, `c4w_content_draft_show`, `c4w_content_update`,
+`c4w_content_image_upload`, `c4w_content_submit`, and `c4w_content_review` all
+have auth functions and accept only `entity_type=post|event`.
+
+`c4w_content_revision` stores the working payload, optimistic version, status,
+author and review feedback. Draft/pending edits never replace the published
+row. Only a submitted revision can be approved; requesting corrections requires
+a note. News retains its native published/draft status; events retain approved.
+The generic event approve action cannot bypass the revision workflow.
+
+All portal POST forms explicitly invoke CKAN's CSRF protector, even when the
+site exempts extension blueprints globally. Images use the existing `c4w`
+uploader category (Pillow validation and PNG/JPEG/WebP conversion), while
+measurements and attachments keep `c4w_data`.
+
+Schema changes are additive and idempotent. Rolling back the image must keep
+the revision table and registration destination column. See
+`c4w-backup-restore.md` for the selective development backup and isolated
+restoration procedure. Live production import/cutover is a separate delivery.

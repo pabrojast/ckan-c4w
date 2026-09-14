@@ -11,16 +11,16 @@
       {% trans %}One account works across IHP-WINS. Choose how you take part.{% endtrans %}
     </p>
     {% if user %}
-      <p class="c4w-note">{{ _('You are already signed in.') }} <a href="{{ h.c4w_url('account') }}">{{ _('My submissions') }}</a></p>
+      <p class="c4w-note">{{ _('You are already signed in.') }} <a href="{{ came_from }}">{{ _('Continue your contribution') }}</a></p>
     {% endif %}
     <div class="c4w-choice-grid">
-      <a class="c4w-choice" href="{{ h.c4w_url('register_citizen') }}">
+      <a class="c4w-choice" href="{{ h.c4w_url('register_citizen', came_from=came_from) }}">
         <span class="c4w-choice__icon">{{ ui.icon('user') }}</span>
         <h2>{{ _('Citizen scientist') }}</h2>
-        <p>{% trans %}You want to propose an initiative or share water data. Confirm your email to start contributing.{% endtrans %}</p>
+        <p>{% trans %}You want to propose a project, share water data, news or events. Confirm your email to start contributing.{% endtrans %}</p>
         <span class="c4w-btn">{{ _('Register as a citizen scientist') }}</span>
       </a>
-      <a class="c4w-choice" href="{{ h.c4w_url('register_manager') }}">
+      <a class="c4w-choice" href="{{ h.c4w_url('register_manager', came_from=came_from) }}">
         <span class="c4w-choice__icon">{{ ui.icon('building') }}</span>
         <h2>{{ _('Project manager') }}</h2>
         <p>{% trans %}You represent an organisation. Confirm your email to start contributing; the team reviews organisation permissions separately.{% endtrans %}</p>
@@ -28,7 +28,7 @@
       </a>
     </div>
     <p class="c4w-auth__links">
-      <a href="{{ h.c4w_login_url() }}">{{ _('Already have an account? Sign in') }}</a>
+      <a href="{{ h.c4w_login_url(came_from) }}">{{ _('Already have an account? Sign in') }}</a>
       <a href="{{ h.c4w_url('verify_resend') }}">{{ _('Resend the confirmation e-mail') }}</a>
     </p>
   </div>

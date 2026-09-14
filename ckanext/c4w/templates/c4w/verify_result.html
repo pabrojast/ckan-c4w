@@ -7,12 +7,12 @@
     <img class="c4w-auth__logo" src="{{ h.url_for_static('/c4w/img/Citizens4Water_Vertical.svg') }}" alt="" width="96" height="127">
     {% if state == 'ok' %}
       <h1>{{ _('Your account is active') }}</h1>
-      <p class="c4w-auth__lede">{{ _('Thank you for confirming your e-mail. You can sign in and share your data.') }}</p>
-      <p><a class="c4w-btn" href="{{ h.c4w_url('login') }}">{{ _('Sign in') }}</a></p>
+      <p class="c4w-auth__lede">{{ _('Thank you for confirming your e-mail. You can sign in and continue your contribution.') }}</p>
+      <p><a class="c4w-btn" href="{{ h.c4w_url('login', came_from=came_from) }}">{{ _('Sign in') }}</a></p>
     {% elif state == 'manager_pending' %}
       <h1>{{ _('E-mail confirmed') }}</h1>
-      <p class="c4w-auth__lede">{% trans %}Your account is active. You can sign in, propose projects and share data. The team will review your organisation permissions separately.{% endtrans %}</p>
-      <p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('login') }}">{{ _('Sign in') }}</a></p>
+      <p class="c4w-auth__lede">{% trans %}Your account is active. You can sign in, propose projects, share data, news and events. The team will review your organisation permissions separately.{% endtrans %}</p>
+      <p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('login', came_from=came_from) }}">{{ _('Sign in') }}</a></p>
     {% elif state == 'expired' %}
       <h1>{{ _('This link has expired') }}</h1>
       <p class="c4w-auth__lede">{{ _('Confirmation links work for two days. Ask for a new one below.') }}</p>
@@ -21,7 +21,7 @@
       <h1>{{ _('This link is not valid') }}</h1>
       <p class="c4w-auth__lede">{{ _('It may have been used already, or copied incompletely. If your account is not active yet, ask for a new link.') }}</p>
       <p><a class="c4w-btn" href="{{ h.c4w_url('verify_resend') }}">{{ _('Send a new link') }}</a>
-         <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('login') }}">{{ _('Sign in') }}</a></p>
+         <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('login', came_from=came_from) }}">{{ _('Sign in') }}</a></p>
     {% endif %}
   </div>
 {% endblock %}

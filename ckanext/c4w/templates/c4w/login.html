@@ -12,7 +12,7 @@
 
     {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
 
-    <form class="c4w-form" method="post" action="{{ h.c4w_url('login') }}" novalidate>
+    <form class="c4w-form" method="post" action="{{ h.c4w_url('login', came_from=came_from) }}" novalidate>
       {{ h.csrf_input() }}
       <input type="hidden" name="came_from" value="{{ came_from }}">
       {{ form.input('login', _('Username or e-mail'), data.login, errors, required=true, autocomplete='username') }}
@@ -25,7 +25,7 @@
     </form>
 
     <p class="c4w-auth__links">
-      <a href="{{ h.c4w_register_url() }}">{{ _('Create an account') }}</a>
+      <a href="{{ h.c4w_register_url(came_from) }}">{{ _('Create an account') }}</a>
       <a href="{{ h.url_for('user.request_reset') }}">{{ _('Forgot your password?') }}</a>
       <a href="{{ h.c4w_url('verify_resend') }}">{{ _('Resend the confirmation e-mail') }}</a>
     </p>

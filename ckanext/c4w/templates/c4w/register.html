@@ -40,11 +40,11 @@
       <h1>{{ self.subtitle() }}</h1>
       <p class="c4w-auth__lede">
         {% if is_manager %}
-          {% trans %}For people who represent an organisation. Confirm your email to propose projects and share data. Organisation permissions are reviewed separately.{% endtrans %}
+          {% trans %}For people who represent an organisation. Confirm your email to propose projects, share data, news and events. Organisation permissions are reviewed separately.{% endtrans %}
         {% else %}
-          {% trans %}Create your IHP-WINS account to propose projects and share water data. Confirm your email to get started.{% endtrans %}
+          {% trans %}Create your IHP-WINS account to propose projects, share water data, news and events. Confirm your email to get started.{% endtrans %}
         {% endif %}
-        <a href="{{ h.c4w_url('register_choose') }}">{{ _('Not you? Choose the other profile.') }}</a>
+        <a href="{{ h.c4w_url('register_choose', came_from=came_from) }}">{{ _('Not you? Choose the other profile.') }}</a>
       </p>
 
       {% if errors.get('message') %}
@@ -56,6 +56,7 @@
       <form class="c4w-form" method="post" novalidate id="c4w-register-form"
             action="{{ h.c4w_url('register_manager' if is_manager else 'register_citizen') }}">
         {{ h.csrf_input() }}
+        <input type="hidden" name="came_from" value="{{ came_from }}">
 
         <div class="c4w-form__section">
           <h2>{{ _('About you') }}</h2>
@@ -118,7 +119,7 @@
       </form>
 
       <p class="c4w-auth__links">
-        <a href="{{ h.c4w_login_url() }}">{{ _('Already registered? Sign in') }}</a>
+        <a href="{{ h.c4w_login_url(came_from) }}">{{ _('Already registered? Sign in') }}</a>
       </p>
 
       {% if recaptcha_publickey %}

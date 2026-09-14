@@ -2554,3 +2554,18 @@ html.c4w-portal .c4w-picker__status { margin: 0; padding: .6rem .75rem; font-siz
  .c4w-auth { padding: 1.25rem; }
  .c4w-auth--wide h1 { font-size: 1.5rem; }
 }
+
+/* Three contribution paths, visible to members and new visitors alike. */
+.c4w-contribute { text-align: center; padding-block: 2rem; }
+html.c4w-portal .c4w-contribute :is(h2, h3) { font-family: var(--c4w-sans); }
+html.c4w-portal .c4w-contribute > p { color: #586b7a !important; max-width: 48rem; margin: 0.75rem auto 1.5rem; }
+.c4w-contribute__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.c4w-contribute__item { min-width: 0; padding: 1.5rem 1rem; background: #f7f9fa; border-radius: 0.75rem; display: flex; flex-direction: column; align-items: center; }
+.c4w-contribute__item h3 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+html.c4w-portal .c4w-contribute__item p { color: #586b7a !important; margin: 0 0 1.25rem; }
+.c4w-contribute__item .c4w-btn { margin-top: auto; max-width: 100%; white-space: normal; text-align: center; }
+html.c4w-portal .c4w-contribute > .c4w-contribute__note { font-size: 0.875rem !important; margin: 1rem auto 0; }
+.c4w-content-form { max-width: 52rem; margin-inline: auto; }
+.c4w-content-preview { overflow-wrap: anywhere; }
+.c4w-content-preview img { max-width: 100%; height: auto; }
+@media (max-width: 48rem) { .c4w-contribute__grid { grid-template-columns: 1fr; } }

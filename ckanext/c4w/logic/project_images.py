@@ -38,7 +38,7 @@ def store_image(upload, field, options):
         result.seek(0)
         name = 'project-%s-%s.jpg' % (field, secrets.token_hex(12))
         fresh = FileStorage(result, filename=name, content_type='image/jpeg')
-        url, _, cleanup = uploads._store(fresh, name, 'image/jpeg', limit)
+        url, _, cleanup = uploads._store(fresh, name, 'image/jpeg', limit, upload_to='c4w')
         return url, cleanup
     except (ValueError, TypeError, OSError, UnidentifiedImageError,
             Image.DecompressionBombError, Image.DecompressionBombWarning, uploads.UploadError) as exc:

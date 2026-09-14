@@ -26,6 +26,7 @@ import ckan.plugins.toolkit as tk
 from ckanext.c4w import constants, db
 from ckanext.c4w.logic.action import _common
 from ckanext.c4w.logic import checks
+from ckanext.c4w.logic.access import contribution_next
 from ckanext.c4w.text import slugify
 
 log = logging.getLogger(__name__)
@@ -246,6 +247,7 @@ def _register(context, data_dict, profile_type):
     profile = db.C4wUserProfile(
         user_id=created['id'],
         profile_type=profile_type,
+        registration_next=contribution_next(data.get('came_from')),
         country=data.get('country') or None,
         organisation_text=data.get('organisation_text') or None,
         given_name=data.get('given_name') or None,
@@ -347,8 +349,9 @@ def c4w_verify_email(context, data_dict):
             tk._(u'[Citizens4Water] Project manager request: %s')
             % (user.fullname or user.name),
             u'%s <%s>\n%s' % (user.fullname or user.name, user.email, url))
+    from ckanext.c4w.logic.access import contribution_next
     return {'state': state, 'profile_type': profile.profile_type,
-            'name': user.name}
+            'name': user.name, 'came_from': contribution_next(profile.registration_next)}
 
 
 def c4w_verification_resend(context, data_dict):

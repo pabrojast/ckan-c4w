@@ -108,6 +108,7 @@ def dataset_full_schema():
 def registration_citizen_schema():
     c = _defaults()
     return {
+        'came_from': [c['ignore_missing'], c['unicode_safe'], v.max_length(2000)],
         'fullname': [c['not_empty'], c['unicode_safe'], v.max_length(200)],
         'given_name': [c['ignore_missing'], c['unicode_safe'], v.max_length(100)],
         'surname': [c['ignore_missing'], c['unicode_safe'], v.max_length(100)],

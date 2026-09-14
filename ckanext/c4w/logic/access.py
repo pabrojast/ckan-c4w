@@ -44,9 +44,28 @@ def safe_next(target, default=None):
     if not target.startswith('/') or target.startswith('//') \
             or target.startswith('/\\'):
         return default
-    if any(ch in target for ch in ('\r', '\n', '\x00')):
+    if '\\' in target or any(ord(ch) < 32 or ord(ch) == 127 for ch in target):
         return default
     return target
+
+
+def contribution_next(target):
+    """Only portal submission paths may persist through email verification."""
+    from urllib.parse import urlsplit, unquote
+    default = c4w_helpers.c4w_url('submit')
+    target = safe_next(target, default)
+    decoded = unquote(target)
+    if safe_next(decoded, default) != decoded or len(target) > 2000:
+        return default
+    path = urlsplit(decoded).path
+    prefixes = ['/citizens4water']
+    preview = tk.config.get('ckanext.c4w.preview_prefix')
+    if preview:
+        prefixes.append('/' + str(preview).strip('/'))
+    if any(path == prefix + '/submit' or path.startswith(prefix + '/submit/')
+           for prefix in prefixes) and not any(part in ('.', '..') for part in path.split('/')):
+        return target
+    return default
 
 
 def require_user():

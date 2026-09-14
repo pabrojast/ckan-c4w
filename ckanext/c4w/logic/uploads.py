@@ -164,7 +164,7 @@ def _asset_reference(uploader):
     return storage, u'/'.join(p.strip('/') for p in (object_type, filename))
 
 
-def _store(upload, stored_name, content_type, max_mb):
+def _store(upload, stored_name, content_type, max_mb, upload_to=UPLOAD_TO):
     """Hand one validated file to the configured uploader.
 
     Returns ``(url, stored_name, cleanup)``. ``cleanup`` is a zero-argument
@@ -175,9 +175,9 @@ def _store(upload, stored_name, content_type, max_mb):
     stream = _stream_of(upload)
     fresh = _fresh_upload(stream, stored_name, content_type)
     data = {'url': u'', 'upload': fresh}
-    uploader = ckan_uploader.get_uploader(UPLOAD_TO)
-    uploader.update_data_dict(data, 'url', 'upload', 'clear')
+    uploader = ckan_uploader.get_uploader(upload_to)
     try:
+        uploader.update_data_dict(data, 'url', 'upload', 'clear')
         uploader.upload(max_mb)
     except tk.ValidationError as exc:
         text = u' '.join(u'%s' % m for v in exc.error_dict.values()
@@ -202,15 +202,15 @@ def _store(upload, stored_name, content_type, max_mb):
         except Exception:
             log.warning("ckanext-c4w: could not delete an orphaned upload")
 
-    return _public_url(url), final_name, cleanup
+    return _public_url(url, upload_to), final_name, cleanup
 
 
-def _public_url(value):
+def _public_url(value, upload_to=UPLOAD_TO):
     """Keep backend URLs intact; expand CKAN's bare local filename."""
     value = u'%s' % (value or u'')
     if '://' in value or value.startswith('/'):
         return value
-    return u'/uploads/%s/%s' % (UPLOAD_TO, value)
+    return u'/uploads/%s/%s' % (upload_to, value)
 
 
 def store_data_file(upload, dataset_id):

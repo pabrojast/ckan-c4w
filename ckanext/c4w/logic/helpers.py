@@ -120,12 +120,22 @@ def c4w_logout_url():
         return tk.url_for('user.logout')
 
 
-def c4w_register_url():
+def c4w_register_url(came_from=None):
     """The portal's own registration chooser, not CKAN's built-in signup."""
     try:
-        return c4w_url('register_choose')
+        return c4w_url('register_choose', **({'came_from': came_from} if came_from else {}))
     except Exception:
         return '/colab'
+
+
+def c4w_image_limit_mb():
+    return int(tk.config.get('ckan.max_image_size') or 2)
+
+
+def c4w_contribution_url(endpoint):
+    from ckanext.c4w.logic.access import current_userobj
+    target = c4w_url(endpoint)
+    return target if current_userobj() is not None else c4w_register_url(target)
 
 
 def c4w_profile_url():
@@ -610,6 +620,8 @@ def get_helpers():
         'c4w_login_url': c4w_login_url,
         'c4w_logout_url': c4w_logout_url,
         'c4w_register_url': c4w_register_url,
+        'c4w_contribution_url': c4w_contribution_url,
+        'c4w_image_limit_mb': c4w_image_limit_mb,
         'c4w_profile_url': c4w_profile_url,
         'c4w_is_sysadmin': c4w_is_sysadmin,
         'c4w_search_endpoint': c4w_search_endpoint,

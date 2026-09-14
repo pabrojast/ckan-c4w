@@ -32,7 +32,7 @@ def submit():
     if bounced is not None:
         return bounced
     return tk.render('c4w/submit.html', extra_vars={
-        'choices': [row for key in ('project', 'dataset') for row in constants.SUBMIT_CHOICES if row[0] == key],
+        'choices': [row for key in ('project', 'dataset', 'post', 'event') for row in constants.SUBMIT_CHOICES if row[0] == key],
         'endpoints': constants.SUBMIT_ENDPOINTS,
         'user': user,
     })

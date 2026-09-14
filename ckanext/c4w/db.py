@@ -548,6 +548,7 @@ c4w_user_profile_table = Table(
     Column('given_name', types.UnicodeText),
     Column('surname', types.UnicodeText),
     Column('profile_visible', types.Boolean, default=False),
+    Column('registration_next', types.UnicodeText),
     Column('terms_accepted_at', types.DateTime),
     Column('email_verified', types.Boolean, default=False),
     Column('verification_token_hash', types.UnicodeText),
@@ -591,7 +592,27 @@ c4w_project_revision_table = Table(
 )
 
 
+c4w_content_revision_table = Table(
+    'c4w_content_revision', metadata,
+    Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
+    Column('entity_type', types.UnicodeText, nullable=False),
+    Column('entity_id', types.UnicodeText, nullable=False),
+    Column('payload', types.UnicodeText, nullable=False, default=u'{}'),
+    Column('status', types.UnicodeText, nullable=False, default=u'draft'),
+    Column('version', types.Integer, nullable=False, default=1),
+    Column('created_by', types.UnicodeText, nullable=False),
+    Column('submitted_at', types.DateTime),
+    Column('reviewed_at', types.DateTime),
+    Column('reviewed_by', types.UnicodeText),
+    Column('review_note', types.UnicodeText),
+    Column('modified', types.DateTime, default=_utcnow),
+    UniqueConstraint('entity_type', 'entity_id', name='uq_c4w_content_revision'),
+    Index('ix_c4w_content_revision_queue', 'status', 'submitted_at'),
+)
+
+
 _ALL_TABLES = [
+    c4w_content_revision_table,
     c4w_project_revision_table,
     c4w_term_link_table,
     c4w_relation_table,
@@ -674,6 +695,10 @@ class C4wProjectRevision(DomainObject):
     pass
 
 
+class C4wContentRevision(DomainObject):
+    pass
+
+
 # Entity type name -> mapped class. The single place that resolves the
 # ``<entity>`` path segment of the moderation routes to a table, so no other
 # module needs its own if-chain.
@@ -711,6 +736,7 @@ def _ensure_mappers():
     mapper(C4wDashboardBundle, c4w_dashboard_bundle_table)
     mapper(C4wUserProfile, c4w_user_profile_table)
     mapper(C4wProjectRevision, c4w_project_revision_table)
+    mapper(C4wContentRevision, c4w_content_revision_table)
     _mapped = True
 
 
@@ -734,6 +760,7 @@ def ensure_mappers():
 #
 # Tuples are (table_name, column_name, column_sql_type).
 _AUTO_HEAL_COLUMNS = [
+    ('c4w_user_profile', 'registration_next', 'TEXT'),
     ('c4w_user_profile', 'given_name', 'TEXT'),
     ('c4w_user_profile', 'surname', 'TEXT'),
     ('c4w_user_profile', 'profile_visible', 'BOOLEAN DEFAULT FALSE'),

@@ -249,11 +249,45 @@ def lookup(kind):
     return views_submit_project.lookup(kind)
 
 
+def submit_news_events():
+    from ckanext.c4w.logic import views_submit_content
+    return views_submit_content.choose()
+
+
+def submit_news():
+    from ckanext.c4w.logic import views_submit_content
+    return views_submit_content.edit('post')
+
+
+def submit_event():
+    from ckanext.c4w.logic import views_submit_content
+    return views_submit_content.edit('event')
+
+
+def content_edit(entity, content_id):
+    from ckanext.c4w.logic import views_submit_content
+    return views_submit_content.edit(entity, content_id)
+
+
+def content_review(entity, content_id):
+    from ckanext.c4w.logic import views_submit_content
+    return views_submit_content.review(entity, content_id)
+
+
 def _register(bp):
     """Attach every rule to a blueprint.
 
     Called once per blueprint so the live and preview mounts can never drift.
     """
+    # CKAN 2.10 may exempt plugin blueprints globally. Protect portal forms
+    # explicitly without changing the CSRF policy of other extensions.
+    @bp.before_request
+    def protect_portal_forms():
+        from flask import request
+        if request.method not in ('GET', 'HEAD', 'OPTIONS'):
+            from ckan.config.middleware.flask_app import csrf
+            csrf.protect()
+
     bp.add_url_rule('/', 'index', index, methods=['GET'])
     bp.add_url_rule('/about', 'about', about, methods=['GET'],
                     strict_slashes=False)
@@ -293,6 +327,12 @@ def _register(bp):
                     submit_project_step, methods=['GET', 'POST'])
     bp.add_url_rule('/submit/project/<project_id>/review', 'project_review',
                     project_review, methods=['GET', 'POST'])
+
+    bp.add_url_rule('/submit/news-events', 'submit_news_events', submit_news_events, methods=['GET'])
+    bp.add_url_rule('/submit/news', 'submit_news', submit_news, methods=['GET', 'POST'])
+    bp.add_url_rule('/submit/event', 'submit_event', submit_event, methods=['GET', 'POST'])
+    bp.add_url_rule('/submit/content/<entity>/<content_id>', 'content_edit', content_edit, methods=['GET', 'POST'])
+    bp.add_url_rule('/submit/content/<entity>/<content_id>/review', 'content_review', content_review, methods=['GET', 'POST'])
 
     # Data: the wizard first (static prefix), then the public catalogue.
     bp.add_url_rule('/submit/data', 'submit_data_start', submit_data_start,

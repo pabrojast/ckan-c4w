@@ -9,7 +9,7 @@ import ckan.plugins.toolkit as tk
 from ckanext.c4w import constants
 from ckanext.c4w.logic import forms, ratelimit
 from ckanext.c4w.logic import helpers as c4w_helpers
-from ckanext.c4w.logic.access import current_userobj
+from ckanext.c4w.logic.access import current_userobj, contribution_next
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ def _too_many(retry):
 def _render(kind, data, errors, pending=False, mail_sent=True):
     from ckanext.c4w.logic.action import registration as reg
     extra_vars = {
+        'came_from': contribution_next(request.values.get('came_from')),
         'kind': kind,
         'data': data or {},
         'errors': forms.errors_for_template(errors),
@@ -43,6 +44,7 @@ def _render(kind, data, errors, pending=False, mail_sent=True):
 def choose():
     return tk.render('c4w/register_choose.html', extra_vars={
         'user': current_userobj(),
+        'came_from': contribution_next(request.args.get('came_from')),
     })
 
 
@@ -50,7 +52,7 @@ def register(kind):
     if current_userobj() is not None:
         tk.h.flash_notice(tk._('You are already signed in.'))
         from flask import redirect
-        return redirect(c4w_helpers.c4w_url('account'))
+        return redirect(contribution_next(request.values.get('came_from')))
     if request.method == 'GET':
         return _render(kind, {'org_choice': 'existing'}, {})
     retry = ratelimit.retry_after('register')
@@ -76,6 +78,7 @@ def verify(token):
     return tk.render('c4w/verify_result.html', extra_vars={
         'state': result.get('state'),
         'profile_type': result.get('profile_type'),
+        'came_from': contribution_next(result.get('came_from')),
     })
 
 

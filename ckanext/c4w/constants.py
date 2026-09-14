@@ -114,6 +114,7 @@ DETAIL_ENDPOINTS = {
 # so they cannot drift. An entry with a route in SUBMIT_ENDPOINTS renders as
 # a link; the others are announced as coming later.
 SUBMIT_CHOICES = (
+    ('post', u'News', u'A story or update for the citizen science community.'),
     ('dataset', u'Data',
      u'A table of water measurements (CSV) that becomes an interactive '
      u'dashboard with a map and charts.'),
@@ -131,6 +132,8 @@ SUBMIT_CHOICES = (
 
 # Chooser key -> blueprint endpoint of its first form step.
 SUBMIT_ENDPOINTS = {
+    'post': 'submit_news',
+    'event': 'submit_event',
     'project': 'submit_project_start',
     'dataset': 'submit_data_start',
 }
