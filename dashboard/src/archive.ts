@@ -18,6 +18,7 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
   const language = cfg.lang.startsWith("es") ? "es" : cfg.lang.startsWith("fr") ? "fr" : "en";
   const t = copy[language];
   const number = new Intl.NumberFormat(language, { maximumFractionDigits: 3 });
+  const measurementNumber = new Intl.NumberFormat(language, { maximumSignificantDigits: 6 });
   const base = root.dataset.archiveBase!;
   const response = await fetch(base + "meta", { credentials: "same-origin" });
   if (!response.ok) throw new Error("GFQA archive is unavailable");
@@ -65,6 +66,7 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
   let page = 0;
   const initialBounds = url.searchParams.get("gfqa_bbox")?.split(",").map(Number);
   let bounds: number[] | undefined = initialBounds?.length === 4 && initialBounds.every(Number.isFinite) ? initialBounds : undefined;
+  let fitOnNextResult = !bounds;
   const initialIntegration = url.searchParams.get("gfqa_integration") || "";
   if (initialIntegration) { option(sel("integration"), initialIntegration, initialIntegration); sel("integration").value = initialIntegration; }
   let current: Result | null = null;
@@ -73,6 +75,7 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const map = new maplibregl.Map({ container: el("map"), style: cfg.basemap, center: [12, 25], zoom: 1.5, cooperativeGestures: true, attributionControl: { compact: true } });
   map.addControl(new maplibregl.NavigationControl(), "top-right");
+  if (bounds) map.fitBounds([[bounds[0]!, bounds[1]!], [bounds[2]!, bounds[3]!]], { padding: 36, duration: 0 });
   const trend = new Chart<"line", number[], string>(el<HTMLCanvasElement>("trend"), { type: "line", data: { labels: [], datasets: [{ label: t.median, data: [], borderColor: "#087c9c", backgroundColor: "#087c9c20", borderWidth: 2, pointRadius: 2, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 8 } } } } });
   const histogram = new Chart<"bar", number[], string>(el<HTMLCanvasElement>("histogram"), { type: "bar", data: { labels: [], datasets: [{ label: t.rows, data: [], backgroundColor: "#219ebc" }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 6 } }, y: { beginAtZero: true } } } });
   let mapLoaded = false;
@@ -82,6 +85,12 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
     const lo = values[0] || 0, hi = values[values.length - 1] || lo + 1;
     const source = map.getSource("gfqa") as maplibregl.GeoJSONSource;
     source.setData({ type: "FeatureCollection", features: current.stations.map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: [p.longitude, p.latitude] }, properties: { ...p, shade: (p.value - lo) / (hi - lo || 1) } })) });
+    if (fitOnNextResult && current.stations.length) {
+      fitOnNextResult = false;
+      const extent = new maplibregl.LngLatBounds();
+      current.stations.forEach(p => extent.extend([p.longitude, p.latitude]));
+      map.fitBounds(extent, { padding: 48, maxZoom: station ? 11 : 6, duration: 0 });
+    }
   };
   map.on("load", () => {
     mapLoaded = true;
@@ -92,9 +101,9 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
       if (!feature) return;
       const props = feature.properties as Record<string, unknown>;
       if (props.station_id) {
-        station = String(props.station_id); page = 0; void refresh();
+        station = String(props.station_id); page = 0; fitOnNextResult = true; void refresh();
       } else if (feature.geometry.type === "Point") {
-        map.flyTo({ center: feature.geometry.coordinates as [number, number], zoom: Math.min(16, map.getZoom() + 2) });
+        map.flyTo({ center: feature.geometry.coordinates as [number, number], zoom: Math.min(16, map.getZoom() + 2) }, { originalEvent: event.originalEvent });
       }
     });
     map.on("mouseenter", "gfqa-points", () => { map.getCanvas().style.cursor = "pointer"; });
@@ -109,13 +118,13 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
     root.setAttribute("aria-busy", "false");
     el<HTMLButtonElement>("download").disabled = false;
     el("kpis").replaceChildren();
-    const kpis: [string, number | null][] = [[t.rows, result.summary.observations], [t.eligible, result.summary.eligible], [t.sites, result.summary.stations], [t.median + ` (${sel("unit").value})`, result.summary.median], [t.censored, result.summary.censored]];
-    for (const [label, value] of kpis) {
+    const kpis: [string, number | null, boolean?][] = [[t.rows, result.summary.observations], [t.eligible, result.summary.eligible], [t.sites, result.summary.stations], [t.median + ` (${sel("unit").value})`, result.summary.median, true], [t.censored, result.summary.censored]];
+    for (const [label, value, measurement] of kpis) {
       const box = document.createElement("div"), strong = document.createElement("strong"), span = document.createElement("span");
-      strong.textContent = value == null ? "—" : number.format(value); span.textContent = label; box.append(strong, span); el("kpis").append(box);
+      strong.textContent = value == null ? "—" : (measurement ? measurementNumber : number).format(value); span.textContent = label; box.append(strong, span); el("kpis").append(box);
     }
     trend.data.labels = result.series.map(r => String(r.year)); trend.data.datasets[0]!.data = result.series.map(r => r.value); trend.update();
-    histogram.data.labels = result.histogram.map(r => number.format(result.histogram_min + r.bin * result.histogram_width)); histogram.data.datasets[0]!.data = result.histogram.map(r => r.count); histogram.update();
+    histogram.data.labels = result.histogram.map(r => measurementNumber.format(result.histogram_min + r.bin * result.histogram_width)); histogram.data.datasets[0]!.data = result.histogram.map(r => r.count); histogram.update();
     const integration = sel("integration").value;
     sel("integration").replaceChildren(); option(sel("integration"), "", t.discrete);
     result.integrations.filter(Boolean).forEach(v => option(sel("integration"), v, v)); sel("integration").value = integration;
@@ -131,7 +140,7 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
         const cell = tr.insertCell();
         if (column === "station_id") {
           const button = document.createElement("button"); button.type = "button"; button.textContent = String(row[column] ?? "");
-          button.addEventListener("click", () => { station = String(row[column]); page = 0; void refresh(); }); cell.append(button);
+          button.addEventListener("click", () => { station = String(row[column]); page = 0; fitOnNextResult = true; void refresh(); }); cell.append(button);
         } else cell.textContent = String(row[column] ?? "");
       }
     }
@@ -169,9 +178,12 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
   }
   el<HTMLFormElement>("search").addEventListener("input", fillParameters);
   root.querySelector("form")!.addEventListener("submit", event => event.preventDefault());
-  sel("parameter").addEventListener("change", () => { activeCode = sel("parameter").value; units(); station = ""; page = 0; sel("integration").value = ""; void refresh(); });
-  for (const field of ["unit", "country", "from", "to", "flag", "integration"]) el(field).addEventListener("change", () => { page = 0; if (field === "country") { station = ""; bounds = undefined; } void refresh(); });
-  map.on("moveend", () => {
+  sel("parameter").addEventListener("change", () => { activeCode = sel("parameter").value; units(); station = ""; page = 0; fitOnNextResult = !bounds; sel("integration").value = ""; void refresh(); });
+  for (const field of ["unit", "country", "from", "to", "flag", "integration"]) el(field).addEventListener("change", () => { page = 0; if (field === "country") { station = ""; bounds = undefined; fitOnNextResult = true; } void refresh(); });
+  map.on("moveend", event => {
+    // Resizing or fitting query results must not silently become a data filter.
+    if (!event.originalEvent) return;
+    fitOnNextResult = false;
     clearTimeout(timer);
     timer = setTimeout(() => {
       const b = map.getBounds();
@@ -180,7 +192,7 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
       page = 0; void refresh();
     }, 500);
   });
-  el("reset").addEventListener("click", () => { bounds = undefined; station = ""; page = 0; void refresh(); });
+  el("reset").addEventListener("click", () => { bounds = undefined; station = ""; page = 0; fitOnNextResult = true; void refresh(); });
   el("station").addEventListener("click", () => { station = ""; page = 0; void refresh(); });
   el("prev").addEventListener("click", () => { page = Math.max(0, page - 1); void refresh(); });
   el("next").addEventListener("click", () => { page++; void refresh(); });

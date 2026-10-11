@@ -9,8 +9,8 @@
 .c4w-archive__filters input,.c4w-archive__filters select { width: 100%; min-width: 0; border: 1px solid #bfd1da; border-radius: 6px; padding: 9px 10px; box-sizing: border-box; color: #173c50; background: #fff; font: inherit; font-size: 14px; min-height: 40px; }
 .c4w-archive__parameter { grid-row: span 2; }
 .c4w-archive__toolbar { padding: 10px 24px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
-.c4w-archive button { border: 1px solid #b9ccd6; background: #fff; color: #086582; border-radius: 6px; padding: 8px 12px; cursor: pointer; font: inherit; font-size: 13px; min-height: 38px; }
-.c4w-archive button:hover { background: #e9f5f8; }.c4w-archive button:disabled { opacity: .45; cursor: default; }
+.c4w-archive__toolbar button,.c4w-archive__table button { border: 1px solid #b9ccd6; background: #fff; color: #086582; border-radius: 6px; padding: 8px 12px; cursor: pointer; font: inherit; font-size: 13px; min-height: 38px; }
+.c4w-archive__toolbar button:hover,.c4w-archive__table button:hover { background: #e9f5f8; }.c4w-archive button:disabled { opacity: .45; cursor: default; }
 .c4w-archive input:focus-visible,.c4w-archive select:focus-visible,.c4w-archive button:focus-visible { outline: 3px solid #1ca0c7; outline-offset: 2px; }
 .c4w-archive__kpis { display: grid; grid-template-columns: repeat(5,1fr); gap: 1px; background: #d8e6ec; border-top: 1px solid #d8e6ec; border-bottom: 1px solid #d8e6ec; }
 .c4w-archive__kpis div { padding: 18px 20px; background: #f8fbfc; display: flex; flex-direction: column; gap: 5px; }
