@@ -32,9 +32,9 @@
     <a href="{{ h.url_for('c4w.dataset_detail', slug=dataset.slug, qualified=True) }}" target="_blank" rel="noopener">{{ _('Open in Citizens4Water') }}</a>
   </div>
   <div class="c4w-embed__body">
-    {% if dataset.bundle_ready %}
+    {% if dataset.bundle_ready or archive_base %}
       {% snippet 'c4w/snippets/dashboard_shell.html', dataset=dataset,
-         bundle_base=bundle_base, basemap_style=basemap_style, lang=lang,
+         bundle_base=bundle_base, archive_base=archive_base, basemap_style=basemap_style, lang=lang,
          full=True %}
     {% else %}
       <p class="c4w-empty">{{ _('This dashboard has not been built yet.') }}</p>

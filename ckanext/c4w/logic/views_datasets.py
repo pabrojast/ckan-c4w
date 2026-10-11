@@ -79,8 +79,11 @@ def dataset_status(slug):
 
 
 def _dashboard_vars(dataset):
+    from ckanext.c4w.archive import service
     return {
         'dataset': dataset,
+        'archive_base': (c4w_helpers.c4w_url('archive_meta', slug=dataset['slug'])[:-4]
+                         if service.enabled(dataset['slug']) else ''),
         'bundle_base': c4w_helpers.c4w_url(
             'dataset_bundle', slug=dataset['slug'], name='meta.json')[
                 :-len('meta.json')],

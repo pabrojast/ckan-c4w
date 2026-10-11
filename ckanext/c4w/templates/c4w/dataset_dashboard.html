@@ -30,13 +30,13 @@
       {% endif %}
     </header>
 
-    {% if dataset.reference_source and dataset.data_quality_note %}
+    {% if dataset.reference_source and dataset.data_quality_note and not archive_base %}
       <p class="c4w-note">{{ dataset.data_quality_note }}</p>
     {% endif %}
 
-    {% if dataset.bundle_ready %}
+    {% if dataset.bundle_ready or archive_base %}
       {% snippet 'c4w/snippets/dashboard_shell.html', dataset=dataset,
-         bundle_base=bundle_base, basemap_style=basemap_style, lang=lang %}
+         bundle_base=bundle_base, archive_base=archive_base, basemap_style=basemap_style, lang=lang %}
     {% else %}
       <p class="c4w-empty">{{ _('This dashboard has not been built yet.') }}</p>
     {% endif %}

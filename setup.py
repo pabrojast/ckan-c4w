@@ -39,6 +39,7 @@ setup(
         # ckanext/c4w/migrate/source.py and imported *inside* that module so a
         # missing driver can never break CKAN startup.
         'psycopg2-binary',
+        'duckdb==1.3.2',
     ],
     entry_points="""
         [ckan.plugins]

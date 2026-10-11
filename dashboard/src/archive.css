@@ -1,0 +1,26 @@
+.c4w-archive { color: #18394a; background: #fff; border: 1px solid #d5e1e8; border-radius: 14px; overflow: hidden; font-family: inherit; }
+.c4w-archive__head { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 24px; background: linear-gradient(115deg,#edf8fb,#fff); border-bottom: 1px solid #d5e1e8; }
+.c4w-archive__eyebrow { text-transform: uppercase; letter-spacing: .09em; font-size: 12px; font-weight: 700; color: #087c9c; }
+.c4w-archive__head h2 { margin: 6px 0 8px; font-size: clamp(20px,2.3vw,30px); }
+.c4w-archive__head p { margin: 0; color: #587481; }
+.c4w-archive__head a { white-space: nowrap; color: #076b8c; font-size: 14px; }
+.c4w-archive__filters { display: grid; grid-template-columns: minmax(220px,2fr) repeat(3,minmax(100px,1fr)); gap: 14px; padding: 20px 24px; margin: 0; background: #fff; }
+.c4w-archive__filters label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: #466370; min-width: 0; }
+.c4w-archive__filters input,.c4w-archive__filters select { width: 100%; min-width: 0; border: 1px solid #bfd1da; border-radius: 6px; padding: 9px 10px; box-sizing: border-box; color: #173c50; background: #fff; font: inherit; font-size: 14px; min-height: 40px; }
+.c4w-archive__parameter { grid-row: span 2; }
+.c4w-archive__toolbar { padding: 10px 24px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+.c4w-archive button { border: 1px solid #b9ccd6; background: #fff; color: #086582; border-radius: 6px; padding: 8px 12px; cursor: pointer; font: inherit; font-size: 13px; min-height: 38px; }
+.c4w-archive button:hover { background: #e9f5f8; }.c4w-archive button:disabled { opacity: .45; cursor: default; }
+.c4w-archive input:focus-visible,.c4w-archive select:focus-visible,.c4w-archive button:focus-visible { outline: 3px solid #1ca0c7; outline-offset: 2px; }
+.c4w-archive__kpis { display: grid; grid-template-columns: repeat(5,1fr); gap: 1px; background: #d8e6ec; border-top: 1px solid #d8e6ec; border-bottom: 1px solid #d8e6ec; }
+.c4w-archive__kpis div { padding: 18px 20px; background: #f8fbfc; display: flex; flex-direction: column; gap: 5px; }
+.c4w-archive__kpis strong { font-size: clamp(19px,2vw,27px); color: #086582; }.c4w-archive__kpis span { font-size: 12px; color: #587481; }
+.c4w-archive__visuals { display: grid; grid-template-columns: 1.5fr 1fr; min-width: 0; }.c4w-archive__map { min-height: 520px; }
+.c4w-archive__charts { min-width: 0; border-left: 1px solid #d8e6ec; }.c4w-archive__charts section { padding: 16px 20px; border-bottom: 1px solid #d8e6ec; }
+.c4w-archive__charts h3,.c4w-archive__raw h3 { margin: 0 0 14px; font-size: 15px; font-weight: 600; }.c4w-archive__charts section>div { position: relative; height: 200px; }
+.c4w-archive__policy { margin: 0; padding: 16px 24px; line-height: 1.65; font-size: 12px; color: #516d7a; background: #f3f8fa; }
+.c4w-archive__raw { padding-bottom: 12px; }.c4w-archive__raw h3 { margin: 0 auto 0 0; }.c4w-archive__table { overflow: auto; max-height: 430px; border-block: 1px solid #d8e6ec; }
+.c4w-archive table { border-collapse: collapse; width: 100%; font-size: 12px; white-space: nowrap; }.c4w-archive th,.c4w-archive td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e6eef2; }
+.c4w-archive th { position: sticky; top: 0; background: #edf5f8; font-weight: 600; }.c4w-archive tbody tr:nth-child(even) { background: #f8fbfc; }
+@media(max-width:850px) { .c4w-archive__visuals { grid-template-columns: 1fr; }.c4w-archive__map { min-height: 390px; }.c4w-archive__charts { display: grid; grid-template-columns: 1fr 1fr; border-left: 0; }.c4w-archive__filters { grid-template-columns: repeat(2,minmax(0,1fr)); }.c4w-archive__parameter { grid-row: auto; grid-column: 1/-1; }.c4w-archive__head { flex-direction: column; align-items: flex-start; }.c4w-archive__kpis { grid-template-columns: repeat(3,1fr); } }
+@media(max-width:500px) { .c4w-archive__head,.c4w-archive__filters { padding: 16px; }.c4w-archive__charts { grid-template-columns: 1fr; }.c4w-archive__kpis { grid-template-columns: repeat(2,1fr); }.c4w-archive__kpis div { padding: 12px; }.c4w-archive__toolbar { padding: 10px 16px; } }

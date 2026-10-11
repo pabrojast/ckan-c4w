@@ -18,6 +18,24 @@ def c4w():
     """Management commands for ckanext-c4w."""
 
 
+@c4w.command('archive-import')
+@click.option('--root', required=True)
+@click.option('--zip', 'source_zip')
+@click.option('--no-activate', is_flag=True)
+def archive_import(root, source_zip, no_activate):
+    """Import all GFQA v3 observations and atomically activate a verified generation."""
+    from ckanext.c4w.archive.importer import run
+    run(root, source_zip, activate=not no_activate)
+
+
+@c4w.command('archive-worker')
+@click.option('--burst', is_flag=True)
+def archive_worker(burst):
+    """Run the isolated GFQA query queue (one query at a time)."""
+    from ckanext.c4w.archive.service import worker
+    worker(burst)
+
+
 @c4w.command()
 def init_db():
     """Create the c4w_* tables (idempotent)."""

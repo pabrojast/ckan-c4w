@@ -284,6 +284,9 @@ def _register(bp):
     @bp.before_request
     def protect_portal_forms():
         from flask import request
+        # Public read-only JSON analytics; no settings or source data are changed.
+        if request.endpoint and request.endpoint.rsplit('.', 1)[-1] == 'archive_query':
+            return
         if request.method not in ('GET', 'HEAD', 'OPTIONS'):
             from ckan.config.middleware.flask_app import csrf
             csrf.protect()
@@ -355,6 +358,12 @@ def _register(bp):
                     methods=['GET'], strict_slashes=False)
     bp.add_url_rule('/data/<slug>/bundle/<path:name>', 'dataset_bundle',
                     dataset_bundle, methods=['GET'])
+    from ckanext.c4w.logic import views_archive
+    bp.add_url_rule('/data/<slug>/archive/meta', 'archive_meta', views_archive.meta, methods=['GET'])
+    bp.add_url_rule('/data/<slug>/archive/query', 'archive_query', views_archive.query, methods=['POST'])
+    bp.add_url_rule('/data/<slug>/archive/jobs/<job_id>', 'archive_job', views_archive.job, methods=['GET'])
+    from ckan.config.middleware.flask_app import csrf
+    csrf.exempt(views_archive.query)
     bp.add_url_rule('/data/<slug>/download/<file_id>', 'dataset_download',
                     dataset_download, methods=['GET'])
     bp.add_url_rule('/data/<slug>/edit', 'dataset_edit', dataset_edit,

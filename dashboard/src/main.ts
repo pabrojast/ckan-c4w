@@ -42,6 +42,17 @@ const TREND_LABEL: Record<Grain, "chart.trendYear" | "chart.trendMonth" | "chart
  *  montar varios en una página sin que compartan estado. */
 export async function mount(root: HTMLElement, override?: Partial<DashboardConfig>): Promise<DashboardHandle> {
   const cfg = { ...readConfig(root), ...override };
+  if (root.dataset.archiveBase) {
+    try {
+      const { mountArchive } = await import("./archive");
+      return await mountArchive(root, cfg);
+    } catch (error) {
+      const boot = root.querySelector<HTMLElement>('[data-role="boot-detail"]');
+      if (boot) boot.textContent = error instanceof Error ? error.message : String(error);
+      root.querySelector('[data-role="boot"]')?.classList.add("is-failed");
+      return { destroy() {} };
+    }
+  }
   const i18n = createI18n(cfg.lang);
   const { t, locale } = i18n;
   i18n.applyDom(root);
