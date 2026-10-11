@@ -17,6 +17,7 @@ const copy = {
 export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
   const language = cfg.lang.startsWith("es") ? "es" : cfg.lang.startsWith("fr") ? "fr" : "en";
   const t = copy[language];
+  const unavailable = { en: "The archive is temporarily unavailable. Please retry shortly.", es: "El archivo no está disponible temporalmente. Vuelve a intentarlo en unos momentos.", fr: "Les archives sont temporairement indisponibles. Veuillez réessayer dans quelques instants." }[language];
   const number = new Intl.NumberFormat(language, { maximumFractionDigits: 3 });
   const measurementNumber = new Intl.NumberFormat(language, { maximumSignificantDigits: 6 });
   const base = root.dataset.archiveBase!;
@@ -160,14 +161,19 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
     (map.getSource("gfqa") as maplibregl.GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: [] });
     el("status").textContent = t.busy;
     const payload = { operation: "dashboard", parameter: activeCode, unit: sel("unit").value, country: sel("country").value, from_year: Number(el<HTMLInputElement>("from").value), to_year: Number(el<HTMLInputElement>("to").value), flag: sel("flag").value, integration: sel("integration").value, station, page, bbox: bounds, zoom: map.getZoom() };
+    const readResponse = async (res: Response) => {
+      const data = await res.json().catch(() => null);
+      if (!data || typeof data !== "object") throw new Error(unavailable);
+      return data;
+    };
     try {
       let res = await fetch(base + "query", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal });
-      let data = await res.json();
+      let data = await readResponse(res);
       const statusUrl = data.status_url;
       for (let attempt = 0; data.status === "pending" && attempt < 120; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         if (signal.aborted) return;
-        res = await fetch(statusUrl, { credentials: "same-origin", signal }); data = await res.json();
+        res = await fetch(statusUrl, { credentials: "same-origin", signal }); data = await readResponse(res);
       }
       if (id !== requestNumber) return;
       if (data.status !== "ready") throw new Error(data.message || "Archive query timed out");
