@@ -20,6 +20,7 @@
 {% block detail_title %}{{ dataset.title }}{% endblock %}
 
 {% block detail_meta %}
+  {% if archive %}<span class="c4w-badge">{{ archive.labels.version }} {{ archive.version }}</span>{% endif %}
   {% if not dataset.approved %}
     <span class="c4w-badge c4w-badge--pending">{{ _('Awaiting review') }}</span>
   {% endif %}
@@ -41,7 +42,7 @@
 {% block detail_body %}
   {% if dataset.record_count or dataset.site_count or dataset.parameter_count %}
     <ul class="c4w-tiles">
-      <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.record_count) }}</span><span class="c4w-tile__label">{{ _('aggregated records') }}</span></li>
+      <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.record_count) }}</span><span class="c4w-tile__label">{{ archive.labels.observations if archive else _('aggregated records') }}</span></li>
       <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.site_count) }}</span><span class="c4w-tile__label">{{ _('sites') }}</span></li>
       <li class="c4w-tile"><span class="c4w-tile__value">{{ h.c4w_number(dataset.parameter_count) }}</span><span class="c4w-tile__label">{{ _('parameters') }}</span></li>
       {% if dataset.grain %}
@@ -118,7 +119,7 @@
     </section>
   {% endif %}
 
-  {% if dataset.bundle_ready %}
+  {% if dataset.bundle_ready or archive %}
     <section>
       <h2>{{ _('Embed the dashboard') }}</h2>
       <p>{{ _('Paste this in any page to show the dashboard there:') }}</p>
@@ -128,8 +129,12 @@
 {% endblock %}
 
 {% block detail_actions %}
-  {% if dataset.bundle_ready %}
+  {% if dataset.bundle_ready or archive %}
     <a class="c4w-btn c4w-btn--block" href="{{ h.c4w_url('dataset_dashboard', slug=dataset.slug) }}">{{ ui.icon('chart') }} {{ _('Open the dashboard') }}</a>
+  {% endif %}
+  {% if archive %}
+    <a class="c4w-btn c4w-btn--quiet c4w-btn--block" href="{{ archive.source_url }}" rel="noopener noreferrer">{{ ui.icon('download', 'c4w-icon--sm') }} {{ archive.labels.download }} <small>({{ h.c4w_bytes(archive.zip_bytes) }})</small></a>
+    {% if dataset.data_files %}<p>{{ archive.labels.legacy }}</p>{% endif %}
   {% endif %}
   {% for file in dataset.data_files %}
     <a class="c4w-btn c4w-btn--quiet c4w-btn--block" href="{{ h.c4w_url('dataset_download', slug=dataset.slug, file_id=file.id) }}"
@@ -141,7 +146,11 @@
 {% endblock %}
 
 {% block detail_facts %}
-  {{ terms('country', _('Countries')) }}
+  {% if archive %}
+    <div class="c4w-detail__facts-row"><dt>{{ _('Countries') }}</dt><dd>{{ archive.countries | join(', ') }}</dd></div>
+  {% else %}
+    {{ terms('country', _('Countries')) }}
+  {% endif %}
   {{ terms('water_data_type', _('Water data type')) }}
   {{ terms('water_type', _('Water type')) }}
   {{ terms('topic', _('Topics')) }}
@@ -150,7 +159,7 @@
 
   {% if dataset.license_id %}
     <div class="c4w-detail__facts-row">
-      <dt>{{ _('Licence') }}</dt><dd>{{ h.c4w_license_title(dataset.license_id) }}</dd>
+      <dt>{{ _('Licence') }}</dt><dd>{% if archive %}<a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener noreferrer">{{ archive.license }}</a>{% else %}{{ h.c4w_license_title(dataset.license_id) }}{% endif %}</dd>
     </div>
   {% endif %}
   {% if dataset.frequency %}

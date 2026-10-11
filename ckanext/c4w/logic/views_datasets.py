@@ -59,12 +59,24 @@ def _show(slug):
 
 def dataset_detail(slug):
     dataset = _show(slug)
+    archive = None
+    from ckanext.c4w.archive import service
+    if service.enabled(slug):
+        from ckanext.c4w.archive.presentation import detail_dataset
+        from ckanext.c4w.archive.query import open_manifest
+        try:
+            _, manifest = open_manifest(service.root())
+            dataset, archive = detail_dataset(dataset, manifest, tk.h.lang())
+        except (OSError, ValueError, KeyError):
+            # A missing/incomplete archive must not hide the legacy catalogue.
+            pass
     try:
         tk.get_action('c4w_dataset_record_view')({}, {'id': dataset['id']})
     except Exception:
         pass
     return tk.render('c4w/dataset_detail.html', extra_vars={
         'dataset': dataset,
+        'archive': archive,
     })
 
 
