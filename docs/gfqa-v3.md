@@ -7,7 +7,9 @@ are never rewritten; enabling the archive switches the dashboard and embed only.
 
 ## Import, validate and activate
 
-Requires Python 3.8+ and DuckDB 1.3.2, with no pandas or PyArrow dependency.
+Requires Python 3.10+ and DuckDB 1.5.5, matching the shared CKAN dashboard runtime,
+with no pandas or PyArrow dependency. Existing archive Parquet files generated
+with DuckDB 1.3.2 remain readable; a dependency upgrade does not require reimport.
 
 ```bash
 python -m ckanext.c4w.archive.importer --root /var/lib/ckan/gfqa --version v3
