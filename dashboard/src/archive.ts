@@ -7,7 +7,7 @@ Chart.register(...registerables);
 type Parameter = { code: string; label: string; family: string; units: string[]; rows: number; eligible: number; min_year: number | null; max_year: number | null; metadata_incomplete: boolean };
 type Manifest = { version: string; generation: string; doi: string; observations: number; observed_parameter_codes: number; parameters: Parameter[]; dimensions: { station_ids: number; countries: string[] }; statistics_policy: string };
 type Point = { latitude: number; longitude: number; value: number; samples: number; stations: number; station_id: string | null; station_name: string | null };
-type Result = { summary: { observations: number; eligible: number; censored: number; stations: number; median: number | null; maximum: number | null }; series: {year: number; value: number; samples: number}[]; stations: Point[]; histogram: {bin: number; count: number}[]; histogram_min: number; histogram_width: number; observations: Record<string, unknown>[]; has_more: boolean; integrations: string[]; map_truncated?: boolean };
+type Result = { summary: { observations: number; eligible: number; censored: number; stations: number; median: number | null; maximum: number | null; undated_in_source?: number }; series: {year: number; value: number; samples: number}[]; stations: Point[]; histogram: {bin: number; count: number}[]; histogram_min: number; histogram_width: number; observations: Record<string, unknown>[]; has_more: boolean; integrations: string[]; map_truncated?: boolean };
 const copy = {
   en: { title: "Global Freshwater Quality Archive", all: "All countries", parameter: "Parameter", unit: "Unit", country: "Country", from: "From year", to: "To year", flag: "Reported flags", allFlags: "All observations", plain: "Unflagged", integration: "Sample integration", discrete: "Discrete samples", clear: "Clear station", busy: "Calculating from original observations…", trend: "Annual median of measurements", histogram: "Distribution of measurements", raw: "Original observations", rows: "observations", sites: "stations", eligible: "used in statistics", median: "median", censored: "censored values", policy: "Statistics use uncensored, finite values with Good, Fair, Unknown or unspecified quality. Limits (<, >), estimated and suspect values remain in the table. Units and sample integration types are kept separate. Colours describe the data, not regulatory quality.", download: "Download this page (CSV)", prev: "Previous", next: "Next", page: "Page", empty: "No observations match these filters.", share: "Copy filtered link", copied: "Link copied", limited: "Map limited to 2,000 cells. Zoom in to explore all locations.", source: "Source and attribution", reset: "Reset map filter", allParams: "Search parameters", version: "Version", noNumeric: "No uncensored values available; original observations remain below." },
   es: { title: "Archivo mundial de calidad del agua dulce", all: "Todos los países", parameter: "Parámetro", unit: "Unidad", country: "País", from: "Desde el año", to: "Hasta el año", flag: "Indicadores originales", allFlags: "Todas las observaciones", plain: "Sin indicador", integration: "Integración de muestra", discrete: "Muestras puntuales", clear: "Quitar estación", busy: "Calculando sobre las observaciones originales…", trend: "Mediana anual de mediciones", histogram: "Distribución de mediciones", raw: "Observaciones originales", rows: "observaciones", sites: "estaciones", eligible: "usadas en estadísticas", median: "mediana", censored: "valores censurados", policy: "Las estadísticas usan valores finitos sin censura con calidad Good, Fair, Unknown o no especificada. Los límites (<, >), valores estimados y sospechosos permanecen en la tabla. Las unidades y tipos de integración se mantienen separados. Los colores describen los datos, no su calidad normativa.", download: "Descargar esta página (CSV)", prev: "Anterior", next: "Siguiente", page: "Página", empty: "Ninguna observación coincide con estos filtros.", share: "Copiar enlace filtrado", copied: "Enlace copiado", limited: "Mapa limitado a 2.000 celdas. Acerca la vista para explorar todas las ubicaciones.", source: "Fuente y atribución", reset: "Restablecer filtro del mapa", allParams: "Buscar parámetros", version: "Versión", noNumeric: "Sin valores numéricos no censurados; las observaciones originales permanecen abajo." },
@@ -32,11 +32,11 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
     <div class="c4w-archive__toolbar"><button data-a="reset" type="button">${t.reset}</button><button data-a="station" type="button" hidden>${t.clear}</button><button data-a="share" type="button">${t.share}</button><span data-a="status" role="status" aria-live="polite"></span></div>
     <div class="c4w-archive__kpis" data-a="kpis"></div>
     <div class="c4w-archive__visuals"><div class="c4w-archive__map" data-a="map" aria-label="${t.sites}"></div><div class="c4w-archive__charts"><section><h3>${t.trend}</h3><div><canvas data-a="trend"></canvas></div></section><section><h3>${t.histogram}</h3><div><canvas data-a="histogram"></canvas></div></section></div></div>
-    <p class="c4w-archive__policy">${t.policy}</p><section class="c4w-archive__raw"><div class="c4w-archive__toolbar"><h3>${t.raw}</h3><button data-a="download" type="button">${t.download}</button></div><div class="c4w-archive__table" tabindex="0"><table data-a="table"></table></div><div class="c4w-archive__toolbar"><button data-a="prev" type="button">${t.prev}</button><span data-a="page"></span><button data-a="next" type="button">${t.next}</button></div></section>`;
+    <p class="c4w-archive__policy">${t.policy}<span data-a="undated"></span></p><section class="c4w-archive__raw"><div class="c4w-archive__toolbar"><h3>${t.raw}</h3><button data-a="download" type="button">${t.download}</button></div><div class="c4w-archive__table" tabindex="0"><table data-a="table"></table></div><div class="c4w-archive__toolbar"><button data-a="prev" type="button">${t.prev}</button><span data-a="page"></span><button data-a="next" type="button">${t.next}</button></div></section>`;
   const el = <T extends HTMLElement = HTMLElement>(name: string) => root.querySelector<T>(`[data-a="${name}"]`)!;
   const sel = (name: string) => el<HTMLSelectElement>(name);
   const option = (select: HTMLSelectElement, value: string, label: string) => select.add(new Option(label, value));
-  el("coverage").textContent = `${number.format(meta.observations)} ${t.rows} · ${number.format(meta.dimensions.station_ids)} ${t.sites} · ${meta.observed_parameter_codes} ${t.parameter.toLowerCase()}`;
+  el("coverage").textContent = `${number.format(meta.observations)} ${t.rows} · ${number.format(meta.dimensions.station_ids)} ${t.sites} · ${meta.observed_parameter_codes} ${t.parameter.toLowerCase()}s`;
   el<HTMLAnchorElement>("source").href = `https://doi.org/${meta.doi}`;
   option(sel("country"), "", t.all);
   meta.dimensions.countries.forEach(c => option(sel("country"), c, c));
@@ -104,6 +104,10 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
   const tableColumns = ["station_id", "country", "date", "local_time", "reported_value", "reported_unit", "value_flags", "data_quality", "depth", "integrated_value", "method_code", "source_file", "source_row"];
   function render(result: Result) {
     current = result;
+    const undatedLabel = language === "es" ? "Observaciones sin fecha válida en la fuente (excluidas del rango)" : language === "fr" ? "Observations sans date valide dans la source (exclues de la période)" : "Undated observations in the source (excluded from the date range)";
+    el("undated").textContent = result.summary.undated_in_source ? ` ${undatedLabel}: ${number.format(result.summary.undated_in_source)}.` : "";
+    root.setAttribute("aria-busy", "false");
+    el<HTMLButtonElement>("download").disabled = false;
     el("kpis").replaceChildren();
     const kpis: [string, number | null][] = [[t.rows, result.summary.observations], [t.eligible, result.summary.eligible], [t.sites, result.summary.stations], [t.median + ` (${sel("unit").value})`, result.summary.median], [t.censored, result.summary.censored]];
     for (const [label, value] of kpis) {
@@ -138,6 +142,13 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
   async function refresh() {
     controller?.abort(); controller = new AbortController();
     const signal = controller.signal, id = ++requestNumber;
+    current = null;
+    root.setAttribute("aria-busy", "true");
+    for (const button of ["download", "prev", "next"]) el<HTMLButtonElement>(button).disabled = true;
+    el("table").replaceChildren(); el("kpis").replaceChildren();
+    trend.data.labels = []; trend.data.datasets[0]!.data = []; trend.update();
+    histogram.data.labels = []; histogram.data.datasets[0]!.data = []; histogram.update();
+    (map.getSource("gfqa") as maplibregl.GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: [] });
     el("status").textContent = t.busy;
     const payload = { operation: "dashboard", parameter: activeCode, unit: sel("unit").value, country: sel("country").value, from_year: Number(el<HTMLInputElement>("from").value), to_year: Number(el<HTMLInputElement>("to").value), flag: sel("flag").value, integration: sel("integration").value, station, page, bbox: bounds, zoom: map.getZoom() };
     try {
@@ -153,7 +164,7 @@ export async function mountArchive(root: HTMLElement, cfg: DashboardConfig) {
       if (data.status !== "ready") throw new Error(data.message || "Archive query timed out");
       render(data.result as Result);
     } catch (error) {
-      if (!signal.aborted) el("status").textContent = error instanceof Error ? error.message : String(error);
+      if (!signal.aborted) { root.setAttribute("aria-busy", "false"); el("status").textContent = error instanceof Error ? error.message : String(error); }
     }
   }
   el<HTMLFormElement>("search").addEventListener("input", fillParameters);

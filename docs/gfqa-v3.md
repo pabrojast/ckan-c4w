@@ -56,6 +56,11 @@ The worker consumes only `c4w-archive` with concurrency one. Each DuckDB query
 uses two threads, at most 1 GiB managed memory and disk spill, with a 45-second
 interrupt and a 70-second job timeout. Permit at least 2 GiB container memory.
 Queue admission stops at 20 pending jobs. Cached results expire after 10 minutes.
+Admission and deduplication are atomic Redis operations. A 30-minute claim covers
+the maximum admitted backlog; RQ failure callbacks release reservations. Results
+cannot be overwritten by an expired worker. Test this against disposable Redis
+with `ARCHIVE_TEST_REDIS=redis://localhost:6379/15 pytest -p no:ckan
+ckanext/c4w/tests/test_archive_queue.py` (the selected database is flushed).
 Imports belong in an operator Job, never in the web process or generic dashboard
 queue. Retain the prior complete generation; restore its name in `active.json`
 to roll back. Production is not enabled by this change.
@@ -81,6 +86,10 @@ Maps aggregate original eligible observations into at most 2,000 geographic
 cells, returning `map_truncated` where further zoom is needed. Annual medians and
 histograms are calculated from original eligible observations, not medians of
 medians. No full observation archive is downloaded by the browser.
+Invalid/absent dates are excluded from date-filtered results and statistics.
+`summary.undated_in_source` exposes their source count. The raw observations and
+export operations can retrieve them with `include_undated: true`; this is also
+the default for those operations when no date range was supplied.
 
 Numerical statistics use finite, uncensored values with quality Good, Fair,
 Unknown or unspecified. Censored, estimated and suspect values remain in raw
@@ -90,7 +99,8 @@ unit and integration class; an empty integration means discrete samples. Negativ
 temperatures remain valid. Original local sampling times are never labeled UTC.
 
 Deep links use `gfqa_parameter`, `gfqa_unit`, `gfqa_country`, `gfqa_from`,
-`gfqa_to`, `gfqa_flag`, `gfqa_station` on the dashboard or embed URL. Example:
+`gfqa_to`, `gfqa_flag`, `gfqa_station`, `gfqa_integration`, and `gfqa_bbox` on the
+dashboard or embed URL. Example:
 
 `/citizens4water/data/gemstat/dashboard?gfqa_parameter=pH&gfqa_unit=pH&gfqa_country=France&gfqa_from=2020&gfqa_to=2024`
 
@@ -112,3 +122,11 @@ median of the original observations. Useful examples are pH, TEMP and PFOS.
 
 Validation: `pytest ckanext/c4w/tests/test_archive.py`, `npm run build` in
 `dashboard/`, and `bash scripts/run-ckan-tests.sh` for CKAN integration.
+
+The complete local import on 2026-10-11 reconciled all 80 observation CSVs to
+51,157,266 Parquet rows, 621 observed parameters and 22,946 distinct stations.
+The source date range is 1906-09-10 through 2024-10-14, with no undated rows.
+29,595,423 observations have a `<` or `>` flag. These remain available in full;
+they are not silently treated as exact concentrations. Generated pH, TEMP and
+PFOS derivatives are approximately 19.4 MB, 16.1 MB and 0.65 MB respectively.
+These checks establish local import correctness; deployment is a separate step.

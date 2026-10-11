@@ -23,6 +23,7 @@ import { bindStats } from "./ui/stats";
 import { bindCsv } from "./ui/csv";
 import { role, roleOrNull } from "./ui/dom";
 import { formatCount } from "./util/format";
+import { mountArchive } from "./archive";
 
 export type DashboardHandle = {
   destroy: () => void;
@@ -44,7 +45,6 @@ export async function mount(root: HTMLElement, override?: Partial<DashboardConfi
   const cfg = { ...readConfig(root), ...override };
   if (root.dataset.archiveBase) {
     try {
-      const { mountArchive } = await import("./archive");
       return await mountArchive(root, cfg);
     } catch (error) {
       const boot = root.querySelector<HTMLElement>('[data-role="boot-detail"]');

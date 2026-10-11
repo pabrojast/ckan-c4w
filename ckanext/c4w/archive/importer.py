@@ -124,10 +124,11 @@ def import_file(source, target, conn, workdir):
     if header != list(COLUMNS):
         raise ValueError('Unexpected GFQA columns in ' + source.name)
     select = ', '.join('coalesce(%s, \'\') AS %s' % (quote(a), quote(b)) for a, b in COLUMNS.items())
-    conn.execute('CREATE OR REPLACE TABLE observations AS SELECT ' + select +
-                 ', row_number() OVER ()::BIGINT AS source_row, ?::VARCHAR AS source_file '
-                 "FROM read_csv(?, header=true, all_varchar=true, delim=',', quote='\"', escape='\"', parallel=false, strict_mode=true)",
-                 [source.name, str(utf8)])
+    # Keep the CSV as a streaming view. Materializing all 13 string columns of
+    # a large pesticide file before COPY causes unnecessary disk spilling.
+    conn.execute('CREATE OR REPLACE VIEW observations AS SELECT ' + select +
+                 ', row_number() OVER ()::BIGINT AS source_row, ' + literal(source.name) + '::VARCHAR AS source_file '
+                 'FROM read_csv(' + literal(utf8) + ", header=true, all_varchar=true, delim=',', quote='\"', escape='\"', parallel=false, strict_mode=true)")
     # Normalization is derived. Raw units/values/flags remain in Parquet.
     conn.execute("""CREATE OR REPLACE VIEW normalized AS SELECT *,
         try_cast(sample_date_raw AS DATE) AS sample_date,
@@ -151,7 +152,7 @@ def import_file(source, target, conn, workdir):
         raise ValueError('Observation conservation failed for ' + source.name)
     params = conn.execute("""SELECT parameter_code, unit, count(*), count(*) FILTER(WHERE eligible),
         min(year(sample_date)), max(year(sample_date)), count(*) FILTER(WHERE sample_date IS NULL)
-        FROM normalized GROUP BY parameter_code, unit ORDER BY parameter_code, unit""").fetchall()
+        FROM read_parquet(?) GROUP BY parameter_code, unit ORDER BY parameter_code, unit""", [str(temporary)]).fetchall()
     os.replace(temporary, target)
     utf8.unlink()
     return {'rows': original_rows, 'parquet': target.name, 'parquet_sha256': digest(target),

@@ -90,7 +90,9 @@ def test_units_temperature_flags_and_integration_remain_distinct(archive):
     assert censored['observations'][0]['reported_value'] == '0.2'
     integrated = query.execute(root, {'parameter':'pH','integration':'Time Integration'})
     assert integrated['summary']['median'] == 8
-    assert query.execute(root, {'parameter':'EXTRA'})['summary']['observations'] == 1
+    assert query.execute(root, {'parameter':'EXTRA'})['summary']['observations'] == 0
+    assert len(query.execute(root, {'parameter':'EXTRA','operation':'observations'})['observations']) == 1
+    assert not query.execute(root, {'parameter':'EXTRA','operation':'observations','from_year':2020})['observations']
 
 
 def test_empty_variables_remain_discoverable_and_import_is_idempotent(archive):

@@ -7,6 +7,8 @@ import uuid
 
 from .query import open_manifest, validate
 
+WAIT_BUDGET = 1800  # 20 admitted jobs * 70-second RQ timeout, plus worker overhead.
+
 
 def root():
     import ckan.plugins.toolkit as tk
@@ -36,13 +38,13 @@ def state(job_id):
     if not cached:
         return {'status': 'expired', 'message': 'This query expired. Please retry.'}
     result = json.loads(cached)
-    if result['status'] == 'pending' and time.time() - result['queued_at'] > 120:
+    if result['status'] == 'pending' and time.time() - result['queued_at'] > WAIT_BUDGET:
         return {'status': 'error', 'message': 'Archive processing is unavailable or exceeded its time limit. Please retry.'}
     return result
 
 
 def submit(data):
-    from ckan.lib.jobs import enqueue, get_queue
+    from ckan.lib.jobs import enqueue
     _, manifest = open_manifest(root())
     query = validate(data, manifest)
     encoded = json.dumps([manifest['generation'], query], sort_keys=True, ensure_ascii=False)
@@ -51,18 +53,31 @@ def submit(data):
     cached = state(job_id)
     if cached['status'] in ('ready', 'pending'):
         return job_id, cached
-    if len(get_queue('c4w-archive')) >= 20:
-        return job_id, {'status': 'error', 'message': 'The archive is busy. Please retry shortly.'}
     claim = uuid.uuid4().hex
-    if not connection.set(key(job_id, 'lock'), claim, nx=True, ex=120):
-        return job_id, state(job_id)
+    # Reserve admission and claim together. Concurrent HTTP requests cannot
+    # overrun the queue limit or enqueue a duplicate query.
+    admitted = connection.eval(
+        'redis.call("zremrangebyscore",KEYS[2],"-inf",ARGV[3]); '
+        'if redis.call("exists",KEYS[1])==1 then return 0 end; '
+        'if redis.call("zcard",KEYS[2])>=20 then return -1 end; '
+        'redis.call("set",KEYS[1],ARGV[1],"EX",ARGV[2]); '
+        'redis.call("zadd",KEYS[2],ARGV[4],ARGV[5]); return 1',
+        2, key(job_id, 'lock'), key('admission', 'slots'), claim,
+        WAIT_BUDGET, time.time(), time.time() + WAIT_BUDGET, job_id)
+    if admitted == -1:
+        return job_id, {'status': 'error', 'message': 'The archive is busy. Please retry shortly.'}
+    if admitted == 0:
+        pending = state(job_id)
+        return job_id, (pending if pending['status'] != 'expired' else
+                        {'status': 'pending', 'queued_at': time.time()})
     payload = {'status': 'pending', 'queued_at': time.time()}
-    connection.setex(key(job_id), 180, json.dumps(payload))
+    connection.setex(key(job_id), WAIT_BUDGET, json.dumps(payload))
     try:
         enqueue(execute_job, kwargs={'job_id': job_id, 'claim': claim,
                                     'query': query, 'generation': manifest['generation']},
                 queue='c4w-archive', title='Query GFQA archive',
-                rq_kwargs={'timeout': 70, 'result_ttl': 0, 'failure_ttl': 300})
+                rq_kwargs={'timeout': 70, 'result_ttl': 0, 'failure_ttl': 300,
+                           'on_failure': query_failed})
     except Exception:
         finish(job_id, claim, {'status': 'error', 'message': 'Archive query queue is unavailable. Please retry.'}, 15)
         return job_id, state(job_id)
@@ -72,9 +87,15 @@ def submit(data):
 def finish(job_id, claim, result, ttl=600):
     redis().eval('if redis.call("get",KEYS[1])==ARGV[1] then '
                  'redis.call("setex",KEYS[2],ARGV[2],ARGV[3]); '
+                 'redis.call("zrem",KEYS[3],ARGV[4]); '
                  'return redis.call("del",KEYS[1]) else return 0 end',
-                 2, key(job_id, 'lock'), key(job_id), claim, ttl,
-                 json.dumps(result, ensure_ascii=False, allow_nan=False))
+                 3, key(job_id, 'lock'), key(job_id), key('admission', 'slots'), claim, ttl,
+                 json.dumps(result, ensure_ascii=False, allow_nan=False), job_id)
+
+
+def query_failed(job, connection, exc_type, exc_value, traceback):
+    finish(job.kwargs['job_id'], job.kwargs['claim'],
+           {'status': 'error', 'message': 'The archive query exceeded its time limit or was interrupted. Narrow the filters and retry.'}, 15)
 
 
 def execute_job(job_id, claim, query, generation):

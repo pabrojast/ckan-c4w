@@ -29,7 +29,7 @@ def validate(data, manifest):
     if not isinstance(data, dict):
         raise ValueError('A query object is required')
     allowed = {'operation', 'parameter', 'unit', 'country', 'station', 'from_year', 'to_year',
-               'bbox', 'zoom', 'page', 'flag', 'integration'}
+               'bbox', 'zoom', 'page', 'flag', 'integration', 'include_undated'}
     if set(data) - allowed:
         raise ValueError('Unknown archive query fields')
     p = next((p for p in manifest['parameters'] if p['code'] == data.get('parameter', 'pH')), None)
@@ -39,6 +39,9 @@ def validate(data, manifest):
     if op not in ('dashboard', 'summary', 'stations', 'series', 'observations', 'export'):
         raise ValueError('Unsupported operation')
     out = {'operation': op, 'parameter': p['code'], 'unit': data.get('unit', next(iter(p['units']), ''))}
+    out['include_undated'] = data.get('include_undated', op in ('observations', 'export') and not any(k in data for k in ('from_year', 'to_year')))
+    if not isinstance(out['include_undated'], bool):
+        raise ValueError('Invalid include_undated')
     if p['units'] and out['unit'] not in p['units']:
         raise ValueError('Unit does not belong to this parameter')
     for key in ('country', 'station', 'integration'):
@@ -101,7 +104,8 @@ def execute(root, data, generation=None):
         conn.execute('CREATE VIEW source AS SELECT * FROM read_parquet(' +
                      '[' + ','.join("'" + p.replace("'", "''") + "'" for p in paths) + '])')
         conn.execute('CREATE TABLE station_meta AS SELECT * FROM read_parquet(?)', [str(directory / 'stations.parquet')])
-        filters = ['o.parameter_code=?', 'o.unit=?', '(o.sample_date IS NULL OR year(o.sample_date) BETWEEN ? AND ?)']
+        date_clause = '(o.sample_date IS NULL OR year(o.sample_date) BETWEEN ? AND ?)' if q['include_undated'] else 'year(o.sample_date) BETWEEN ? AND ?'
+        filters = ['o.parameter_code=?', 'o.unit=?', date_clause]
         args = [q['parameter'], q['unit'], q['from_year'], q['to_year']]
         if q['country']:
             filters.append('s.country=?'); args.append(q['country'])
@@ -117,6 +121,9 @@ def execute(root, data, generation=None):
         conn.execute('CREATE TABLE filtered AS SELECT o.*, s.country, s.name AS station_name, '
                      's.latitude, s.longitude, s.water_type FROM source o LEFT JOIN station_meta s '
                      'USING(station_id) WHERE ' + ' AND '.join(filters), args)
+        # Undated rows are available in raw tables but cannot contribute to
+        # statistics presented as belonging to a selected date range.
+        conn.execute('UPDATE filtered SET eligible=false WHERE sample_date IS NULL')
         result = {'generation': manifest['generation'], 'query': q,
                   'statistics_policy': manifest['statistics_policy']}
         op = q['operation']
@@ -129,6 +136,9 @@ def execute(root, data, generation=None):
                 max(value) FILTER(WHERE eligible) AS maximum,
                 count(*) FILTER(WHERE latitude IS NULL OR longitude IS NULL) AS unmapped
                 FROM filtered"""))[0]
+            result['summary']['undated_in_source'] = conn.execute(
+                'SELECT count(*) FROM source WHERE parameter_code=? AND unit=? AND sample_date IS NULL',
+                [q['parameter'], q['unit']]).fetchone()[0]
             result['integrations'] = [r[0] for r in conn.execute(
                 'SELECT DISTINCT integrated_value FROM source WHERE parameter_code=? ORDER BY 1 LIMIT 50',
                 [q['parameter']]).fetchall()]
