@@ -1,7 +1,7 @@
 {% extends 'c4w/base.html' %}
 {% block subtitle %}{{ _('Delete') }} · {{ preview.title }}{% endblock %}
 {% block c4w_content %}
-<div class="c4w-page c4w-auth c4w-auth--wide" id="c4w-main">
+<div class="c4w-page c4w-auth c4w-auth--wide c4w-delete" id="c4w-main">
   <h1>{{ _('Permanently delete this item?') }}</h1>
   <h2>{{ preview.title }}</h2>
   <p>{{ preview.entity_type | capitalize }} · <code>{{ preview.slug }}</code></p>
