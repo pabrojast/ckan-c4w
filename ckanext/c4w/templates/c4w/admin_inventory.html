@@ -12,6 +12,13 @@
   </header>
   {% snippet 'c4w/snippets/admin_navigation.html', sections=sections, section=section %}
   <p class="c4w-form__lede">{{ _('Hide removes an item from the public portal without deleting it. Unhide preserves its approval or draft status. Related content is managed separately.') }}</p>
+  {% for deletion in cleanup %}
+  <form class="c4w-note" method="post" action="{{ h.c4w_url('admin_cleanup', deletion_id=deletion.id) }}">
+    {{ h.csrf_input() }}<input type="hidden" name="next" value="{{ return_url }}">
+    {{ _('Stored file cleanup pending for') }} <strong>{{ deletion.slug }}</strong>
+    <button class="c4w-btn c4w-btn--quiet" type="submit">{{ _('Retry file cleanup') }}</button>
+  </form>
+  {% endfor %}
   <form class="c4w-listing__controls" method="get" action="{{ h.c4w_url('admin_inventory', section=section) }}">
     <div class="c4w-listing__search">
       <label class="c4w-sr-only" for="c4w-q">{{ _('Search content') }}</label>
@@ -60,6 +67,7 @@
             {{ h.csrf_input() }}<input type="hidden" name="next" value="{{ return_url }}">
             <button type="submit" class="c4w-btn c4w-btn--quiet">{{ _('Unhide') if item.hidden else _('Hide') }}</button>
           </form>
+          {% if item.hidden %}<a class="c4w-btn c4w-btn--danger" href="{{ h.c4w_url('admin_delete', section=section, item_id=item.id, next=return_url) }}">{{ _('Delete') }}</a>{% endif %}
         </td>
       </tr>
     {% endfor %}</tbody>

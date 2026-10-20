@@ -90,7 +90,10 @@
     </form>
   {% endif %}
 
-  {% if not dataset.approved %}
+  {% if h.c4w_is_content_admin() %}
+    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_inventory', section='data', q=dataset.slug) }}">{{ _('Manage visibility') }}</a>
+    {% if dataset.hidden %}<a class="c4w-btn c4w-btn--danger" href="{{ h.c4w_url('admin_delete', section='data', item_id=dataset.id) }}">{{ _('Delete') }}</a>{% endif %}
+  {% elif not dataset.approved %}
     <form method="post" action="{{ h.c4w_url('dataset_delete', slug=dataset.slug) }}" class="c4w-form"
           onsubmit="return window.confirm(this.getAttribute('data-confirm'));"
           data-confirm="{{ _('Remove this dataset and its files?') }}">

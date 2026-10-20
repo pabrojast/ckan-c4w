@@ -12,8 +12,11 @@
 {% set counts = counts or {} %}
 {% set visible = options | selectattr('term', 'in', counts) | list %}
 {% if visible or h.c4w_facet_active(name, '') %}
-  <div class="c4w-facet">
-    <h3 class="c4w-facet__title">{{ ui.icon(icon or 'filter', 'c4w-icon--sm') }} {{ title }}</h3>
+  <details class="c4w-facet" data-facet-group>
+    <summary class="c4w-facet__title">{{ ui.icon(icon or 'filter', 'c4w-icon--sm') }} <span>{{ title }}</span>
+      {% set selected = h.c4w_facet_selected_count(name) %}{% if selected %}<span class="c4w-facet__count">{{ selected }} {{ _('selected') }}</span>{% endif %}
+      {{ ui.icon('chevron-down', 'c4w-icon--sm c4w-facet__chevron') }}
+    </summary>
     <ul class="c4w-facet__list">
       {% for option in visible %}
         {% set active = h.c4w_facet_active(name, option.term) %}
@@ -27,5 +30,5 @@
         </li>
       {% endfor %}
     </ul>
-  </div>
+  </details>
 {% endif %}

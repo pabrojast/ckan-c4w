@@ -96,3 +96,13 @@ def require_sysadmin():
     if not getattr(user, 'sysadmin', False):
         tk.abort(403, tk._('Not authorized'))
     return user, None
+
+
+def require_content_admin():
+    user, bounced = require_user()
+    if bounced is not None:
+        return None, bounced
+    from ckanext.c4w.logic.permissions import is_content_admin
+    if not is_content_admin(user):
+        tk.abort(403, tk._('Not authorized'))
+    return user, None

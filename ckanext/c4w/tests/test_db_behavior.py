@@ -120,6 +120,8 @@ def test_post_status_defaults_to_draft(session):
 
 def test_a_term_link_cannot_be_duplicated(session):
     """The constraint is what makes the importer's delete-and-reinsert safe."""
+    session.add(db.C4wProject(id=u'x', slug=u'x', name=u'X'))
+    session.commit()
     for _ in range(2):
         session.add(db.C4wTermLink(
             entity_type=u'project', entity_id=u'x',
@@ -131,6 +133,8 @@ def test_a_term_link_cannot_be_duplicated(session):
 
 def test_the_same_term_may_belong_to_two_vocabularies(session):
     """'other' is a legitimate member of most of them."""
+    session.add(db.C4wProject(id=u'x', slug=u'x', name=u'X'))
+    session.commit()
     session.add(db.C4wTermLink(entity_type=u'project', entity_id=u'x',
                                vocabulary=u'topic', term=u'other'))
     session.add(db.C4wTermLink(entity_type=u'project', entity_id=u'x',
@@ -140,6 +144,8 @@ def test_the_same_term_may_belong_to_two_vocabularies(session):
 
 
 def test_a_relation_cannot_be_duplicated(session):
+    session.add(db.C4wProject(id=u'x', slug=u'x', name=u'X'))
+    session.commit()
     for _ in range(2):
         session.add(db.C4wRelation(
             subject_type=u'project', subject_id=u'x', predicate=u'editor',

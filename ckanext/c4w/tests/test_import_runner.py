@@ -542,3 +542,14 @@ def test_the_haystack_is_not_served_to_a_reader(session, corpus):
     listing = q.build_listing(projects_action._spec(), {})
     assert listing['results']
     assert all('search_text' not in row for row in listing['results'])
+
+
+def test_permanently_deleted_legacy_item_is_not_reimported(session, corpus):
+    """A future import must respect deliberate permanent deletion."""
+    legacy_id=corpus['project'][0]['id']
+    session.add(db.C4wDeletion(entity_type='project',entity_id='removed',legacy_id=legacy_id,
+                              slug='removed',deleted_by='admin'))
+    session.commit()
+    engine=runner_module.Runner(dsn='unused',only=['project'],dry_run=False)
+    engine._run_with(FakeReader(corpus), resolver=FakeResolver())
+    assert session.query(db.C4wProject).filter_by(legacy_id=legacy_id).first() is None

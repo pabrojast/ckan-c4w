@@ -84,3 +84,26 @@
     window.setTimeout(checkProcessing, 3000);
   }
 })();
+
+// Individual disclosures stay closed on navigation; active filters remain visible.
+(function () {
+  document.querySelectorAll('[data-facet-panel]').forEach(function (panel) {
+    var wide = window.matchMedia('(min-width: 62.001rem)');
+    panel.open = wide.matches;
+    wide.addEventListener('change', function (event) { panel.open = event.matches; });
+    var toggle = panel.querySelector('[data-facets-toggle]');
+    var groups = Array.from(panel.querySelectorAll('[data-facet-group]'));
+    if (!toggle || !groups.length) return;
+    toggle.hidden = false;
+    function sync() {
+      var anyOpen = groups.some(function (group) { return group.open; });
+      toggle.textContent = anyOpen ? toggle.dataset.collapse : toggle.dataset.expand;
+    }
+    groups.forEach(function (group) { group.addEventListener('toggle', sync); });
+    toggle.addEventListener('click', function () {
+      var open = !groups.some(function (group) { return group.open; });
+      groups.forEach(function (group) { group.open = open; });
+      sync();
+    });
+  });
+})();

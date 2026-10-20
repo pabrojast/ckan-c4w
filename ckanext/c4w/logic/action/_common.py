@@ -54,7 +54,7 @@ def can_edit(entity_type, row, context):
     user = context.get('auth_user_obj')
     if user is None or not getattr(user, 'id', None):
         return False
-    if getattr(user, 'sysadmin', False):
+    if is_content_admin(context):
         return True
     if getattr(row, 'created_by', None) and row.created_by == user.id:
         return True
@@ -82,6 +82,11 @@ def is_visible(entity_type, row, context):
     if is_public(entity_type, row):
         return True
     return can_edit(entity_type, row, context)
+
+
+def is_content_admin(context):
+    from ckanext.c4w.logic.permissions import is_content_admin as permitted
+    return permitted(context.get('auth_user_obj'))
 
 
 def is_sysadmin(context):

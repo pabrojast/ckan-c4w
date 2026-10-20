@@ -3,7 +3,7 @@ from flask import request, redirect
 import ckan.plugins.toolkit as tk
 from ckan.model.meta import Session
 from ckanext.c4w.logic import forms, helpers
-from ckanext.c4w.logic.access import require_user, require_sysadmin
+from ckanext.c4w.logic.access import require_user, require_content_admin
 from ckanext.c4w.logic.action import content_write
 
 
@@ -67,7 +67,7 @@ def edit(entity, content_id=None):
 
 
 def review(entity, content_id):
-    _, bounced = require_sysadmin() if request.method == 'POST' else require_user()
+    _, bounced = require_content_admin() if request.method == 'POST' else require_user()
     if bounced is not None:
         return bounced
     draft = _load(entity, content_id)

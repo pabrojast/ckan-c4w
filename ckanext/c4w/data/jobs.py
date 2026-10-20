@@ -71,6 +71,8 @@ def dispatch(dataset_id, force=False):
     from ckan.model.meta import Session
 
     db.ensure_mappers()
+    from ckanext.c4w.logic.integrity import lock
+    lock(Session)
     row = Session.query(db.C4wDataset).filter(
         db.C4wDataset.id == dataset_id).populate_existing().with_for_update().first()
     if row is None:
@@ -134,6 +136,8 @@ def process_dataset(dataset_id, force=False, progress=None):
     from ckanext.c4w.logic import uploads
 
     db.ensure_mappers()
+    from ckanext.c4w.logic.integrity import lock
+    lock(Session)
     row = Session.query(db.C4wDataset).filter(
         db.C4wDataset.id == dataset_id).populate_existing().with_for_update().first()
     if row is None:

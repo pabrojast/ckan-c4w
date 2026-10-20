@@ -31,7 +31,7 @@
         <h1>{% block listing_title %}{% endblock %}</h1>
         <p class="c4w-listing__count">{% block listing_count %}{% endblock %}</p>
         {% block listing_admin_actions %}
-          {% if h.c4w_is_sysadmin() %}
+          {% if h.c4w_is_content_admin() %}
             {% set entity = endpoint.replace('_list', '') %}
             {% set section = 'training_resources' if entity == 'training_resource' else h.c4w_admin_section(entity) %}
             {% if section %}<a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_inventory', section=section) }}">{{ _('Manage visibility') }}</a>{% endif %}
@@ -76,12 +76,23 @@
       </form>
     </header>
 
-    {#
-      Results come BEFORE the filters in source order and are moved beside them
-      with CSS. On a narrow screen and in a screen reader the visitor meets the
-      content first, not a column of filters.
-    #}
+    {% if has_facets %}
+      <aside class="c4w-facets" aria-label="{{ _('Filters') }}">
+        <details data-facet-panel>
+          <summary class="c4w-facets__toggle">{{ ui.icon('filter') }} {{ _('Filters') }} {{ ui.icon('chevron-down', 'c4w-icon--sm') }}</summary>
+          <div class="c4w-facets__groups">
+            <button type="button" class="c4w-btn c4w-btn--quiet" data-facets-toggle data-expand="{{ _('Expand all') }}" data-collapse="{{ _('Collapse all') }}" hidden>{{ _('Expand all') }}</button>
+            {{ facets_html }}
+          </div>
+        </details>
+      </aside>
+    {% endif %}
     <div class="c4w-listing__results">
+      {% set active_filters = h.c4w_active_filters(params) %}
+      {% if active_filters %}<nav class="c4w-active-filters" aria-label="{{ _('Active filters') }}">
+        {% for filter in active_filters %}<a class="c4w-chip" href="{{ filter.url }}" aria-label="{{ _('Remove filter') }}: {{ filter.label }}">{{ filter.label }} <span aria-hidden="true">×</span></a>{% endfor %}
+        <a href="{{ h.c4w_clear_filters_url() }}">{{ _('Clear all filters') }}</a>
+      </nav>{% endif %}
       {% if listing.results %}
         {% block listing_cards %}{% endblock %}
         {% snippet 'c4w/snippets/pagination.html',
@@ -94,13 +105,6 @@
       {% endif %}
     </div>
 
-    {% if has_facets %}
-      <aside class="c4w-facets" aria-label="{{ _('Filters') }}">
-        <details open>
-          <summary class="c4w-facets__toggle">{{ ui.icon('filter') }} {{ _('Filters') }}</summary>
-          <div class="c4w-facets__groups">{{ facets_html }}</div>
-        </details>
-      </aside>
-    {% endif %}
+
   </div>
 {% endblock %}

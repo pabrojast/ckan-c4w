@@ -296,14 +296,14 @@ def c4w_my_submissions_auth(context, data_dict):
 
 @tk.auth_allow_anonymous_access
 def c4w_moderation_list_auth(context, data_dict):
-    if _common.is_sysadmin(context):
+    if _common.is_content_admin(context):
         return {'success': True}
     return {'success': False, 'msg': tk._('Not authorized')}
 
 
 @tk.auth_allow_anonymous_access
 def c4w_entity_moderate_auth(context, data_dict):
-    if _common.is_sysadmin(context):
+    if _common.is_content_admin(context):
         return {'success': True}
     return {'success': False, 'msg': tk._('Not authorized')}
 

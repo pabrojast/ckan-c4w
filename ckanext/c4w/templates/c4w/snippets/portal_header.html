@@ -38,7 +38,7 @@
         <ul>
           <li><a href="{{ h.c4w_url('account') }}">{{ _('My submissions') }}</a></li>
           <li><a href="{{ h.c4w_url('submit') }}">{{ _('Contribute') }}</a></li>
-          {% if h.c4w_is_sysadmin() %}
+          {% if h.c4w_is_content_admin() %}
             <li><a href="{{ h.c4w_url('admin_index') }}">{{ _('Admin') }}</a></li>
           {% endif %}
           {% if h.c4w_profile_url() %}

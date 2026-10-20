@@ -149,6 +149,12 @@ def c4w_profile_url():
         return None
 
 
+def c4w_is_content_admin():
+    from ckanext.c4w.logic.access import current_userobj
+    from ckanext.c4w.logic.permissions import is_content_admin
+    return is_content_admin(current_userobj())
+
+
 def c4w_is_sysadmin():
     """True when the current visitor is a CKAN sysadmin."""
     from ckanext.c4w.logic.access import current_userobj
@@ -373,6 +379,32 @@ def c4w_facet_active(name, value):
         return u'%s' % value in request.args.getlist(name)
     except Exception:
         return False
+
+
+def c4w_facet_selected_count(name):
+    from flask import request
+    return len(set(v for v in request.args.getlist(name) if v))
+
+
+def c4w_active_filters(params):
+    out = []
+    for name, values in params.items():
+        if name in ('q', 'order', 'page', 'period'):
+            continue
+        for value in values if isinstance(values, list) else [values]:
+            if not value:
+                continue
+            label = c4w_country_name(value) if name == 'country' else c4w_term_label(name, value)
+            out.append(dict(label=label, url=c4w_facet_toggle_url(name, value)))
+    return out
+
+
+def c4w_clear_filters_url():
+    from flask import request
+    endpoint = (request.endpoint or '').split('.')[-1]
+    args = {k: request.args[k] for k in ('q', 'order', 'period') if request.args.get(k)}
+    args.update(request.view_args or {})
+    return c4w_url(endpoint, **args)
 
 
 def c4w_any_facet_active(names):
@@ -643,6 +675,9 @@ def get_helpers():
         'c4w_facet_toggle_url': c4w_facet_toggle_url,
         'c4w_page_url': c4w_page_url,
         'c4w_facet_active': c4w_facet_active,
+        'c4w_facet_selected_count': c4w_facet_selected_count,
+        'c4w_active_filters': c4w_active_filters,
+        'c4w_clear_filters_url': c4w_clear_filters_url,
         'c4w_any_facet_active': c4w_any_facet_active,
         'c4w_image_url': c4w_image_url,
         'c4w_login_url': c4w_login_url,
@@ -652,6 +687,7 @@ def get_helpers():
         'c4w_image_limit_mb': c4w_image_limit_mb,
         'c4w_profile_url': c4w_profile_url,
         'c4w_is_sysadmin': c4w_is_sysadmin,
+        'c4w_is_content_admin': c4w_is_content_admin,
         'c4w_search_endpoint': c4w_search_endpoint,
         'c4w_detail_url': c4w_detail_url,
         'c4w_entity_title': c4w_entity_title,

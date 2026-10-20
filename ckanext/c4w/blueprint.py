@@ -71,6 +71,16 @@ def admin_inventory(section):
     return view(section)
 
 
+def admin_delete(section, item_id):
+    from ckanext.c4w.logic.views_admin import admin_delete as view
+    return view(section, item_id)
+
+
+def admin_cleanup(deletion_id):
+    from ckanext.c4w.logic.views_admin import admin_cleanup as view
+    return view(deletion_id)
+
+
 def admin_event_edit(event_id=None):
     from ckanext.c4w.logic.views_admin import admin_event_edit as view
     return view(event_id)
@@ -319,6 +329,10 @@ def _register(bp):
                     strict_slashes=False)
     bp.add_url_rule('/admin/<section>', 'admin_inventory', admin_inventory,
                     methods=['GET'], strict_slashes=False)
+    bp.add_url_rule('/admin/<section>/<item_id>/delete', 'admin_delete', admin_delete,
+                    methods=['GET', 'POST'])
+    bp.add_url_rule('/admin/deletions/<deletion_id>/retry', 'admin_cleanup', admin_cleanup,
+                    methods=['POST'])
     bp.add_url_rule('/admin/events/new', 'admin_event_new', admin_event_edit,
                     methods=['GET', 'POST'])
     bp.add_url_rule('/admin/events/<event_id>/edit', 'admin_event_edit', admin_event_edit,

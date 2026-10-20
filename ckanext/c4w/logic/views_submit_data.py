@@ -460,9 +460,14 @@ def delete(slug):
     dataset = _load(slug)
     if dataset is None:
         return tk.abort(404, tk._('Dataset not found'))
+    if c4w_helpers.c4w_is_content_admin():
+        return redirect(c4w_helpers.c4w_url('admin_delete', section='data', item_id=dataset['id']))
     try:
         tk.get_action('c4w_dataset_delete')(_context(), {'id': dataset['id']})
     except tk.NotAuthorized:
         return tk.abort(403, tk._('Not authorized'))
+    except tk.ValidationError as exc:
+        tk.h.flash_error(' '.join(exc.error_dict.get('message', [])))
+        return redirect(c4w_helpers.c4w_url('dataset_detail', slug=slug))
     tk.h.flash_success(tk._('Dataset removed.'))
     return redirect(c4w_helpers.c4w_url('account'))

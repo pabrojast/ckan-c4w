@@ -454,33 +454,21 @@ def c4w_dataset_delete(context, data_dict):
     The owner may delete their own unapproved dataset; a sysadmin any.
     """
     tk.check_access('c4w_dataset_delete', context, data_dict)
-    from ckan.model.meta import Session
-    from ckanext.c4w.logic import uploads
-
+    from ckanext.c4w.logic.action import deletion
+    from ckanext.c4w.logic import integrity
+    integrity.lock(db.Session)
     row = _require_editable(context, data_dict.get('id'))
-    if row.approved and not _common.is_sysadmin(context):
-        raise tk.NotAuthorized(
-            tk._('A published dataset can only be removed by a reviewer'))
-    files = (Session.query(db.C4wDatasetFile)
-             .filter(db.C4wDatasetFile.dataset_id == row.id).all())
-    stored = [f.stored_name for f in files if f.stored_name]
-    for query in (
-            Session.query(db.C4wDatasetFile)
-            .filter(db.C4wDatasetFile.dataset_id == row.id),
-            Session.query(db.C4wDashboardBundle)
-            .filter(db.C4wDashboardBundle.dataset_id == row.id),
-            Session.query(db.C4wTermLink)
-            .filter(db.C4wTermLink.entity_type == ENTITY,
-                    db.C4wTermLink.entity_id == row.id),
-            Session.query(db.C4wRelation)
-            .filter(db.C4wRelation.subject_type == ENTITY,
-                    db.C4wRelation.subject_id == row.id)):
-        query.delete(synchronize_session=False)
-    Session.delete(row)
-    Session.commit()
-    for name in stored:
-        uploads.delete_stored(name)
-    return {'id': row.id, 'deleted': True}
+    db.Session.refresh(row)
+    if _common.is_content_admin(context):
+        # Administrators always use the explicit preview/confirmation flow.
+        return deletion.c4w_entity_delete(context, dict(data_dict, entity_type=ENTITY))
+    if row.approved:
+        raise tk.NotAuthorized(tk._('A published dataset can only be removed by a reviewer'))
+    if deletion.dependencies(ENTITY, row):
+        deletion._error('Remove the links from the related items before deleting this item.')
+    if row.processing_status in ('queued', 'processing'):
+        deletion._error('Wait for dataset processing to finish before deleting it.')
+    return deletion.delete_row(context, ENTITY, row)
 
 
 # --------------------------------------------------------------------------- #

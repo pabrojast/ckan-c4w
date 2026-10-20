@@ -2427,15 +2427,15 @@ html.c4w-portal .c4w-choice p { margin: 0 !important; color: var(--c4w-muted) !i
 }
 
 @media (min-width: 56rem) {
-  .c4w-footer__inner { grid-template-columns: minmax(20rem, 1.8fr) 1fr 1fr 1fr; gap: 2rem; }
+  .c4w-footer__inner { grid-template-columns: minmax(24rem, 1.8fr) 1fr 1fr 1fr; gap: 2rem; }
 }
 
-.c4w-footer__logo { display: block; width: 5.5rem; margin: 0 0 1rem; }
-.c4w-footer__logos { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
-.c4w-footer__logos .c4w-footer__logo { flex: 0 0 auto; margin: 0; height: auto; }
-.c4w-footer__partner { display: block; object-fit: contain; height: auto; max-width: 100%; }
-.c4w-footer__partner--scivil { width: 6rem; }
-.c4w-footer__partner--flanders { width: 7.5rem; }
+.c4w-footer__logos { display: flex; align-items: center; gap: .375rem; margin-bottom: 1rem; }
+.c4w-footer__logos img { display: block; flex: none; object-fit: contain; width: auto; height: 44px; max-width: none; margin: 0; }
+@media (min-width: 56rem) {
+  .c4w-footer__logos { gap: 1rem; }
+  .c4w-footer__logos img { height: 56px; }
+}
 
 html.c4w-portal .c4w-footer__about { margin: 0 0 0.75rem !important; color: var(--c4w-muted) !important; font-size: 0.9rem !important; max-width: 40ch; }
 
@@ -2613,4 +2613,19 @@ html.c4w-portal .c4w-contribute > .c4w-contribute__note { font-size: 0.875rem !i
 @media (max-width: 767px) {
   .c4w-admin-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .c4w-admin-inventory .c4w-listing__search { flex: 1 1 100%; min-width: 0; }
+}
+
+/* Catalogue facets: native disclosure controls also work without JavaScript. */
+.c4w-facets__toggle { display: flex; align-items: center; gap: .5rem; cursor: pointer; padding: .75rem 1rem; font-weight: 600; }
+.c4w-facet__title { cursor: pointer; list-style: none; }
+.c4w-facet__title::-webkit-details-marker { display: none; }
+.c4w-facet__chevron { margin-left: auto; flex: none; }
+.c4w-facet[open] > summary .c4w-facet__chevron { transform: rotate(180deg); }
+.c4w-active-filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 1rem; }
+.c4w-active-filters .c4w-chip { display: inline-flex; gap: .5rem; padding: .35rem .7rem; border-radius: 999px; background: var(--c4w-pale); }
+.c4w-admin-inventory td:last-child { display: flex; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 62rem) {
+  .c4w-listing__header { order: 0; }
+  .c4w-facets { order: 1; margin-bottom: 1rem; }
+  .c4w-listing__results { order: 2; }
 }

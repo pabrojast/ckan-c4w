@@ -6,11 +6,11 @@ import ckan.plugins.toolkit as tk
 
 from ckanext.c4w import constants
 from ckanext.c4w.logic import helpers as c4w_helpers
-from ckanext.c4w.logic.access import require_sysadmin, safe_next
+from ckanext.c4w.logic.access import require_sysadmin, require_content_admin, safe_next
 
 
 def admin_index():
-    _user, bounced = require_sysadmin()
+    _user, bounced = require_content_admin()
     if bounced is not None:
         return bounced
     listing = tk.get_action('c4w_moderation_list')({}, {})
@@ -36,7 +36,7 @@ def admin_platforms():
 
 
 def admin_event_edit(event_id=None):
-    _, bounced = require_sysadmin()
+    _, bounced = require_content_admin()
     if bounced is not None:
         return bounced
     from ckan.model.meta import Session
@@ -65,7 +65,7 @@ def admin_event_edit(event_id=None):
 
 
 def admin_inventory(section):
-    _user, bounced = require_sysadmin()
+    _user, bounced = require_content_admin()
     if bounced is not None:
         return bounced
     entry = next((entry for entry in constants.ADMIN_SECTIONS if entry[0] == section), None)
@@ -79,6 +79,7 @@ def admin_inventory(section):
         return tk.abort(400, tk._('Invalid visibility filter.'))
     return tk.render('c4w/admin_inventory.html', extra_vars={
         'listing': listing, 'params': params, 'section': section,
+        'cleanup': tk.get_action('c4w_deletion_list')({}, {})['results'],
         'entity_type': entry[1], 'section_label': entry[2],
         'sections': tk.get_action('c4w_admin_summary')({}, {})['sections'],
         'return_url': c4w_helpers.c4w_url(
@@ -87,9 +88,53 @@ def admin_inventory(section):
     })
 
 
+def admin_delete(section, item_id):
+    _, bounced = require_content_admin()
+    if bounced is not None:
+        return bounced
+    entry = next((e for e in constants.ADMIN_SECTIONS if e[0] == section), None)
+    if entry is None:
+        tk.abort(404, tk._('Not found'))
+    args = {'entity_type': entry[1], 'id': item_id}
+    default = c4w_helpers.c4w_url('admin_inventory', section=section, visibility='hidden')
+    return_url = safe_next(request.values.get('next'), default)
+    errors = []
+    if request.method == 'POST':
+        args.update(version=request.form.get('version'), confirm_slug=request.form.get('confirm_slug'))
+        try:
+            result = tk.get_action('c4w_entity_delete')({}, args)
+        except tk.ValidationError as exc:
+            errors = exc.error_dict.get('message', [])
+        except tk.ObjectNotFound:
+            tk.abort(404, tk._('Not found'))
+        else:
+            tk.h.flash_success(tk._('Item permanently deleted.'))
+            if result['cleanup_pending']:
+                tk.h.flash_notice(tk._('Some stored files still need cleanup. You can retry from the inventory.'))
+            return redirect(return_url)
+    try:
+        preview = tk.get_action('c4w_entity_delete_preview')({}, args)
+    except tk.ObjectNotFound:
+        tk.abort(404, tk._('Not found'))
+    return tk.render('c4w/admin_delete.html', extra_vars={
+        'preview': preview, 'section': section, 'return_url': return_url, 'errors': errors})
+
+
+def admin_cleanup(deletion_id):
+    _, bounced = require_content_admin()
+    if bounced is not None:
+        return bounced
+    result = tk.get_action('c4w_deletion_cleanup')({}, {'id': deletion_id})
+    if result['cleanup_pending']:
+        tk.h.flash_error(tk._('Storage cleanup is still pending. Please try again later.'))
+    else:
+        tk.h.flash_success(tk._('Stored files cleaned up.'))
+    return redirect(safe_next(request.form.get('next'), c4w_helpers.c4w_url('admin_index')))
+
+
 def admin_moderate(entity, item_id, operation):
     """POST endpoint. GET is a 405 from the blueprint."""
-    _user, bounced = require_sysadmin()
+    _user, bounced = require_content_admin()
     if bounced is not None:
         return bounced
     if constants.moderate_error(entity, operation):

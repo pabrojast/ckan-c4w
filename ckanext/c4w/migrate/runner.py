@@ -203,7 +203,12 @@ class Runner(object):
         rows.sort(key=self._slug_priority)
 
         imported = 0
+        from ckanext.c4w.logic.integrity import lock
         for index, row in enumerate(rows, start=1):
+            lock(db.Session)
+            if db.Session.query(db.C4wDeletion.id).filter_by(entity_type=entity, legacy_id=row['id']).first():
+                self.report['skipped'].append('%s %s was permanently deleted' % (entity, row['id']))
+                continue
             result = mapper(row, lookups)
             if result.get('skip'):
                 self.report['skipped'].extend(result.get('notes', []))

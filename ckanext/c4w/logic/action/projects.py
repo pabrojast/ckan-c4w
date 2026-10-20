@@ -96,7 +96,7 @@ def _visible_to(project, context):
     user = context.get('auth_user_obj')
     if user is None:
         return False
-    if getattr(user, 'sysadmin', False):
+    if _common.is_content_admin(context):
         return True
     if project.created_by and project.created_by == user.id:
         return True

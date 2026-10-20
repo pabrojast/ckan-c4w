@@ -6,7 +6,7 @@
 {% block listing_search_label %}{{ _('Search platforms') }}{% endblock %}
 
 {% block listing_admin_actions %}
-  {% if h.c4w_is_sysadmin() %}
+  {% if h.c4w_is_content_admin() %}
     <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_platforms') }}">{{ _('Manage platforms') }}</a>
   {% endif %}
 {% endblock %}

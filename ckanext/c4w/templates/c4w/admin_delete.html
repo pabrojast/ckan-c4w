@@ -1,0 +1,36 @@
+{% extends 'c4w/base.html' %}
+{% block subtitle %}{{ _('Delete') }} · {{ preview.title }}{% endblock %}
+{% block c4w_content %}
+<div class="c4w-page c4w-auth c4w-auth--wide" id="c4w-main">
+  <h1>{{ _('Permanently delete this item?') }}</h1>
+  <h2>{{ preview.title }}</h2>
+  <p>{{ preview.entity_type | capitalize }} · <code>{{ preview.slug }}</code></p>
+  <p>{{ _('This cannot be undone. Its drafts, revisions and dataset files will also be removed. Shared images and external files are kept.') }}</p>
+  {% for error in errors %}<p class="c4w-form-errors" role="alert">{{ error }}</p>{% endfor %}
+  {% for reason in preview.blocked %}<p class="c4w-note">{{ reason }}</p>{% endfor %}
+  {% if preview.dependencies %}
+    <h2>{{ _('Related items to resolve first') }}</h2>
+    <ul>{% for item in preview.dependencies %}<li>
+      {% set url = h.c4w_detail_url(item) if item.slug else '' %}
+      {% if url %}<a href="{{ url }}">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}
+      — {{ item.reason }}
+    </li>{% endfor %}</ul>
+  {% endif %}
+  {% if preview.files %}<h2>{{ _('Dataset files') }}</h2><ul>
+    {% for file in preview.files %}<li>{{ file.name }}</li>{% endfor %}
+  </ul>{% endif %}
+  {% if preview.can_delete %}
+  <form class="c4w-form" method="post" action="{{ h.c4w_url('admin_delete', section=section, item_id=preview.id) }}">
+    {{ h.csrf_input() }}
+    <input type="hidden" name="next" value="{{ return_url }}">
+    <input type="hidden" name="version" value="{{ preview.version }}">
+    <label for="confirm-slug">{{ _('Type the identifier to confirm') }}: <strong>{{ preview.slug }}</strong></label>
+    <input id="confirm-slug" name="confirm_slug" autocomplete="off" required>
+    <div class="c4w-form__actions">
+      <a class="c4w-btn c4w-btn--quiet" href="{{ return_url }}">{{ _('Cancel') }}</a>
+      <button class="c4w-btn c4w-btn--danger" type="submit">{{ _('Permanently delete') }}</button>
+    </div>
+  </form>
+  {% else %}<a class="c4w-btn c4w-btn--quiet" href="{{ return_url }}">{{ _('Back to inventory') }}</a>{% endif %}
+</div>
+{% endblock %}

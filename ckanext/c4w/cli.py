@@ -394,3 +394,31 @@ def dataset_report(reference, dump_dir):
                 handle.write(gzip.decompress(blob.body))
     if dump_dir and blobs:
         click.secho(u'bundle written to %s' % dump_dir, fg=u'green')
+
+
+@c4w.command('content-admin')
+@click.argument('username')
+@click.option('--grant', 'grant', flag_value=True, default=True)
+@click.option('--revoke', 'grant', flag_value=False)
+@click.option('--actor', required=True, help='Active CKAN sysadmin performing this change.')
+@click.option('--apply', is_flag=True, help='Apply the grant/revocation; otherwise preview.')
+def content_admin(username, grant, actor, apply):
+    """Assign C4W content administration without changing CKAN sysadmin."""
+    from ckan import model
+    from ckanext.c4w import db
+    admin = model.User.get(actor)
+    user = model.User.get(username)
+    if not admin or not admin.sysadmin or admin.state != 'active':
+        raise click.ClickException('Actor must be an active CKAN sysadmin.')
+    if not user or user.state != 'active':
+        raise click.ClickException('Target must be an active existing CKAN account.')
+    db.ensure_mappers()
+    existing = db.Session.query(db.C4wPortalAdmin).filter_by(user_id=user.id).first()
+    if apply:
+        if grant and existing is None:
+            db.Session.add(db.C4wPortalAdmin(user_id=user.id, granted_by=admin.id))
+        elif not grant and existing is not None:
+            db.Session.delete(existing)
+        db.Session.commit()
+    click.echo('%s C4W content admin %s: %s' % ('Applied' if apply else 'Preview',
+                                               'grant' if grant else 'revocation', user.name))

@@ -277,7 +277,7 @@ def _read_auth(context, data_dict):
 
 @tk.auth_allow_anonymous_access
 def _admin_auth(context, data_dict):
-    return {'success': _common.is_sysadmin(context)}
+    return {'success': _common.is_content_admin(context)}
 
 
 def get_auth_functions():

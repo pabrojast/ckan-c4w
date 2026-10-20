@@ -127,7 +127,7 @@ def test_hide_unhide_preserves_approval_and_inventory_position(env, approved):
 def test_moderation_redirect_preserves_search_page_and_explains_visibility(env, monkeypatch, approved):
     row = project(env, 'Test project', approved=approved)
     notices = []
-    monkeypatch.setattr(views_admin, 'require_sysadmin', lambda: (env.contexts['admin']['auth_user_obj'], None))
+    monkeypatch.setattr(views_admin, 'require_content_admin', lambda: (env.contexts['admin']['auth_user_obj'], None))
     monkeypatch.setattr(views_admin.c4w_helpers, 'c4w_url', lambda endpoint, **kw: '/citizens4water/admin')
     monkeypatch.setattr(tk, 'h', SimpleNamespace(flash_success=notices.append))
     monkeypatch.setattr(tk, 'get_action', lambda name: lambda _context, data:

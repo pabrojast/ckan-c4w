@@ -102,7 +102,7 @@ def test_hide_unhide_preserves_approval_navigation_and_detail_permissions(env, m
     context = env.contexts['admin']
     original_order = [r['id'] for r in moderation.c4w_admin_platform_list(context, {})['results']]
     notices = []
-    monkeypatch.setattr(views_admin, 'require_sysadmin', lambda: (context['auth_user_obj'], None))
+    monkeypatch.setattr(views_admin, 'require_content_admin', lambda: (context['auth_user_obj'], None))
     monkeypatch.setattr(views_admin.c4w_helpers, 'c4w_url', lambda endpoint, **kw: '/citizens4water/admin')
     monkeypatch.setattr(tk, 'h', SimpleNamespace(flash_success=notices.append))
     monkeypatch.setattr(tk, 'get_action', lambda name: lambda _context, data:

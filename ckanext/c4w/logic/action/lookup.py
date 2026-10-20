@@ -42,7 +42,7 @@ def c4w_lookup(context, data_dict):
         if kind == 'project':
             user = context.get('auth_user_obj')
             if user:
-                if not _common.is_sysadmin(context):
+                if not _common.is_content_admin(context):
                     editors = Session.query(db.C4wRelation.subject_id).filter_by(
                         subject_type='project', predicate='editor', object_type='user', object_id=user.id)
                     query = query.filter(or_(public, cls.created_by == user.id, cls.id.in_(editors)))

@@ -5,7 +5,7 @@
     {{ _('You can preview this item because you have permission to manage it.') }}
   </p>
 {% endif %}
-{% if h.c4w_is_sysadmin() %}
+{% if h.c4w_is_content_admin() %}
   <div class="c4w-visibility-controls">
     {% if entity_type == 'event' %}<a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_event_edit', event_id=item.id) }}">{{ _('Edit event') }}</a>{% endif %}
     <form method="post" action="{{ h.c4w_url('admin_moderate', entity=entity_type, item_id=item.id, operation='hide') }}">
@@ -14,5 +14,6 @@
       <button class="c4w-btn c4w-btn--quiet" type="submit">{{ _('Unhide') if item.hidden else _('Hide') }}</button>
     </form>
     <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_inventory', section=section, q=item.slug) }}">{{ _('Manage visibility') }}</a>
+    {% if item.hidden %}<a class="c4w-btn c4w-btn--danger" href="{{ h.c4w_url('admin_delete', section=section, item_id=item.id) }}">{{ _('Delete') }}</a>{% endif %}
   </div>
 {% endif %}

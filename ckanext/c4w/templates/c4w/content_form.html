@@ -21,7 +21,7 @@
         {% for field, kind, label in [('project_id','project','Project'),('main_organisation_id','organisation','Organiser')] %}{% if data.get(field) %}<p><strong>{{ _(label) }}:</strong> {% for item in h.c4w_lookup_options(kind, data.get(field)) %}{{ item.title }}{% endfor %}</p>{% endif %}{% endfor %}
       {% endif %}
     </article>
-    {% if h.c4w_is_sysadmin() and draft.status == 'pending' %}
+    {% if h.c4w_is_content_admin() and draft.status == 'pending' %}
       <form class="c4w-form" method="post">
         {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ draft.version }}">
         {{ form.textarea('note', _('Feedback for the author'), '', errors, hint=_('Required when requesting changes.'), maxlength=2000) }}

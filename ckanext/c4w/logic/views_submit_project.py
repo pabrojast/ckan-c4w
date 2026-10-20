@@ -3,7 +3,7 @@ from flask import redirect, request, jsonify
 import ckan.plugins.toolkit as tk
 
 from ckanext.c4w.logic import forms, helpers, project_fields
-from ckanext.c4w.logic.access import require_user, require_sysadmin
+from ckanext.c4w.logic.access import require_user, require_content_admin
 
 
 def lookup(kind):
@@ -117,7 +117,7 @@ def step(project_id, step):
 
 
 def review(project_id):
-    _, bounced = require_sysadmin() if request.method == 'POST' else require_user()
+    _, bounced = require_content_admin() if request.method == 'POST' else require_user()
     if bounced is not None:
         return bounced
     draft = _load(project_id)

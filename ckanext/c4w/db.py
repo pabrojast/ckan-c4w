@@ -619,7 +619,30 @@ c4w_content_revision_table = Table(
 )
 
 
+c4w_portal_admin_table = Table(
+    'c4w_portal_admin', metadata,
+    Column('user_id', types.UnicodeText, primary_key=True),
+    Column('granted_by', types.UnicodeText, nullable=False),
+    Column('created', types.DateTime, nullable=False, default=_utcnow),
+)
+
+# Durable audit and cleanup outbox. It contains no deleted content or passwords.
+c4w_deletion_table = Table(
+    'c4w_deletion', metadata,
+    Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
+    Column('entity_type', types.UnicodeText, nullable=False),
+    Column('entity_id', types.UnicodeText, nullable=False),
+    Column('legacy_id', types.Integer),
+    Column('slug', types.UnicodeText, nullable=False),
+    Column('deleted_by', types.UnicodeText, nullable=False),
+    Column('created', types.DateTime, nullable=False, default=_utcnow),
+    Column('pending_files', types.UnicodeText, nullable=False, default='[]'),
+    UniqueConstraint('entity_type', 'entity_id', name='uq_c4w_deletion_entity'),
+)
+
 _ALL_TABLES = [
+    c4w_portal_admin_table,
+    c4w_deletion_table,
     c4w_content_revision_table,
     c4w_project_revision_table,
     c4w_term_link_table,
@@ -707,6 +730,14 @@ class C4wContentRevision(DomainObject):
     pass
 
 
+class C4wPortalAdmin(DomainObject):
+    pass
+
+
+class C4wDeletion(DomainObject):
+    pass
+
+
 # Entity type name -> mapped class. The single place that resolves the
 # ``<entity>`` path segment of the moderation routes to a table, so no other
 # module needs its own if-chain.
@@ -745,7 +776,11 @@ def _ensure_mappers():
     mapper(C4wUserProfile, c4w_user_profile_table)
     mapper(C4wProjectRevision, c4w_project_revision_table)
     mapper(C4wContentRevision, c4w_content_revision_table)
+    mapper(C4wPortalAdmin, c4w_portal_admin_table)
+    mapper(C4wDeletion, c4w_deletion_table)
     _mapped = True
+    from ckanext.c4w.logic.integrity import install
+    install()
 
 
 def ensure_mappers():
