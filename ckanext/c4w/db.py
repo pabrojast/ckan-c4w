@@ -306,6 +306,8 @@ c4w_platform_table = Table(
     # entities resolved, plus every vocabulary label. See logic/query.py.
     Column('search_text', types.UnicodeText),
     Column('approved', types.Boolean, default=True),
+    Column('hidden', types.Boolean, default=False, server_default=sa.false(),
+           nullable=False),
     Column('created_by', types.UnicodeText),
     Column('extras', types.UnicodeText, default=u'{}'),
     Column('created', types.DateTime, default=_utcnow),
@@ -760,6 +762,7 @@ def ensure_mappers():
 #
 # Tuples are (table_name, column_name, column_sql_type).
 _AUTO_HEAL_COLUMNS = [
+    ('c4w_platform', 'hidden', 'BOOLEAN NOT NULL DEFAULT FALSE'),
     ('c4w_user_profile', 'registration_next', 'TEXT'),
     ('c4w_user_profile', 'given_name', 'TEXT'),
     ('c4w_user_profile', 'surname', 'TEXT'),

@@ -1,0 +1,60 @@
+{% extends "c4w/base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
+
+{% block subtitle %}{{ _('All platforms') }} · {{ _('Admin') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-admin-inventory c4w-admin-platforms" id="c4w-main">
+    <header class="c4w-pagehead">
+      <div>
+        <h1>{{ _('All platforms') }}</h1>
+        <p class="c4w-listing__count">{{ ungettext('{n} platform', '{n} platforms', listing.count).format(n=listing.count) }}</p>
+      </div>
+      <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_index') }}">{{ _('Moderation') }}</a>
+    </header>
+    <p class="c4w-form__lede">{{ _('Manage visibility for all platforms. Only approved platforms that are not hidden appear in the public catalogue.') }}</p>
+    <form class="c4w-listing__controls" method="get" action="{{ h.c4w_url('admin_platforms') }}">
+      <div class="c4w-listing__search">
+        <label class="c4w-sr-only" for="c4w-q">{{ _('Search platforms') }}</label>
+        <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}" placeholder="{{ _('Search platforms') }}…">
+        <button type="submit" aria-label="{{ _('Search') }}">{{ ui.icon('search') }}</button>
+      </div>
+      {% if params.q %}<a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_platforms') }}">{{ _('Clear search') }}</a>{% endif %}
+    </form>
+    {% if listing.results %}
+      <div class="c4w-table-wrap"><table class="c4w-table">
+        <thead><tr><th scope="col">{{ _('Platform') }}</th><th scope="col">{{ _('Publication') }}</th><th scope="col">{{ _('Actions') }}</th></tr></thead>
+        <tbody>
+          {% for platform in listing.results %}
+            <tr>
+              <td>
+                <a href="{{ h.c4w_url('platform_detail', slug=platform.slug) }}">{{ platform.name }}</a>
+                <br><span class="c4w-files__meta">{{ _('Slug') }}: <code>{{ platform.slug }}</code></span>
+                {% if platform.url %}<br><span class="c4w-files__meta">{{ platform.url }}</span>{% endif %}
+              </td>
+              <td>
+                {% if platform.approved and not platform.hidden %}
+                  <span class="c4w-badge c4w-badge--approved">{{ _('Published') }}</span>
+                {% else %}
+                  <span class="c4w-badge c4w-badge--hidden">{{ _('Not visible to the public') }}</span>
+                  {% if platform.hidden %}<span class="c4w-badge c4w-badge--hidden">{{ _('Hidden') }}</span>{% endif %}
+                  {% if not platform.approved %}<span class="c4w-badge c4w-badge--pending">{{ _('Not approved') }}</span>{% endif %}
+                {% endif %}
+              </td>
+              <td>
+                <form method="post" action="{{ h.c4w_url('admin_moderate', entity='platform', item_id=platform.id, operation='hide') }}">
+                  {{ h.csrf_input() }}
+                  <input type="hidden" name="next" value="{{ return_url }}">
+                  <button type="submit" class="c4w-btn c4w-btn--quiet">{% if platform.hidden %}{{ _('Unhide') }}{% else %}{{ _('Hide') }}{% endif %}</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+      {% snippet 'c4w/snippets/pagination.html', page=listing.page, pages=listing.pages %}
+    {% else %}
+      <p class="c4w-empty">{{ _('No platforms match your search.') }}</p>
+    {% endif %}
+  </div>
+{% endblock %}

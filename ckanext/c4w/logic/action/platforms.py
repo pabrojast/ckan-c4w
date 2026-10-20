@@ -48,7 +48,15 @@ def _enrich(out):
 
 c4w_platform_show = _common.make_show(
     'platform', db.C4wPlatform, 'c4w_platform_show', enrich=_enrich)
-c4w_platform_list = _common.make_list(spec, 'c4w_platform_list')
+
+
+@tk.side_effect_free
+def c4w_platform_list(context, data_dict):
+    """Public catalogue for every role; private rows live in the inventory."""
+    tk.check_access('c4w_platform_list', context, data_dict)
+    return q.build_listing(spec(), data_dict or {}, include_private=False)
+
+
 c4w_platform_facets = _common.make_facets(spec, 'c4w_platform_facets')
 
 

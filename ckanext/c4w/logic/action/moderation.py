@@ -115,6 +115,24 @@ def c4w_admin_project_list(context, data_dict):
 
 
 @tk.side_effect_free
+def c4w_admin_platform_list(context, data_dict):
+    """All platforms, including published, hidden and unapproved rows."""
+    tk.check_access('c4w_admin_platform_list', context, data_dict)
+    from ckanext.c4w.logic import query
+
+    db.ensure_mappers()
+    spec = query.ListingSpec(
+        entity_type='platform',
+        model_cls=db.C4wPlatform,
+        search_columns=('name', 'slug'),
+        orderings={'name': lambda m: [m.name.asc(), m.id.asc()]},
+        default_order='name',
+        page_size=25,
+    )
+    return query.build_listing(spec, data_dict or {}, include_private=True)
+
+
+@tk.side_effect_free
 def c4w_moderation_list(context, data_dict):
     """The reviewer's queue: unapproved or hidden rows, grouped by type."""
     tk.check_access('c4w_moderation_list', context, data_dict)
@@ -223,6 +241,7 @@ def get_actions():
     return {
         'c4w_my_submissions': c4w_my_submissions,
         'c4w_admin_project_list': c4w_admin_project_list,
+        'c4w_admin_platform_list': c4w_admin_platform_list,
         'c4w_moderation_list': c4w_moderation_list,
         'c4w_entity_moderate': c4w_entity_moderate,
     }
@@ -255,6 +274,7 @@ def get_auth_functions():
     return {
         'c4w_my_submissions': c4w_my_submissions_auth,
         'c4w_admin_project_list': c4w_moderation_list_auth,
+        'c4w_admin_platform_list': c4w_moderation_list_auth,
         'c4w_moderation_list': c4w_moderation_list_auth,
         'c4w_entity_moderate': c4w_entity_moderate_auth,
     }

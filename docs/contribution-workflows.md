@@ -165,6 +165,27 @@ restoration procedure. Live production import/cutover is a separate delivery.
 
 The public project catalogue, its counts and its home-page selections show
 only approved projects that are not hidden, including for sysadmins.
+
+### Platform visibility
+
+`/citizens4water/admin/platforms` and `c4w_admin_platform_list` provide the
+sysadmin-only platform inventory. Search matches names and slugs; pages contain
+25 rows by default, ordered by name/id. Each row shows its slug and external
+URL so duplicate names remain distinguishable. The moderation page, public
+platform listing and platform details link to the inventory for sysadmins.
+
+Platforms support the existing `c4w_entity_moderate` `hide` operation. It toggles
+`hidden` without changing approval; Unhide does not publish a pending platform.
+Forms retain search/page context and require the existing CSRF protection.
+The public platform catalogue, facets and headline count always exclude hidden
+and unapproved rows for every role. Authorized detail previews display a
+visibility notice; other callers receive 404 for non-public platform details.
+
+The schema bootstrap adds `c4w_platform.hidden BOOLEAN NOT NULL DEFAULT FALSE`
+to existing databases without changing their rows' approval or addresses.
+Run `ckan c4w init-db` with the candidate image and verify the column before
+switching traffic. Repeating the upgrade preserves existing hidden values.
+Rolling back the application image may retain this compatible extra column.
 `/citizens4water/admin/projects` is the sysadmin inventory: it includes every
 project, supports search and pagination, and offers Hide/Unhide while keeping
 the current search and page. Its read-only action, `c4w_admin_project_list`,

@@ -41,6 +41,21 @@ def admin_projects():
     })
 
 
+def admin_platforms():
+    _user, bounced = require_sysadmin()
+    if bounced is not None:
+        return bounced
+    params = {key: request.args.get(key) for key in ('q', 'page')
+              if request.args.get(key)}
+    listing = tk.get_action('c4w_admin_platform_list')({}, params)
+    return tk.render('c4w/admin_platforms.html', extra_vars={
+        'listing': listing,
+        'params': params,
+        'return_url': c4w_helpers.c4w_url(
+            'admin_platforms', q=params.get('q', ''), page=listing['page']),
+    })
+
+
 def admin_moderate(entity, item_id, operation):
     """POST endpoint. GET is a 405 from the blueprint."""
     _user, bounced = require_sysadmin()

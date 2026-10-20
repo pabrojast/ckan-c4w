@@ -79,6 +79,7 @@ MODERATION_OPS = (
 # rather than probing a live row, so a URL cannot invent a column.
 ENTITY_HAS_HIDDEN = (
     'project',
+    'platform',
     'resource',
     'dataset',
 )

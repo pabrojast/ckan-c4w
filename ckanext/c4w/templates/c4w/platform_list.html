@@ -5,6 +5,12 @@
 {% block listing_count %}{{ ungettext('{n} platform', '{n} platforms', listing.count).format(n=listing.count) }}{% endblock %}
 {% block listing_search_label %}{{ _('Search platforms') }}{% endblock %}
 
+{% block listing_admin_actions %}
+  {% if h.c4w_is_sysadmin() %}
+    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_platforms') }}">{{ _('Manage platforms') }}</a>
+  {% endif %}
+{% endblock %}
+
 {% block listing_cards %}
   <div class="c4w-card-grid">
     {% for platform in listing.results %}
