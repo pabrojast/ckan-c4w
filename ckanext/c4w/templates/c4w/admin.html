@@ -6,7 +6,9 @@
   <div class="c4w-page" id="c4w-main">
     <header class="c4w-pagehead">
       <h1>{{ _('Moderation') }}</h1>
+      <a class="c4w-btn" href="{{ h.c4w_url('admin_projects') }}">{{ _('All projects') }}</a>
     </header>
+    <p class="c4w-form__lede">{{ _('This queue contains items awaiting review or hidden items. Use All projects to manage published projects too.') }}</p>
 
     {% if project_requests %}
       <section class="c4w-queue">

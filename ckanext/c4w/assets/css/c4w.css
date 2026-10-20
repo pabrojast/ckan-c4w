@@ -1833,6 +1833,27 @@ html.c4w-portal .c4w-detail__actions--top { margin: 0 0 1.25rem !important; }
 .c4w-table__actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .c4w-table__actions form { margin: 0; display: flex; gap: 0.4rem; }
 
+.c4w-admin-projects .c4w-listing__controls { margin-bottom: 1.25rem; }
+.c4w-admin-projects .c4w-table { table-layout: fixed; }
+.c4w-admin-projects .c4w-table th:first-child { width: 50%; }
+.c4w-admin-projects .c4w-table td { overflow-wrap: anywhere; }
+.c4w-admin-projects .c4w-badge { white-space: normal; }
+.c4w-admin-projects .c4w-table form { margin: 0; }
+.c4w-project-visibility {
+  padding: 1rem;
+  border-left: 4px solid var(--c4w-blue);
+  border-radius: var(--c4w-radius);
+  background: var(--c4w-pale);
+}
+.c4w-project-visibility strong { display: block; }
+
+@media (max-width: 40rem) {
+  .c4w-admin-projects .c4w-table th:first-child { width: 40%; }
+  .c4w-admin-projects .c4w-table th,
+  .c4w-admin-projects .c4w-table td { padding: 0.65rem 0.4rem; }
+  .c4w-admin-projects .c4w-table .c4w-btn { padding: 0.5rem; }
+}
+
 .c4w-chooser {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));

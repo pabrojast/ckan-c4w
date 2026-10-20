@@ -170,10 +170,9 @@ def c4w_project_show(context, data_dict):
 
 @tk.side_effect_free
 def c4w_project_list(context, data_dict):
-    """The faceted /projects listing."""
+    """The public catalogue, including when a sysadmin is browsing."""
     tk.check_access('c4w_project_list', context, data_dict)
-    return q.build_listing(_spec(), data_dict or {},
-                           include_private=_common.is_sysadmin(context))
+    return q.build_listing(_spec(), data_dict or {})
 
 
 @tk.side_effect_free

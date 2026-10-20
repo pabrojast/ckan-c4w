@@ -160,3 +160,18 @@ Schema changes are additive and idempotent. Rolling back the image must keep
 the revision table and registration destination column. See
 `c4w-backup-restore.md` for the selective development backup and isolated
 restoration procedure. Live production import/cutover is a separate delivery.
+
+## Project visibility and administration
+
+The public project catalogue, its counts and its home-page selections show
+only approved projects that are not hidden, including for sysadmins.
+`/citizens4water/admin/projects` is the sysadmin inventory: it includes every
+project, supports search and pagination, and offers Hide/Unhide while keeping
+the current search and page. Its read-only action, `c4w_admin_project_list`,
+requires a sysadmin and accepts `q`, `page` and `page_size` (25 by default,
+at most 100); it returns the standard listing envelope.
+
+The existing `/citizens4water/admin` review queue remains separate. Hiding
+does not delete a project or change approval; unhiding an unapproved project
+does not publish it. Authorised owners, editors and sysadmins can still
+preview non-public detail pages, which display a visibility notice.

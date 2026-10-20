@@ -1,0 +1,56 @@
+{% extends "c4w/base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
+
+{% block subtitle %}{{ _('All projects') }} · {{ _('Admin') }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-admin-projects" id="c4w-main">
+    <header class="c4w-pagehead">
+      <div>
+        <h1>{{ _('All projects') }}</h1>
+        <p class="c4w-listing__count">{{ ungettext('{n} project', '{n} projects', listing.count).format(n=listing.count) }}</p>
+      </div>
+      <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_index') }}">{{ _('Moderation') }}</a>
+    </header>
+    <p class="c4w-form__lede">{{ _('Manage visibility for all projects. Only approved projects that are not hidden appear in the public catalogue.') }}</p>
+    <form class="c4w-listing__controls" method="get" action="{{ h.c4w_url('admin_projects') }}">
+      <div class="c4w-listing__search">
+        <label class="c4w-sr-only" for="c4w-q">{{ _('Search projects') }}</label>
+        <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}" placeholder="{{ _('Search projects') }}…">
+        <button type="submit" aria-label="{{ _('Search') }}">{{ ui.icon('search') }}</button>
+      </div>
+      {% if params.q %}<a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_projects') }}">{{ _('Clear search') }}</a>{% endif %}
+    </form>
+    {% if listing.results %}
+      <div class="c4w-table-wrap"><table class="c4w-table">
+        <thead><tr><th scope="col">{{ _('Project') }}</th><th scope="col">{{ _('Publication') }}</th><th scope="col">{{ _('Actions') }}</th></tr></thead>
+        <tbody>
+          {% for project in listing.results %}
+            <tr>
+              <td><a href="{{ h.c4w_url('project_detail', slug=project.slug) }}">{{ project.name }}</a></td>
+              <td>
+                {% if project.approved and not project.hidden %}
+                  <span class="c4w-badge c4w-badge--approved">{{ _('Published') }}</span>
+                {% else %}
+                  <span class="c4w-badge c4w-badge--hidden">{{ _('Not visible to the public') }}</span>
+                  {% if project.hidden %}<span class="c4w-badge c4w-badge--hidden">{{ _('Hidden') }}</span>{% endif %}
+                  {% if not project.approved %}<span class="c4w-badge c4w-badge--pending">{{ _('Not approved') }}</span>{% endif %}
+                {% endif %}
+              </td>
+              <td>
+                <form method="post" action="{{ h.c4w_url('admin_moderate', entity='project', item_id=project.id, operation='hide') }}">
+                  {{ h.csrf_input() }}
+                  <input type="hidden" name="next" value="{{ return_url }}">
+                  <button type="submit" class="c4w-btn c4w-btn--quiet">{% if project.hidden %}{{ _('Unhide') }}{% else %}{{ _('Hide') }}{% endif %}</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+      {% snippet 'c4w/snippets/pagination.html', page=listing.page, pages=listing.pages %}
+    {% else %}
+      <p class="c4w-empty">{{ _('No projects match your search.') }}</p>
+    {% endif %}
+  </div>
+{% endblock %}

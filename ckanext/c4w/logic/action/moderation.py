@@ -95,6 +95,26 @@ def c4w_my_submissions(context, data_dict):
 
 
 @tk.side_effect_free
+def c4w_admin_project_list(context, data_dict):
+    """The complete project inventory, separate from the review queue."""
+    tk.check_access('c4w_admin_project_list', context, data_dict)
+    from ckanext.c4w.logic import query
+
+    db.ensure_mappers()
+    spec = query.ListingSpec(
+        entity_type='project',
+        model_cls=db.C4wProject,
+        search_columns=('name', 'slug', 'search_text'),
+        # Hiding updates modified. A name/id order keeps rows on their page.
+        orderings={'name': lambda m: [m.name.asc(), m.id.asc()]},
+        default_order='name',
+        page_size=25,
+        defer_columns=('geom_geojson',),
+    )
+    return query.build_listing(spec, data_dict or {}, include_private=True)
+
+
+@tk.side_effect_free
 def c4w_moderation_list(context, data_dict):
     """The reviewer's queue: unapproved or hidden rows, grouped by type."""
     tk.check_access('c4w_moderation_list', context, data_dict)
@@ -202,6 +222,7 @@ def c4w_entity_moderate(context, data_dict):
 def get_actions():
     return {
         'c4w_my_submissions': c4w_my_submissions,
+        'c4w_admin_project_list': c4w_admin_project_list,
         'c4w_moderation_list': c4w_moderation_list,
         'c4w_entity_moderate': c4w_entity_moderate,
     }
@@ -233,6 +254,7 @@ def c4w_entity_moderate_auth(context, data_dict):
 def get_auth_functions():
     return {
         'c4w_my_submissions': c4w_my_submissions_auth,
+        'c4w_admin_project_list': c4w_moderation_list_auth,
         'c4w_moderation_list': c4w_moderation_list_auth,
         'c4w_entity_moderate': c4w_entity_moderate_auth,
     }

@@ -26,6 +26,21 @@ def admin_index():
     })
 
 
+def admin_projects():
+    _user, bounced = require_sysadmin()
+    if bounced is not None:
+        return bounced
+    params = {key: request.args.get(key) for key in ('q', 'page')
+              if request.args.get(key)}
+    listing = tk.get_action('c4w_admin_project_list')({}, params)
+    return tk.render('c4w/admin_projects.html', extra_vars={
+        'listing': listing,
+        'params': params,
+        'return_url': c4w_helpers.c4w_url(
+            'admin_projects', q=params.get('q', ''), page=listing['page']),
+    })
+
+
 def admin_moderate(entity, item_id, operation):
     """POST endpoint. GET is a 405 from the blueprint."""
     _user, bounced = require_sysadmin()
@@ -46,7 +61,14 @@ def admin_moderate(entity, item_id, operation):
     except tk.ValidationError:
         tk.h.flash_error(tk._('Open the proposal review to approve its changes.'))
         return redirect(c4w_helpers.c4w_url('admin_index'))
-    if operation == 'process':
+    if operation == 'hide':
+        if result.get('hidden'):
+            tk.h.flash_success(tk._('Hidden. This item is not visible to the public.'))
+        elif result.get('approved'):
+            tk.h.flash_success(tk._('Visible to the public.'))
+        else:
+            tk.h.flash_success(tk._('Unhidden. This item still needs approval before it is public.'))
+    elif operation == 'process':
         status = result.get('processing_status')
         if status == 'ready':
             tk.h.flash_success(tk._('Processing finished.'))
