@@ -19,7 +19,7 @@ def _load(entity, content_id):
         tk.abort(404, tk._('Contribution not found.'))
 
 
-def _render(entity, draft=None, data=None, errors=None, review=False):
+def _render(entity, draft=None, data=None, errors=None, review=False, admin_mode=False):
     data = dict(data if data is not None else (draft or {}).get('payload', {}))
     # Invalid submissions may be echoed into a contenteditable: sanitize that echo too.
     for name in ('content', 'description'):
@@ -27,7 +27,7 @@ def _render(entity, draft=None, data=None, errors=None, review=False):
             sanitizer = content_write.sanitize_rich_html if name == 'content' else content_write.sanitize_html
             data[name] = sanitizer(str(data[name] or ''))
     return tk.render('c4w/content_form.html', extra_vars=dict(entity=entity, draft=draft,
-        data=data, errors=forms.errors_for_template(errors or {}), review=review))
+        data=data, errors=forms.errors_for_template(errors or {}), review=review, admin_mode=admin_mode))
 
 
 def edit(entity, content_id=None):

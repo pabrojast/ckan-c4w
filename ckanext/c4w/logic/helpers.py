@@ -335,6 +335,7 @@ def c4w_facet_toggle_url(name, value):
         if key.startswith('_'):
             continue
         flat[key] = values[0] if len(values) == 1 else values
+    flat.update(request.view_args or {})
     return c4w_url(endpoint, **flat)
 
 
@@ -360,6 +361,7 @@ def c4w_page_url(page):
         if kept:
             args[key] = kept[0] if len(kept) == 1 else kept
     args['page'] = page
+    args.update(request.view_args or {})
     endpoint = (request.endpoint or '').split('.')[-1]
     return c4w_url(endpoint, **args)
 
@@ -492,7 +494,7 @@ def c4w_language_options():
             for code in constants.DATASET_LANGUAGES]
 
 
-def c4w_country_options():
+def c4w_country_options(current=None):
     """Every ISO 3166-1 territory as ``[(code, name)]``, sorted by name."""
     try:
         from babel import Locale
@@ -501,7 +503,19 @@ def c4w_country_options():
                  if len(code) == 2 and code.isalpha() and code.isupper()]
     except Exception:
         return []
+    if current and current not in dict(pairs):
+        pairs.append((current, current))
     return sorted(pairs, key=lambda pair: pair[1].casefold())
+
+
+def c4w_site_host():
+    from urllib.parse import urlsplit
+    return urlsplit(tk.config.get('ckan.site_url', '')).netloc
+
+
+def c4w_event_status(event):
+    from ckanext.c4w.logic.event_dates import status
+    return status(event)
 
 
 # Entity (or nav stat key) -> icon symbol in snippets/icons.html.
@@ -597,6 +611,8 @@ def c4w_admin_section(entity_type, item=None):
 
 def get_helpers():
     return {
+        'c4w_site_host': c4w_site_host,
+        'c4w_event_status': c4w_event_status,
         'c4w_is_public': c4w_is_public,
         'c4w_admin_section': c4w_admin_section,
         'c4w_lookup_options': c4w_lookup_options,

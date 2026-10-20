@@ -15,6 +15,7 @@
       <div>
         <h1>{{ _('Events') }}</h1>
         <p class="c4w-listing__count">{{ _('Meetings, campaigns and courses of the citizen science and water community.') }}</p>
+        {% if h.c4w_is_sysadmin() %}<a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_inventory', section='events') }}">{{ _('Manage events') }}</a>{% endif %}
       </div>
       <form class="c4w-listing__controls" method="get"
             action="{{ h.c4w_url('event_list') }}">
@@ -53,6 +54,11 @@
             {% snippet 'c4w/snippets/event_card.html', event=event %}
           {% endfor %}
         </div>
+      </section>
+    {% endif %}
+    {% if listing.undated %}
+      <section><h2>{{ _('Dates to be announced') }}</h2>
+        {% for event in listing.undated %}{% snippet 'c4w/snippets/event_card.html', event=event %}{% endfor %}
       </section>
     {% endif %}
 

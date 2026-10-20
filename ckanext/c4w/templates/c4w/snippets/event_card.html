@@ -13,6 +13,7 @@
       <a href="{{ h.c4w_url('event_detail', slug=event.slug) }}">{{ event.title }}</a>
     </{{ heading_tag | default('h2') }}>
     <p class="c4w-card__meta">
+      {% if event.calendar_status == 'ongoing' %}<span class="c4w-badge">{{ _('In progress') }}</span>{% endif %}
       {% if event.place %}<span class="c4w-card__place">{{ ui.icon('map-pin', 'c4w-icon--sm') }} {{ event.place }}</span>{% endif %}
       {% if event.event_type %}<span class="c4w-card__status">{{ h.c4w_term_label('event_type', event.event_type) }}</span>{% endif %}
     </p>

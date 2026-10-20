@@ -35,6 +35,35 @@ def admin_platforms():
     return admin_inventory('platforms')
 
 
+def admin_event_edit(event_id=None):
+    _, bounced = require_sysadmin()
+    if bounced is not None:
+        return bounced
+    from ckan.model.meta import Session
+    from ckanext.c4w.logic import forms, views_submit_content
+    draft = views_submit_content._load('event', event_id) if event_id else None
+    if request.method == 'GET':
+        return views_submit_content._render('event', draft, admin_mode=True)
+    data = forms.parse_form_data(request.form)
+    args = dict(data)
+    if event_id:
+        args['id'] = event_id
+    else:
+        args.pop('id', None)
+    try:
+        saved = tk.get_action('c4w_event_admin_save')({}, args)
+    except tk.ValidationError as exc:
+        Session.rollback()
+        # Do not silently refresh the version and allow a second click to
+        # overwrite changes made in another window.
+        if draft:
+            draft['version'] = data.get('version', '')
+        return views_submit_content._render('event', draft, data, exc.error_dict, admin_mode=True)
+    tk.h.flash_success(tk._('Event changes published. Its visibility setting is unchanged.')
+                      if data.get('mode') == 'publish' else tk._('Draft saved.'))
+    return redirect(c4w_helpers.c4w_url('admin_event_edit', event_id=saved['id']))
+
+
 def admin_inventory(section):
     _user, bounced = require_sysadmin()
     if bounced is not None:

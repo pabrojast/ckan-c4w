@@ -7,6 +7,7 @@
     <div><h1>{{ _('All content') }} · {{ _(section_label) }}</h1>
       <p class="c4w-listing__count">{{ ungettext('{n} item', '{n} items', listing.count).format(n=listing.count) }}</p>
     </div>
+    {% if entity_type == 'event' %}<a class="c4w-btn" href="{{ h.c4w_url('admin_event_new') }}">{{ _('New event') }}</a>{% endif %}
     <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_index') }}">{{ _('Moderation') }}</a>
   </header>
   {% snippet 'c4w/snippets/admin_navigation.html', sections=sections, section=section %}
@@ -34,8 +35,17 @@
           <small class="c4w-admin-slug">{{ item.slug }}</small>
           {% if entity_type == 'platform' and item.url %}<small class="c4w-admin-slug">{{ item.url }}</small>{% endif %}
           {% if entity_type == 'dataset' %}<small class="c4w-admin-slug">{{ h.c4w_status_badge(item.processing_status) }}</small>{% endif %}
+          {% if entity_type == 'event' %}
+            <small class="c4w-admin-slug">{{ (item.start_date or '')[:10] }}{% if item.end_date %} – {{ item.end_date[:10] }}{% endif %}</small>
+            {% set calendar_status = h.c4w_event_status(item) %}
+            <span class="c4w-badge">{{ _({'past':'Past', 'ongoing':'In progress', 'upcoming':'Upcoming', 'undated':'No date'}[calendar_status]) }}</span>
+          {% endif %}
         </td>
         <td>
+          {% if entity_type == 'event' %}
+            <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_event_edit', event_id=item.id) }}">{{ _('Edit') }}</a>
+            <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_detail_url(item) }}">{{ _('View') }}</a>
+          {% endif %}
           {% if item.public_visible %}<span class="c4w-badge c4w-badge--approved">{{ _('Published') }}</span>
           {% else %}
             <span class="c4w-badge c4w-badge--hidden">{{ _('Not visible to the public') }}</span>

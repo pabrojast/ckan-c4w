@@ -13,7 +13,7 @@ from ckanext.c4w.text import html_to_text
 FIELDS = {
     'post': ('title', 'content', 'excerpt'),
     'event': ('title', 'description', 'start_date', 'end_date', 'place',
-              'country', 'timezone', 'language', 'event_type', 'url',
+              'country', 'hour', 'timezone', 'language', 'event_type', 'url',
               'project_id', 'main_organisation_id'),
 }
 
@@ -25,7 +25,17 @@ def kind(data):
     return value
 
 
-def validate(entity, data, context, complete=False):
+def country_code(value):
+    """Normalize recognized legacy English country names without losing others."""
+    from babel import Locale
+    value = str(value or '').strip()
+    for code, name in Locale.parse('en').territories.items():
+        if len(code) == 2 and code.isalpha() and value.casefold() == name.casefold():
+            return code
+    return value
+
+
+def validate(entity, data, context, complete=False, legacy_country=None):
     out, errors = {}, {}
     for name in FIELDS[entity]:
         value = data.get(name) or ''
@@ -36,6 +46,11 @@ def validate(entity, data, context, complete=False):
                 value = (sanitize_rich_html if entity == 'post' else sanitize_html)(str(value))
             elif name in ('start_date', 'end_date'):
                 value = checks.check_date(value).isoformat() if value else ''
+            elif name == 'hour' and value:
+                value = datetime.time.fromisoformat(str(value))
+                if value.tzinfo or value.microsecond:
+                    raise ValueError('Enter a local time as HH:MM or HH:MM:SS.')
+                value = value.isoformat()
             elif name == 'url':
                 value = checks.check_url(value)
             elif name == 'timezone' and value:
@@ -44,7 +59,9 @@ def validate(entity, data, context, complete=False):
             elif name == 'language' and value:
                 value = checks.check_language_code(value)
             elif name == 'country' and value:
-                value = checks.check_country_code(value)
+                value = country_code(value)
+                if value != legacy_country:
+                    value = checks.check_country_code(value)
             elif name == 'event_type' and value:
                 if value not in dict(constants.EVENT_TYPES):
                     raise ValueError('Choose an event type from the list.')
@@ -91,14 +108,22 @@ def _snapshot(entity, row):
     out = {}
     for name in FIELDS[entity]:
         value = getattr(row, name, '') or ''
-        out[name] = value.date().isoformat() if isinstance(value, datetime.datetime) else value
+        if isinstance(value, datetime.datetime):
+            value = value.date().isoformat()
+        elif isinstance(value, datetime.time):
+            value = value.isoformat()
+        out[name] = country_code(value) if name == 'country' else value
     if entity == 'post':
         out['image_url'] = row.image_url or ''
     return out
 
 
 def dictize(entity, row, rev):
-    payload = db.load_extras(rev.payload) if rev else _snapshot(entity, row)
+    payload = _snapshot(entity, row)
+    if rev:
+        payload.update(db.load_extras(rev.payload))
+    if entity == 'event':
+        payload['country'] = country_code(payload.get('country'))
     published = row.status == constants.POST_STATUS_PUBLISHED if entity == 'post' else bool(row.approved)
     return dict(id=row.id, slug=row.slug, entity_type=entity, title=payload.get('title'),
                 payload=payload, published=published, status=rev.status if rev else ('approved' if published else 'draft'),
@@ -152,8 +177,9 @@ def c4w_content_create(context, data_dict):
 def c4w_content_update(context, data_dict):
     tk.check_access('c4w_content_update', context, data_dict)
     entity, row, rev = _working(context, data_dict)
-    payload = db.load_extras(rev.payload)
-    updates, errors = validate(entity, dict(payload, **data_dict), context)
+    payload = dict(_snapshot(entity, row), **db.load_extras(rev.payload))
+    updates, errors = validate(entity, dict(payload, **data_dict), context,
+                               legacy_country=getattr(row, 'country', None))
     if errors:
         raise tk.ValidationError(errors)
     payload.update(updates)
@@ -185,7 +211,8 @@ def c4w_content_image_upload(context, data_dict):
 def c4w_content_submit(context, data_dict):
     tk.check_access('c4w_content_submit', context, data_dict)
     entity, row, rev = _working(context, data_dict)
-    _, errors = validate(entity, db.load_extras(rev.payload), context, complete=True)
+    _, errors = validate(entity, db.load_extras(rev.payload), context, complete=True,
+                         legacy_country=getattr(row, 'country', None))
     if errors:
         raise tk.ValidationError(errors)
     _touch(rev, 'pending'); rev.submitted_at = db._utcnow(); Session.commit()
@@ -207,40 +234,84 @@ def c4w_content_review(context, data_dict):
     if decision == 'changes_requested' and not note:
         raise tk.ValidationError({'note': [tk._('Explain which changes are needed.')]})
     if decision == 'approve':
-        payload = db.load_extras(rev.payload)
+        payload = dict(_snapshot(entity, row), **db.load_extras(rev.payload))
         # Validate references as the author, not using the reviewer's wider permissions.
         import ckan.model as model
         author = model.User.get(getattr(row, 'author_id', None) or getattr(row, 'created_by', None))
-        values, errors = validate(entity, payload, {'auth_user_obj': author}, complete=True)
+        values, errors = validate(entity, payload, {'auth_user_obj': author}, complete=True,
+                                  legacy_country=getattr(row, 'country', None))
         if errors:
             raise tk.ValidationError(errors)
-        for key, value in values.items():
-            if key in ('start_date', 'end_date'):
-                value = datetime.datetime.combine(checks.check_date(value), datetime.time()) if value else None
-            setattr(row, key, value or None)
-        if entity == 'post':
-            row.image_url = payload.get('image_url') or None
-            row.status = constants.POST_STATUS_PUBLISHED
-            row.created_on = row.created_on or db._utcnow()
-            row.updated_on = db._utcnow()
-        else:
-            row.approved = True
-        row.search_text = html_to_text(' '.join(str(v or '') for v in values.values()))
-        row.modified = db._utcnow()
+        _publish(entity, row, values, payload)
     _touch(rev, 'approved' if decision == 'approve' else 'changes_requested')
     rev.review_note = note; rev.reviewed_at = db._utcnow(); rev.reviewed_by = context['auth_user_obj'].id
     Session.commit()
     return dictize(entity, row, rev)
 
 
+def _publish(entity, row, values, payload):
+    for key, value in values.items():
+        if key in ('start_date', 'end_date'):
+            value = datetime.datetime.combine(checks.check_date(value), datetime.time()) if value else None
+        elif key == 'hour':
+            value = datetime.time.fromisoformat(value) if value else None
+        setattr(row, key, value or None)
+    if entity == 'post':
+        row.image_url = payload.get('image_url') or None
+        row.status = constants.POST_STATUS_PUBLISHED
+        row.created_on = row.created_on or db._utcnow()
+        row.updated_on = db._utcnow()
+    else:
+        row.approved = True
+    # Publication and visibility are independent: never reset hidden here.
+    row.search_text = html_to_text(' '.join(str(v or '') for v in values.values()))
+    row.modified = db._utcnow()
+
+
+def c4w_event_admin_save(context, data_dict):
+    """Save or publish an event revision atomically, only as a sysadmin."""
+    tk.check_access('c4w_event_admin_save', context, data_dict)
+    mode = data_dict.get('mode')
+    if mode not in ('draft', 'publish'):
+        raise tk.ValidationError({'mode': [tk._('Choose save draft or publish changes.')]})
+    db.ensure_mappers()
+    if data_dict.get('id'):
+        _, row, rev = _working(context, dict(data_dict, entity_type='event'))
+        payload = dict(_snapshot('event', row), **db.load_extras(rev.payload))
+    else:
+        row = rev = None
+        payload = {}
+    values, errors = validate('event', dict(payload, **data_dict), context,
+                              complete=mode == 'publish',
+                              legacy_country=getattr(row, 'country', None))
+    if errors:
+        raise tk.ValidationError(errors)
+    if row is None:
+        row = db.C4wEvent(id=db.make_uuid(), slug=db.unique_slug(db.C4wEvent, values['title']),
+                          title=values['title'], created_by=context['auth_user_obj'].id)
+        rev = db.C4wContentRevision(entity_type='event', entity_id=row.id,
+            created_by=context['auth_user_obj'].id, status='draft', version=0)
+        Session.add_all([row, rev])
+    rev.payload = db.dump_extras(values)
+    _touch(rev, 'approved' if mode == 'publish' else 'draft')
+    rev.review_note = ''
+    if mode == 'publish':
+        _publish('event', row, values, values)
+        rev.reviewed_at = db._utcnow()
+        rev.reviewed_by = context['auth_user_obj'].id
+    Session.commit()
+    return dictize('event', row, rev)
+
+
 WRITE = [c4w_content_create, c4w_content_update, c4w_content_image_upload, c4w_content_submit]
 
 
 def get_actions():
-    return {f.__name__: f for f in WRITE + [c4w_content_draft_show, c4w_content_review]}
+    return {f.__name__: f for f in WRITE + [c4w_content_draft_show, c4w_content_review, c4w_event_admin_save]}
 
 
 def get_auth_functions():
     out = {f.__name__: project_write._verified_auth for f in WRITE}
-    out.update(c4w_content_draft_show=project_write._read_auth, c4w_content_review=project_write._admin_auth)
+    out.update(c4w_content_draft_show=project_write._read_auth, c4w_content_review=project_write._admin_auth,
+               c4w_event_admin_save=project_write._admin_auth)
     return out

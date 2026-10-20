@@ -7,6 +7,7 @@
 {% endif %}
 {% if h.c4w_is_sysadmin() %}
   <div class="c4w-visibility-controls">
+    {% if entity_type == 'event' %}<a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_event_edit', event_id=item.id) }}">{{ _('Edit event') }}</a>{% endif %}
     <form method="post" action="{{ h.c4w_url('admin_moderate', entity=entity_type, item_id=item.id, operation='hide') }}">
       {{ h.csrf_input() }}
       <input type="hidden" name="next" value="{{ h.c4w_detail_url(item) }}">

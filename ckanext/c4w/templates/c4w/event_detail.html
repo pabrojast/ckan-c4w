@@ -38,6 +38,7 @@
   {% snippet 'c4w/snippets/fact_row.html', title=_('Ends'),
      value=event.end_date[:10] if event.end_date else None %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Time zone'), value=event.timezone %}
+  {% snippet 'c4w/snippets/fact_row.html', title=_('Start time (local)'), value=event.hour %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Language'),
      value=h.c4w_language_name(event.language) %}
   {% snippet 'c4w/snippets/fact_row.html', title=_('Country'), value=event.country %}

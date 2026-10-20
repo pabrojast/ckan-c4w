@@ -6,11 +6,13 @@ past in reverse. The Django site offered no filters at all here, so this
 listing keeps a search box and an ordering and nothing else.
 """
 import datetime
+import sqlalchemy as sa
 
 import ckan.plugins.toolkit as tk
 
 from ckanext.c4w import constants, db
 from ckanext.c4w.logic import query as q
+from ckanext.c4w.logic import event_dates
 from ckanext.c4w.logic.action import _common
 
 
@@ -68,33 +70,39 @@ def c4w_event_list(context, data_dict):
     tk.check_access('c4w_event_list', context, data_dict)
     data_dict = dict(data_dict or {})
 
-    listing = q.build_listing(spec(), data_dict,
-                              include_private=False)
-    now = datetime.datetime.utcnow().isoformat()
-    upcoming, past = [], []
-    for event in listing['results']:
-        end = event.get('end_date') or event.get('start_date') or ''
-        (upcoming if end >= now else past).append(event)
-    listing['upcoming'] = upcoming
-    listing['past'] = past
-    # Counted over the WHOLE set, not the page. The split is presentational,
-    # so a page that happens to hold only past events must not report that
-    # there are no upcoming ones -- there are, on the page before.
-    listing['upcoming_total'] = _count_upcoming(context, data_dict)
-    return listing
-
-
-def _count_upcoming(context, data_dict):
-    """How many events are still ahead, across every page."""
+    period = data_dict.get('period') or 'all'
+    if period not in ('all', 'upcoming', 'past'):
+        raise tk.ValidationError({'period': [tk._('Choose all, upcoming or past events.')]})
     from ckan.model.meta import Session
-
-    db.ensure_mappers()
-    query = Session.query(db.C4wEvent).filter(
-        db.C4wEvent.start_date >= datetime.datetime.utcnow())
-    query = q._public_filter(query, db.C4wEvent)
-    query = q._apply_search(query, db.C4wEvent, spec(), data_dict.get('q'))
-    query = q._apply_native_filters(query, db.C4wEvent, spec(), data_dict)
-    return query.count()
+    listing_spec = spec()
+    model = db.C4wEvent
+    # Read only the calendar fields, not descriptions, before pagination.
+    query = Session.query(model.id, model.start_date, model.end_date, model.timezone)
+    query = q._public_filter(query, model)
+    query = q._apply_search(query, model, listing_spec, data_dict.get('q'))
+    query = q._apply_native_filters(query, model, listing_spec, data_dict)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    statuses = {row.id: event_dates.status(row, now) for row in query.all()}
+    upcoming_ids = [id_ for id_, status in statuses.items() if status in ('upcoming', 'ongoing')]
+    past_ids = [id_ for id_, status in statuses.items() if status == 'past']
+    filters = () if period == 'all' else (model.id.in_(upcoming_ids if period == 'upcoming' else past_ids),)
+    # Keep current events first on the complete calendar, followed by the
+    # most recent history. A future event cannot disappear behind old pages.
+    listing_spec.orderings['start'] = lambda m: [
+        sa.case((m.id.in_(upcoming_ids), 0), (m.id.in_(past_ids), 1), else_=2),
+        sa.case((m.id.in_(upcoming_ids), m.start_date), else_=None).asc(),
+        m.start_date.desc().nullslast(), m.id.asc(),
+    ]
+    listing = q.build_listing(listing_spec, data_dict, include_private=False, filters=filters)
+    for event in listing['results']:
+        event['calendar_status'] = statuses[event['id']]
+    listing['upcoming'] = [e for e in listing['results'] if e['calendar_status'] in ('upcoming', 'ongoing')]
+    listing['past'] = [e for e in listing['results'] if e['calendar_status'] == 'past']
+    listing['undated'] = [e for e in listing['results'] if e['calendar_status'] == 'undated']
+    listing['upcoming_total'] = len(upcoming_ids)
+    listing['past_total'] = len(past_ids)
+    listing['period'] = period
+    return listing
 
 
 c4w_event_show = _common.make_show(

@@ -1,10 +1,10 @@
 {% extends "c4w/base.html" %}
 {% import 'c4w/macros/form.html' as form with context %}
-{% block subtitle %}{{ _('Review contribution') if review else _('Share news') if entity == 'post' else _('Share an event') }}{% endblock %}
+{% block subtitle %}{{ (_('Edit event') if draft else _('New event')) if admin_mode else _('Review contribution') if review else _('Share news') if entity == 'post' else _('Share an event') }}{% endblock %}
 {% block c4w_content %}
 <div class="c4w-page c4w-content-form" id="c4w-main">
-  <header class="c4w-pagehead"><h1>{{ self.subtitle() }}</h1><a href="{{ h.c4w_url('account') }}">{{ _('My submissions') }}</a></header>
-  {% if draft %}<p><span class="c4w-badge">{{ _(draft.status | replace('_', ' ') | capitalize) }}</span>{% if draft.published %} · {{ _('A published version is available. Changes need a new review.') }}{% endif %}</p>{% endif %}
+  <header class="c4w-pagehead"><h1>{{ self.subtitle() }}</h1><a href="{{ h.c4w_url('admin_inventory', section='events') if admin_mode else h.c4w_url('account') }}">{{ _('All events') if admin_mode else _('My submissions') }}</a></header>
+  {% if draft %}<p><span class="c4w-badge">{{ _(draft.status | replace('_', ' ') | capitalize) }}</span>{% if draft.published %} · {{ _('A published version is available. Save a draft to work privately, or publish your changes.') if admin_mode else _('A published version is available. Changes need a new review.') }}{% endif %}</p>{% endif %}
   {% if draft and draft.review_note %}<div class="c4w-note"><strong>{{ _('Reviewer feedback') }}</strong><p>{{ draft.review_note }}</p></div>{% endif %}
   {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
   {% if review %}
@@ -15,7 +15,7 @@
         {% if data.excerpt %}<p>{{ data.excerpt }}</p>{% endif %}
         {{ data.content | safe }}
       {% else %}
-        <dl>{% for name, label in [('start_date','Starts'),('end_date','Ends'),('place','Place'),('country','Country'),('timezone','Time zone'),('language','Language'),('event_type','Event type')] %}{% if data.get(name) %}<dt>{{ _(label) }}</dt><dd>{{ data.get(name) }}</dd>{% endif %}{% endfor %}</dl>
+        <dl>{% for name, label in [('start_date','Starts'),('end_date','Ends'),('hour','Time'),('place','Place'),('country','Country'),('timezone','Time zone'),('language','Language'),('event_type','Event type')] %}{% if data.get(name) %}<dt>{{ _(label) }}</dt><dd>{{ data.get(name) }}</dd>{% endif %}{% endfor %}</dl>
         {{ data.description | safe }}
         {% if data.url %}<p><a href="{{ data.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ _('Go to event page') }}</a></p>{% endif %}
         {% for field, kind, label in [('project_id','project','Project'),('main_organisation_id','organisation','Organiser')] %}{% if data.get(field) %}<p><strong>{{ _(label) }}:</strong> {% for item in h.c4w_lookup_options(kind, data.get(field)) %}{{ item.title }}{% endfor %}</p>{% endif %}{% endfor %}
@@ -30,9 +30,9 @@
     {% endif %}
     <p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('content_edit', entity=entity, content_id=draft.id) }}">{{ _('Edit contribution') }}</a></p>
   {% else %}
-    <p>{{ _('Save a draft and return whenever you are ready. The team reviews your submission before publication.') }}</p>
+    <p>{{ _('Save a draft or publish the event directly. Publishing preserves its Hide / Unhide setting.') if admin_mode else _('Save a draft and return whenever you are ready. The team reviews your submission before publication.') }}</p>
     <form class="c4w-form" method="post" enctype="multipart/form-data" novalidate
-          action="{{ h.c4w_url('content_edit', entity=entity, content_id=draft.id) if draft else h.c4w_url('submit_news' if entity == 'post' else 'submit_event') }}">
+          action="{% if admin_mode %}{{ h.c4w_url('admin_event_edit', event_id=draft.id) if draft else h.c4w_url('admin_event_new') }}{% else %}{{ h.c4w_url('content_edit', entity=entity, content_id=draft.id) if draft else h.c4w_url('submit_news' if entity == 'post' else 'submit_event') }}{% endif %}">
       {{ h.csrf_input() }}
       {% if draft %}<input type="hidden" name="version" value="{{ draft.version }}">{% endif %}
       {{ form.input('title', _('Title'), data.title, errors, required=true, maxlength=300) }}
@@ -44,15 +44,16 @@
       {% else %}
         <div data-rich-editor>{{ form.textarea('description', _('About the event'), data.description, errors, required=true, rows=8) }}</div>
         {% call form.row() %}{{ form.date('start_date', _('Start date'), data.start_date, errors, required=true) }}{{ form.date('end_date', _('End date'), data.end_date, errors) }}{% endcall %}
+        {{ form.input('hour', _('Start time (local)'), data.hour, errors, type='time', attrs={'step': 1}) }}
         {{ form.input('place', _('Place or online location'), data.place, errors, maxlength=300) }}
-        {% call form.row() %}{{ form.select('country', _('Country'), h.c4w_country_options(), data.country, errors, empty_label=_('Choose…')) }}{{ form.input('timezone', _('Time zone'), data.timezone, errors, placeholder='Europe/Paris') }}{% endcall %}
+        {% call form.row() %}{{ form.select('country', _('Country'), h.c4w_country_options(data.country), data.country, errors, empty_label=_('Choose…')) }}{{ form.input('timezone', _('Time zone'), data.timezone, errors, placeholder='Europe/Paris') }}{% endcall %}
         {% call form.row() %}{{ form.input('language', _('Language code'), data.language, errors, placeholder='en', hint=_('For example: en, es or fr.')) }}{{ form.select('event_type', _('Event type'), h.c4w_option_list('event_type'), data.event_type, errors, empty_label=_('Choose…')) }}{% endcall %}
         {{ form.input('url', _('Event website'), data.url, errors, type='url', placeholder='https://') }}
         {{ form.lookup('project_id', _('Related project (optional)'), 'project', data.project_id or '', errors) }}
         {{ form.lookup('main_organisation_id', _('Organiser (optional)'), 'organisation', data.main_organisation_id or '', errors) }}
       {% endif %}
-      <div class="c4w-form__actions"><button class="c4w-btn c4w-btn--quiet" name="action" value="save" type="submit">{{ _('Save draft') }}</button><button class="c4w-btn" name="action" value="submit" type="submit">{{ _('Send for review') }}</button></div>
-      {% if draft %}<p><a href="{{ h.c4w_url('content_review', entity=entity, content_id=draft.id) }}">{{ _('Preview saved contribution') }}</a></p>{% endif %}
+      <div class="c4w-form__actions"><button class="c4w-btn c4w-btn--quiet" name="{{ 'mode' if admin_mode else 'action' }}" value="{{ 'draft' if admin_mode else 'save' }}" type="submit">{{ _('Save draft') }}</button><button class="c4w-btn" name="{{ 'mode' if admin_mode else 'action' }}" value="{{ 'publish' if admin_mode else 'submit' }}" type="submit">{{ _('Publish changes') if admin_mode else _('Send for review') }}</button></div>
+      {% if draft and not admin_mode %}<p><a href="{{ h.c4w_url('content_review', entity=entity, content_id=draft.id) }}">{{ _('Preview saved contribution') }}</a></p>{% endif %}
     </form>
   {% endif %}
 </div>

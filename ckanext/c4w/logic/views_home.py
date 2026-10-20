@@ -28,7 +28,7 @@ def index():
     latest = _safe('c4w_project_list', {
         'page_size': 6, 'order': 'modified'})
     posts = _safe('c4w_post_list', {'page_size': 3, 'order': 'created'})
-    events = _safe('c4w_event_list', {'page_size': 8, 'order': 'start'})
+    events = _safe('c4w_event_list', {'page_size': 3, 'order': 'start', 'period': 'upcoming'})
 
     featured_project = None
     for project in (featured.get('results') or []):

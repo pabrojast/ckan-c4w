@@ -7,8 +7,12 @@
 <footer class="c4w-footer">
   <div class="c4w-footer__inner">
     <div class="c4w-footer__brand">
+      <div class="c4w-footer__logos">
       <img class="c4w-footer__logo" src="{{ h.url_for_static('/c4w/img/Citizens4Water_Vertical.svg') }}"
            alt="{{ _('Citizens4Water') }}" width="88" height="116" loading="lazy">
+        <img class="c4w-footer__partner c4w-footer__partner--scivil" src="{{ h.url_for_static('/c4w/img/scivil.png') }}" alt="Scivil – Citizen Science Vlaanderen" loading="lazy">
+        <img class="c4w-footer__partner c4w-footer__partner--flanders" src="{{ h.url_for_static('/c4w/img/flanders.png') }}" alt="{{ _('Flemish Government – Flanders State of the Art') }}" loading="lazy">
+      </div>
       <p class="c4w-footer__about">
         {% trans %}Citizens4Water is coordinated by Scivil and financed by the Flemish Government, within UNESCO's IHP-IX programme.{% endtrans %}
       </p>
@@ -54,6 +58,6 @@
   </div>
   <div class="c4w-footer__bottom">
     <p>Citizens4Water · {{ _('A UNESCO IHP-WINS portal') }}</p>
-    <p><a href="{{ h.url_for('home.index') }}">data.dev-wins.com</a></p>
+    <p><a href="{{ h.url_for('home.index') }}">{{ h.c4w_site_host() }}</a></p>
   </div>
 </footer>

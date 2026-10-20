@@ -224,3 +224,25 @@ The additive upgrade adds `hidden BOOLEAN NOT NULL DEFAULT FALSE` to
 `c4w_organisation`, `c4w_event` and `c4w_post`. Run it before replacing web
 workers, with a verified database backup. Repeating it preserves existing
 values. Rolling back application images does not require dropping columns.
+
+### Event administration and calendar dates
+
+Open **Admin → Events** for the complete event inventory, date/status labels,
+**New event**, **Edit**, **View** and **Hide / Unhide**. Administrators can save
+an unpublished revision or publish validated changes directly in the event
+editor. Publication preserves the item's hidden flag, creator and URL; saving
+a draft does not replace its public version. Concurrent edits require a reload.
+Contributors continue to submit proposals for review.
+
+The editor retains local start time and time zone. Recognized imported country
+names are normalized to country codes; unknown legacy names can be retained
+unchanged. Upcoming events include those ending today in the event's time zone
+(UTC fallback). Events already started are marked **In progress**. The home
+page filters current/upcoming events before pagination; historical and undated
+events remain available in the complete calendar.
+
+The imported Citizen Science Fair has a guarded, idempotent date repair in
+`scripts/correct-citizen-science-fair-date.py`: it changes only its erroneous
+2925-06-18 end date to 2025-06-18 after a backup and a dry run against the
+explicit target site. The Scivil and Flemish Government footer assets are
+unchanged copies of the supplied originals, scaled proportionally with CSS.
