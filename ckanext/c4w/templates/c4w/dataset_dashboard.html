@@ -30,6 +30,8 @@
       {% endif %}
     </header>
 
+    {% snippet 'c4w/snippets/visibility_controls.html', entity_type='dataset', item=dataset %}
+
     {% if dataset.reference_source and dataset.data_quality_note %}
       <p class="c4w-note">{{ dataset.data_quality_note }}</p>
     {% endif %}

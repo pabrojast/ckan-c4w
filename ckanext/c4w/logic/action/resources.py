@@ -92,7 +92,7 @@ def _listing(training, action_name):
         data_dict['training'] = u'1' if training else u'0'
         return q.build_listing(
             training_spec() if training else spec(), data_dict,
-            include_private=_common.is_sysadmin(context))
+            include_private=False)
 
     listing.__name__ = str(action_name)
     return listing

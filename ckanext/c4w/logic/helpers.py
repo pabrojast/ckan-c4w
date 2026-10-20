@@ -585,8 +585,20 @@ def c4w_project_field_value(field, value):
     return value or ''
 
 
+def c4w_is_public(entity_type, item):
+    from ckanext.c4w.logic.visibility import is_public
+    return is_public(entity_type, item)
+
+
+def c4w_admin_section(entity_type, item=None):
+    from ckanext.c4w.logic.visibility import admin_section
+    return admin_section(entity_type, item)
+
+
 def get_helpers():
     return {
+        'c4w_is_public': c4w_is_public,
+        'c4w_admin_section': c4w_admin_section,
         'c4w_lookup_options': c4w_lookup_options,
         'c4w_project_language_options': c4w_project_language_options,
         'c4w_project_field_value': c4w_project_field_value,

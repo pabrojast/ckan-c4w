@@ -69,7 +69,7 @@ def c4w_event_list(context, data_dict):
     data_dict = dict(data_dict or {})
 
     listing = q.build_listing(spec(), data_dict,
-                              include_private=_common.is_sysadmin(context))
+                              include_private=False)
     now = datetime.datetime.utcnow().isoformat()
     upcoming, past = [], []
     for event in listing['results']:
@@ -91,8 +91,9 @@ def _count_upcoming(context, data_dict):
     db.ensure_mappers()
     query = Session.query(db.C4wEvent).filter(
         db.C4wEvent.start_date >= datetime.datetime.utcnow())
-    if not _common.is_sysadmin(context):
-        query = query.filter(db.C4wEvent.approved.is_(True))
+    query = q._public_filter(query, db.C4wEvent)
+    query = q._apply_search(query, db.C4wEvent, spec(), data_dict.get('q'))
+    query = q._apply_native_filters(query, db.C4wEvent, spec(), data_dict)
     return query.count()
 
 

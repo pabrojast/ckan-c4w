@@ -229,7 +229,8 @@ def test_moderate_error_rejects_unknown_pairs_before_sql():
     assert constants.moderate_error('nope', 'approve') == 'unknown_entity'
     assert constants.moderate_error('project', 'delete') == 'unknown_op'
     assert constants.moderate_error('post', 'approve') == 'not_moderated'
-    assert constants.moderate_error('event', 'hide') == 'no_hidden'
+    for entity in constants.ENTITY_TYPES:
+        assert constants.moderate_error(entity, 'hide') is None
     assert constants.moderate_error('organisation', 'feature') == 'no_featured'
 
 

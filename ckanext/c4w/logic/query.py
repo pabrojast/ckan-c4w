@@ -270,7 +270,7 @@ def _native_facet_counts(spec, base_query, data_dict, selected):
     return counts
 
 
-def build_listing(spec, data_dict, include_private=False):
+def build_listing(spec, data_dict, include_private=False, filters=()):
     """Run a listing.
 
     Returns ``{'count', 'results', 'facets', 'page', 'pages', 'page_size',
@@ -289,7 +289,7 @@ def build_listing(spec, data_dict, include_private=False):
     # The base carries only visibility and free-text search -- NO facet
     # filters. Both the row query and the counts derive from it, which is what
     # lets each facet leave its own selection out of its own counts.
-    base = Session.query(model_cls)
+    base = Session.query(model_cls).filter(*filters)
     if not include_private:
         base = _public_filter(base, model_cls)
     base = _apply_search(base, model_cls, spec, data_dict.get('q'))

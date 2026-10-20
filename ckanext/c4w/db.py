@@ -198,6 +198,8 @@ c4w_organisation_table = Table(
     Column('country', types.UnicodeText),
     # Organisations were never moderated in Django; keep that default.
     Column('approved', types.Boolean, default=True),
+    Column('hidden', types.Boolean, default=False, server_default=sa.false(),
+           nullable=False),
     Column('ecsa_member', types.Boolean, default=False),
     # Optional link to a CKAN organization. Deliberately NOT a real foreign
     # key: a hard FK would make deleting a CKAN organization fail or cascade
@@ -323,6 +325,8 @@ c4w_event_table = Table(
     Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
     Column('legacy_id', types.Integer),
     Column('slug', types.UnicodeText, nullable=False),
+    Column('hidden', types.Boolean, default=False, server_default=sa.false(),
+           nullable=False),
     Column('title', types.UnicodeText, nullable=False),
     Column('description', types.UnicodeText),
     Column('place', types.UnicodeText),
@@ -363,6 +367,8 @@ c4w_post_table = Table(
     Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
     Column('legacy_id', types.Integer),
     Column('slug', types.UnicodeText, nullable=False),
+    Column('hidden', types.Boolean, default=False, server_default=sa.false(),
+           nullable=False),
     Column('title', types.UnicodeText, nullable=False),
     Column('content', types.UnicodeText),
     Column('excerpt', types.UnicodeText),
@@ -762,6 +768,9 @@ def ensure_mappers():
 #
 # Tuples are (table_name, column_name, column_sql_type).
 _AUTO_HEAL_COLUMNS = [
+    ('c4w_organisation', 'hidden', 'BOOLEAN NOT NULL DEFAULT FALSE'),
+    ('c4w_event', 'hidden', 'BOOLEAN NOT NULL DEFAULT FALSE'),
+    ('c4w_post', 'hidden', 'BOOLEAN NOT NULL DEFAULT FALSE'),
     ('c4w_platform', 'hidden', 'BOOLEAN NOT NULL DEFAULT FALSE'),
     ('c4w_user_profile', 'registration_next', 'TEXT'),
     ('c4w_user_profile', 'given_name', 'TEXT'),

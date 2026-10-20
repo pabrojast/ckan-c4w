@@ -82,6 +82,21 @@ ENTITY_HAS_HIDDEN = (
     'platform',
     'resource',
     'dataset',
+    'organisation',
+    'event',
+    'post',
+)
+
+# Public sections share seven models; training resources have their own list.
+ADMIN_SECTIONS = (
+    ('data', 'dataset', 'Data'),
+    ('projects', 'project', 'Projects'),
+    ('platforms', 'platform', 'Platforms'),
+    ('organisations', 'organisation', 'Organisations'),
+    ('resources', 'resource', 'Resources'),
+    ('training_resources', 'resource', 'Training resources'),
+    ('events', 'event', 'Events'),
+    ('news', 'post', 'News'),
 )
 ENTITY_HAS_FEATURED = (
     'project',

@@ -1,0 +1,17 @@
+{% set section = h.c4w_admin_section(entity_type, item) %}
+{% if not h.c4w_is_public(entity_type, item) %}
+  <p class="c4w-visibility-note" role="status">
+    <strong>{{ _('Not visible to the public') }}</strong>
+    {{ _('You can preview this item because you have permission to manage it.') }}
+  </p>
+{% endif %}
+{% if h.c4w_is_sysadmin() %}
+  <div class="c4w-visibility-controls">
+    <form method="post" action="{{ h.c4w_url('admin_moderate', entity=entity_type, item_id=item.id, operation='hide') }}">
+      {{ h.csrf_input() }}
+      <input type="hidden" name="next" value="{{ h.c4w_detail_url(item) }}">
+      <button class="c4w-btn c4w-btn--quiet" type="submit">{{ _('Unhide') if item.hidden else _('Hide') }}</button>
+    </form>
+    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_inventory', section=section, q=item.slug) }}">{{ _('Manage visibility') }}</a>
+  </div>
+{% endif %}

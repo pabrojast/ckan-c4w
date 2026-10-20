@@ -1,4 +1,6 @@
 {% extends "c4w/detail_base.html" %}
+{% set visibility_entity = 'dataset' %}
+{% set visibility_item = dataset %}
 {% import 'c4w/macros/ui.html' as ui with context %}
 {% set back_endpoint = 'dataset_list' %}
 {% set back_label = _('Data') %}

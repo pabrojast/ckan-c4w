@@ -40,7 +40,8 @@ def c4w_stats(context, data_dict):
         'posts': (
             Session.query(db.C4wPost)
             .filter(db.C4wPost.status
-                    == constants.POST_STATUS_PUBLISHED).count()
+                    == constants.POST_STATUS_PUBLISHED,
+                    db.C4wPost.hidden.isnot(True)).count()
         ),
     }
 

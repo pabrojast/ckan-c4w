@@ -19,6 +19,7 @@ def admin_index():
     except Exception:
         managers = []
     return tk.render('c4w/admin.html', extra_vars={
+        'sections': tk.get_action('c4w_admin_summary')({}, {})['sections'],
         'groups': listing.get('groups') or [],
         'managers': managers or [],
         'project_requests': listing.get('project_requests') or [],
@@ -27,32 +28,33 @@ def admin_index():
 
 
 def admin_projects():
-    _user, bounced = require_sysadmin()
-    if bounced is not None:
-        return bounced
-    params = {key: request.args.get(key) for key in ('q', 'page')
-              if request.args.get(key)}
-    listing = tk.get_action('c4w_admin_project_list')({}, params)
-    return tk.render('c4w/admin_projects.html', extra_vars={
-        'listing': listing,
-        'params': params,
-        'return_url': c4w_helpers.c4w_url(
-            'admin_projects', q=params.get('q', ''), page=listing['page']),
-    })
+    return admin_inventory('projects')
 
 
 def admin_platforms():
+    return admin_inventory('platforms')
+
+
+def admin_inventory(section):
     _user, bounced = require_sysadmin()
     if bounced is not None:
         return bounced
-    params = {key: request.args.get(key) for key in ('q', 'page')
+    entry = next((entry for entry in constants.ADMIN_SECTIONS if entry[0] == section), None)
+    if entry is None:
+        return tk.abort(404, tk._('Not found'))
+    params = {key: request.args.get(key) for key in ('q', 'page', 'visibility')
               if request.args.get(key)}
-    listing = tk.get_action('c4w_admin_platform_list')({}, params)
-    return tk.render('c4w/admin_platforms.html', extra_vars={
-        'listing': listing,
-        'params': params,
+    try:
+        listing = tk.get_action('c4w_admin_entity_list')({}, dict(params, section=section))
+    except tk.ValidationError:
+        return tk.abort(400, tk._('Invalid visibility filter.'))
+    return tk.render('c4w/admin_inventory.html', extra_vars={
+        'listing': listing, 'params': params, 'section': section,
+        'entity_type': entry[1], 'section_label': entry[2],
+        'sections': tk.get_action('c4w_admin_summary')({}, {})['sections'],
         'return_url': c4w_helpers.c4w_url(
-            'admin_platforms', q=params.get('q', ''), page=listing['page']),
+            'admin_inventory', section=section, q=params.get('q', ''),
+            visibility=params.get('visibility', 'all'), page=listing['page']),
     })
 
 
@@ -79,7 +81,7 @@ def admin_moderate(entity, item_id, operation):
     if operation == 'hide':
         if result.get('hidden'):
             tk.h.flash_success(tk._('Hidden. This item is not visible to the public.'))
-        elif result.get('approved'):
+        elif c4w_helpers.c4w_is_public(entity, result):
             tk.h.flash_success(tk._('Visible to the public.'))
         else:
             tk.h.flash_success(tk._('Unhidden. This item still needs approval before it is public.'))

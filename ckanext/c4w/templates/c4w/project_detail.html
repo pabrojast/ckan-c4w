@@ -1,4 +1,6 @@
 {% extends "c4w/detail_base.html" %}
+{% set visibility_entity = 'project' %}
+{% set visibility_item = project %}
 {% import 'c4w/macros/ui.html' as ui with context %}
 {% set back_endpoint = 'project_list' %}
 {% set back_label = _('Projects') %}
@@ -51,13 +53,6 @@
 {% endblock %}
 
 {% block detail_body %}
-  {% if not project.approved or project.hidden %}
-    <p class="c4w-project-visibility" role="status">
-      <strong>{{ _('Not visible to the public') }}</strong>
-      {{ _('You can preview this project because you have permission to manage it.') }}
-      {% if h.c4w_is_sysadmin() %}<a href="{{ h.c4w_url('admin_projects', q=project.slug) }}">{{ _('Manage visibility') }}</a>{% endif %}
-    </p>
-  {% endif %}
   {% if project.description %}
     <section>
       <h2>{{ _('About') }}</h2>

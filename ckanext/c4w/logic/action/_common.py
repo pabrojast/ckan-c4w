@@ -78,14 +78,8 @@ def is_visible(entity_type, row, context):
     logic/query.py exactly -- a detail page that shows what its own listing
     filters out is how unapproved content leaks.
     """
-    published = True
-    if hasattr(row, 'approved'):
-        published = bool(row.approved)
-    if hasattr(row, 'hidden') and row.hidden:
-        published = False
-    if hasattr(row, 'status') and entity_type == 'post':
-        published = row.status == constants.POST_STATUS_PUBLISHED
-    if published:
+    from ckanext.c4w.logic.visibility import is_public
+    if is_public(entity_type, row):
         return True
     return can_edit(entity_type, row, context)
 
@@ -147,10 +141,10 @@ def make_list(spec_factory, action_name):
     @tk.side_effect_free
     def listing(context, data_dict):
         tk.check_access(action_name, context, data_dict)
-        # Only a sysadmin sees what the public filter hides, and the decision
-        # is made HERE rather than read from the request.
+        # Public catalogues have the same contents for every role.
+        # Complete inventories are separate, sysadmin-only actions.
         return q.build_listing(spec_factory(), data_dict or {},
-                               include_private=is_sysadmin(context))
+                               include_private=False)
 
     listing.__name__ = str(action_name)
     return listing

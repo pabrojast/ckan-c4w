@@ -30,11 +30,14 @@
       </header>
 
       <div class="c4w-detail__body">
+        {% if visibility_item is defined %}
+          {% snippet 'c4w/snippets/visibility_controls.html', entity_type=visibility_entity, item=visibility_item %}
+        {% endif %}
         {% block detail_body %}{% endblock %}
       </div>
 
       <aside class="c4w-detail__aside">
-        <p class="c4w-detail__actions">{% block detail_actions %}{% endblock %}</p>
+        <div class="c4w-detail__actions">{% block detail_actions %}{% endblock %}</div>
         <dl class="c4w-detail__facts">{% block detail_facts %}{% endblock %}</dl>
       </aside>
     </article>

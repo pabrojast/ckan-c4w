@@ -133,7 +133,7 @@ def dataset_bundle(slug, name):
     response.headers['ETag'] = etag
     response.headers['Vary'] = 'Accept-Encoding'
     response.headers['Cache-Control'] = (
-        'public, max-age=300' if blob.get('public') else 'private, no-store')
+        'private, no-cache' if blob.get('public') else 'private, no-store')
     return response
 
 

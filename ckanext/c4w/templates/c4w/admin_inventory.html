@@ -1,0 +1,60 @@
+{% extends "c4w/base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
+{% block subtitle %}{{ _(section_label) }} · {{ _('Admin') }}{% endblock %}
+{% block c4w_content %}
+<div class="c4w-page c4w-admin-inventory" id="c4w-main">
+  <header class="c4w-pagehead">
+    <div><h1>{{ _('All content') }} · {{ _(section_label) }}</h1>
+      <p class="c4w-listing__count">{{ ungettext('{n} item', '{n} items', listing.count).format(n=listing.count) }}</p>
+    </div>
+    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_index') }}">{{ _('Moderation') }}</a>
+  </header>
+  {% snippet 'c4w/snippets/admin_navigation.html', sections=sections, section=section %}
+  <p class="c4w-form__lede">{{ _('Hide removes an item from the public portal without deleting it. Unhide preserves its approval or draft status. Related content is managed separately.') }}</p>
+  <form class="c4w-listing__controls" method="get" action="{{ h.c4w_url('admin_inventory', section=section) }}">
+    <div class="c4w-listing__search">
+      <label class="c4w-sr-only" for="c4w-q">{{ _('Search content') }}</label>
+      <input id="c4w-q" type="search" name="q" value="{{ params.q or '' }}" placeholder="{{ _('Search by name or slug') }}">
+      <button type="submit" aria-label="{{ _('Search') }}">{{ ui.icon('search') }}</button>
+    </div>
+    <label for="c4w-visibility">{{ _('Visibility') }}</label>
+    <select id="c4w-visibility" name="visibility">
+      {% for value, label in [('all', _('All')), ('published', _('Published')), ('hidden', _('Hidden')), ('unpublished', _('Not approved / Draft'))] %}
+        <option value="{{ value }}" {% if (params.visibility or 'all') == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button class="c4w-btn c4w-btn--quiet" type="submit">{{ _('Filter') }}</button>
+  </form>
+  {% if listing.results %}
+  <div class="c4w-table-wrap"><table class="c4w-table">
+    <thead><tr><th scope="col">{{ _('Name') }}</th><th scope="col">{{ _('Publication') }}</th><th scope="col">{{ _('Actions') }}</th></tr></thead>
+    <tbody>{% for item in listing.results %}
+      <tr data-entity-id="{{ item.id }}">
+        <td><a href="{{ h.c4w_detail_url(item) }}">{{ item.name or item.title }}</a>
+          <small class="c4w-admin-slug">{{ item.slug }}</small>
+          {% if entity_type == 'platform' and item.url %}<small class="c4w-admin-slug">{{ item.url }}</small>{% endif %}
+          {% if entity_type == 'dataset' %}<small class="c4w-admin-slug">{{ h.c4w_status_badge(item.processing_status) }}</small>{% endif %}
+        </td>
+        <td>
+          {% if item.public_visible %}<span class="c4w-badge c4w-badge--approved">{{ _('Published') }}</span>
+          {% else %}
+            <span class="c4w-badge c4w-badge--hidden">{{ _('Not visible to the public') }}</span>
+            {% if item.hidden %}<span class="c4w-badge c4w-badge--hidden">{{ _('Hidden') }}</span>{% endif %}
+            {% if (entity_type == 'post' and item.status != 'published') or (entity_type != 'post' and not item.approved) %}
+              <span class="c4w-badge c4w-badge--pending">{{ _('Draft') if entity_type == 'post' else _('Not approved') }}</span>
+            {% endif %}
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ h.c4w_url('admin_moderate', entity=entity_type, item_id=item.id, operation='hide') }}">
+            {{ h.csrf_input() }}<input type="hidden" name="next" value="{{ return_url }}">
+            <button type="submit" class="c4w-btn c4w-btn--quiet">{{ _('Unhide') if item.hidden else _('Hide') }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% snippet 'c4w/snippets/pagination.html', page=listing.page, pages=listing.pages %}
+  {% else %}<p class="c4w-empty">{{ _('No content matches your search.') }}</p>{% endif %}
+</div>
+{% endblock %}

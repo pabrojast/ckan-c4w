@@ -1,4 +1,6 @@
 {% extends "c4w/detail_base.html" %}
+{% set visibility_entity = 'organisation' %}
+{% set visibility_item = organisation %}
 {% import 'c4w/macros/ui.html' as ui with context %}
 {% set back_endpoint = 'organisation_list' %}
 {% set back_label = _('Organisations') %}

@@ -1,4 +1,6 @@
 {% extends "c4w/detail_base.html" %}
+{% set visibility_entity = 'resource' %}
+{% set visibility_item = resource %}
 {% set back_endpoint = 'training_resource_list' if resource.is_training_resource else 'resource_list' %}
 {% set back_label = _('Training resources') if resource.is_training_resource else _('Resources') %}
 

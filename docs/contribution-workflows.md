@@ -196,3 +196,31 @@ The existing `/citizens4water/admin` review queue remains separate. Hiding
 does not delete a project or change approval; unhiding an unapproved project
 does not publish it. Authorised owners, editors and sysadmins can still
 preview non-public detail pages, which display a visibility notice.
+
+
+## Content visibility
+
+`/citizens4water/admin` links to complete inventories for Data, Projects,
+Platforms, Organisations, Resources, Training resources, Events and News.
+Each inventory has search, visibility filters, stable 25-row pagination and
+Hide/Unhide. Sysadmins also have these controls on detail pages. Existing
+project/platform inventory actions and URLs remain supported; the shared
+`c4w_admin_entity_list` action accepts a whitelisted `section`, `q`, `page`,
+`page_size` and `visibility` (`all`, `published`, `hidden`, `unpublished`).
+`unpublished` means not approved or a draft, independently of the hidden flag.
+`c4w_admin_summary` returns total, published and hidden counts per section.
+Both actions require a sysadmin.
+
+All seven entity types have independent visibility. Hide does not delete,
+change approval or draft status, trigger data processing, or hide associated
+content. Approval and revision review preserve explicit hiding. Unhide does
+not approve a draft. Public listings, statistics and search use the same
+public rule for every role; owners/editors and sysadmins retain private detail
+previews. Hidden Data also blocks anonymous dashboard, embed, bundle and
+portal download access. Dashboard bundles revalidate cached responses before
+reuse. Direct object-storage URLs already shared remain public.
+
+The additive upgrade adds `hidden BOOLEAN NOT NULL DEFAULT FALSE` to
+`c4w_organisation`, `c4w_event` and `c4w_post`. Run it before replacing web
+workers, with a verified database backup. Repeating it preserves existing
+values. Rolling back application images does not require dropping columns.

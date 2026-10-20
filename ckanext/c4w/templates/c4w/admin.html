@@ -5,13 +5,12 @@
 {% block c4w_content %}
   <div class="c4w-page" id="c4w-main">
     <header class="c4w-pagehead">
-      <h1>{{ _('Moderation') }}</h1>
-      <div class="c4w-table__actions">
-        <a class="c4w-btn" href="{{ h.c4w_url('admin_projects') }}">{{ _('All projects') }}</a>
-        <a class="c4w-btn" href="{{ h.c4w_url('admin_platforms') }}">{{ _('All platforms') }}</a>
-      </div>
+      <h1>{{ _('Content administration') }}</h1>
     </header>
-    <p class="c4w-form__lede">{{ _('This queue contains items awaiting review or hidden items. Use All projects or All platforms to manage published items too.') }}</p>
+    <p class="c4w-form__lede">{{ _('Choose a section to manage all its content, including published and hidden items.') }}</p>
+    {% snippet 'c4w/snippets/admin_navigation.html', sections=sections, section='' %}
+    <h2>{{ _('Moderation') }}</h2>
+    <p class="c4w-form__lede">{{ _('Review submitted contributions below. Visibility can be managed independently in each section.') }}</p>
 
     {% if project_requests %}
       <section class="c4w-queue">

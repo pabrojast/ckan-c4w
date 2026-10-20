@@ -2592,3 +2592,20 @@ html.c4w-portal .c4w-contribute > .c4w-contribute__note { font-size: 0.875rem !i
 .c4w-content-preview { overflow-wrap: anywhere; }
 .c4w-content-preview img { max-width: 100%; height: auto; }
 @media (max-width: 48rem) { .c4w-contribute__grid { grid-template-columns: 1fr; } }
+
+/* One inventory and reversible visibility controls for every C4W section. */
+.c4w-admin-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin: 1rem 0 1.5rem; }
+.c4w-admin-nav a { padding: .9rem; border: 1px solid var(--c4w-rule); border-radius: 10px; color: var(--c4w-ink); overflow-wrap: anywhere; }
+.c4w-admin-nav a[aria-current=page] { border-color: var(--c4w-blue); background: var(--c4w-pale); }
+.c4w-admin-nav strong { display: flex; justify-content: space-between; gap: .5rem; }
+.c4w-admin-nav small, .c4w-admin-slug { display: block; color: var(--c4w-muted); margin-top: .35rem; }
+.c4w-visibility-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: 1.5rem; }
+.c4w-visibility-controls form { margin: 0; }
+.c4w-visibility-note { padding: 1rem; background: var(--c4w-pale); border-radius: 10px; }
+.c4w-visibility-note strong { display: block; }
+.c4w-admin-inventory .c4w-listing__controls { flex-wrap: wrap; justify-content: flex-start; }
+.c4w-admin-inventory select { max-width: 100%; }
+@media (max-width: 767px) {
+  .c4w-admin-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .c4w-admin-inventory .c4w-listing__search { flex: 1 1 100%; min-width: 0; }
+}

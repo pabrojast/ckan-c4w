@@ -1,4 +1,6 @@
 {% extends "c4w/detail_base.html" %}
+{% set visibility_entity = 'platform' %}
+{% set visibility_item = platform %}
 {% set back_endpoint = 'platform_list' %}
 {% set back_label = _('Platforms') %}
 
@@ -22,12 +24,6 @@
 {% endblock %}
 
 {% block detail_body %}
-  {% if not platform.approved or platform.hidden %}
-    <p class="c4w-platform-visibility" role="status">
-      <strong>{{ _('Not visible to the public') }}</strong>
-      {{ _('You can preview this platform because you have permission to manage it.') }}
-    </p>
-  {% endif %}
   {# Sanitised on the way in; see logic/sanitize.py. #}
   {% if platform.description %}<section>{{ platform.description | safe }}</section>{% endif %}
   {% if platform.organisations %}
@@ -44,9 +40,6 @@
 {% endblock %}
 
 {% block detail_actions %}
-  {% if h.c4w_is_sysadmin() %}
-    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_platforms', q=platform.slug) }}">{{ _('Manage visibility') }}</a>
-  {% endif %}
   {% if platform.url %}
     <a class="c4w-btn" href="{{ platform.url }}" rel="noopener noreferrer nofollow"
        target="_blank">{{ _('Visit platform') }}</a>

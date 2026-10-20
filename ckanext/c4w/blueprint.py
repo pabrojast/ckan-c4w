@@ -66,6 +66,11 @@ def admin_platforms():
     return views_admin.admin_platforms()
 
 
+def admin_inventory(section):
+    from ckanext.c4w.logic.views_admin import admin_inventory as view
+    return view(section)
+
+
 def admin_moderate(entity, item_id, operation):
     from ckanext.c4w.logic import views_admin
     return views_admin.admin_moderate(entity, item_id, operation)
@@ -307,6 +312,8 @@ def _register(bp):
                     strict_slashes=False)
     bp.add_url_rule('/admin', 'admin_index', admin_index, methods=['GET'],
                     strict_slashes=False)
+    bp.add_url_rule('/admin/<section>', 'admin_inventory', admin_inventory,
+                    methods=['GET'], strict_slashes=False)
     bp.add_url_rule('/admin/projects', 'admin_projects', admin_projects,
                     methods=['GET'], strict_slashes=False)
     bp.add_url_rule('/admin/platforms', 'admin_platforms', admin_platforms,

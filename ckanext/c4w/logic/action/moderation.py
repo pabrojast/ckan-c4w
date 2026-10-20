@@ -94,42 +94,80 @@ def c4w_my_submissions(context, data_dict):
     return {'groups': out}
 
 
+def _inventory(section):
+    from ckanext.c4w.logic import query
+    entry = next((entry for entry in constants.ADMIN_SECTIONS if entry[0] == section), None)
+    if entry is None:
+        raise tk.ObjectNotFound(tk._('Not found'))
+    _section, entity, label = entry
+    model = _models()[entity]
+    title = 'name' if hasattr(model, 'name') else 'title'
+    spec = query.ListingSpec(
+        entity_type=entity, model_cls=model,
+        search_columns=tuple(c for c in (title, 'slug', 'search_text') if hasattr(model, c)),
+        orderings={'name': lambda m: [getattr(m, title).asc(), m.id.asc()]},
+        default_order='name', page_size=25,
+        defer_columns=tuple(c for c in ('geom_geojson', 'mapping_json') if hasattr(model, c)),
+    )
+    filters = ([model.is_training_resource.is_(section == 'training_resources')]
+               if entity == 'resource' else [])
+    return spec, filters, label
+
+
+@tk.side_effect_free
+def c4w_admin_entity_list(context, data_dict):
+    """Complete, searchable inventories; never used by a public catalogue."""
+    tk.check_access('c4w_admin_entity_list', context, data_dict)
+    from ckanext.c4w.logic import query
+    from ckanext.c4w.logic.visibility import is_public
+    from sqlalchemy import and_
+    data = dict(data_dict or {})
+    spec, filters, _label = _inventory(data.get('section'))
+    model = spec.model_cls
+    approved = (model.status == constants.POST_STATUS_PUBLISHED
+                if spec.entity_type == 'post' else model.approved.is_(True))
+    visibility = data.get('visibility', 'all')
+    if visibility == 'published':
+        filters.append(and_(approved, model.hidden.isnot(True)))
+    elif visibility == 'hidden':
+        filters.append(model.hidden.is_(True))
+    elif visibility == 'unpublished':
+        filters.append(model.approved.isnot(True) if spec.entity_type != 'post'
+                       else (model.status != constants.POST_STATUS_PUBLISHED) | model.status.is_(None))
+    elif visibility != 'all':
+        raise tk.ValidationError({'visibility': [tk._('Invalid visibility filter.')]})
+    result = query.build_listing(spec, data, include_private=True, filters=filters)
+    for item in result['results']:
+        item['public_visible'] = is_public(spec.entity_type, item)
+    return result
+
+
+@tk.side_effect_free
+def c4w_admin_summary(context, data_dict):
+    tk.check_access('c4w_admin_summary', context, data_dict)
+    from ckan.model.meta import Session
+    from ckanext.c4w.logic import query
+    sections = []
+    for section, entity, label in constants.ADMIN_SECTIONS:
+        spec, filters, _label = _inventory(section)
+        base = Session.query(spec.model_cls).filter(*filters)
+        sections.append(dict(section=section, entity_type=entity, label=label,
+                             total=base.count(),
+                             published=query._public_filter(base, spec.model_cls).count(),
+                             hidden=base.filter(spec.model_cls.hidden.is_(True)).count()))
+    return {'sections': sections}
+
+
 @tk.side_effect_free
 def c4w_admin_project_list(context, data_dict):
-    """The complete project inventory, separate from the review queue."""
     tk.check_access('c4w_admin_project_list', context, data_dict)
-    from ckanext.c4w.logic import query
-
-    db.ensure_mappers()
-    spec = query.ListingSpec(
-        entity_type='project',
-        model_cls=db.C4wProject,
-        search_columns=('name', 'slug', 'search_text'),
-        # Hiding updates modified. A name/id order keeps rows on their page.
-        orderings={'name': lambda m: [m.name.asc(), m.id.asc()]},
-        default_order='name',
-        page_size=25,
-        defer_columns=('geom_geojson',),
-    )
-    return query.build_listing(spec, data_dict or {}, include_private=True)
+    return c4w_admin_entity_list(context, dict(data_dict or {}, section='projects'))
 
 
 @tk.side_effect_free
 def c4w_admin_platform_list(context, data_dict):
-    """All platforms, including published, hidden and unapproved rows."""
     tk.check_access('c4w_admin_platform_list', context, data_dict)
-    from ckanext.c4w.logic import query
-
-    db.ensure_mappers()
-    spec = query.ListingSpec(
-        entity_type='platform',
-        model_cls=db.C4wPlatform,
-        search_columns=('name', 'slug'),
-        orderings={'name': lambda m: [m.name.asc(), m.id.asc()]},
-        default_order='name',
-        page_size=25,
-    )
-    return query.build_listing(spec, data_dict or {}, include_private=True)
+    return c4w_admin_entity_list(context, dict(data_dict or {}, section='platforms'))
 
 
 @tk.side_effect_free
@@ -214,8 +252,6 @@ def c4w_entity_moderate(context, data_dict):
         row.approved = True
         if hasattr(row, 'moderated'):
             row.moderated = True
-        if hasattr(row, 'hidden'):
-            row.hidden = False
     elif operation == 'hide':
         row.hidden = not bool(row.hidden)
     elif operation == 'feature':
@@ -240,6 +276,8 @@ def c4w_entity_moderate(context, data_dict):
 def get_actions():
     return {
         'c4w_my_submissions': c4w_my_submissions,
+        'c4w_admin_entity_list': c4w_admin_entity_list,
+        'c4w_admin_summary': c4w_admin_summary,
         'c4w_admin_project_list': c4w_admin_project_list,
         'c4w_admin_platform_list': c4w_admin_platform_list,
         'c4w_moderation_list': c4w_moderation_list,
@@ -273,6 +311,8 @@ def c4w_entity_moderate_auth(context, data_dict):
 def get_auth_functions():
     return {
         'c4w_my_submissions': c4w_my_submissions_auth,
+        'c4w_admin_entity_list': c4w_moderation_list_auth,
+        'c4w_admin_summary': c4w_moderation_list_auth,
         'c4w_admin_project_list': c4w_moderation_list_auth,
         'c4w_admin_platform_list': c4w_moderation_list_auth,
         'c4w_moderation_list': c4w_moderation_list_auth,

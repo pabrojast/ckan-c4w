@@ -1,0 +1,9 @@
+<nav class="c4w-admin-nav" aria-label="{{ _('Content administration') }}">
+  {% for entry in sections %}
+    <a href="{{ h.c4w_url('admin_inventory', section=entry.section) }}"
+       {% if section == entry.section %}aria-current="page"{% endif %}>
+      <strong>{{ _(entry.label) }} <span>{{ entry.total }}</span></strong>
+      <small>{{ _('{n} published').format(n=entry.published) }} · {{ _('{n} hidden').format(n=entry.hidden) }}</small>
+    </a>
+  {% endfor %}
+</nav>

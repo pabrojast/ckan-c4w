@@ -38,9 +38,8 @@ def c4w_lookup(context, data_dict):
     elif kind in ('organisation', 'project'):
         cls = db.C4wOrganisation if kind == 'organisation' else db.C4wProject
         query = Session.query(cls.id, cls.name, cls.slug)
-        public = cls.approved.is_(True)
+        public = cls.approved.is_(True) & cls.hidden.isnot(True)
         if kind == 'project':
-            public = public & cls.hidden.isnot(True)
             user = context.get('auth_user_obj')
             if user:
                 if not _common.is_sysadmin(context):

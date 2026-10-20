@@ -30,7 +30,13 @@
       <div>
         <h1>{% block listing_title %}{% endblock %}</h1>
         <p class="c4w-listing__count">{% block listing_count %}{% endblock %}</p>
-        {% block listing_admin_actions %}{% endblock %}
+        {% block listing_admin_actions %}
+          {% if h.c4w_is_sysadmin() %}
+            {% set entity = endpoint.replace('_list', '') %}
+            {% set section = 'training_resources' if entity == 'training_resource' else h.c4w_admin_section(entity) %}
+            {% if section %}<a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_inventory', section=section) }}">{{ _('Manage visibility') }}</a>{% endif %}
+          {% endif %}
+        {% endblock %}
       </div>
 
       {#
