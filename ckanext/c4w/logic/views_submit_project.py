@@ -55,7 +55,7 @@ def start():
         return bounced
     if request.method == 'GET':
         return _render(1)
-    data = forms.parse_form_data(request.form, multi=project_fields.MULTI)
+    data = forms.parse_form_data(request.form, files=request.files, multi=project_fields.MULTI)
     try:
         draft = tk.get_action('c4w_project_create')({}, data)
     except tk.ValidationError as exc:
@@ -83,25 +83,18 @@ def step(project_id, step):
     draft = _load(project_id)
     if request.method == 'GET':
         return _render(step, draft)
-    data = forms.parse_form_data(request.form, multi=project_fields.MULTI)
+    data = forms.parse_form_data(request.form, files=request.files, multi=project_fields.MULTI)
     data.update(id=project_id, step=step)
     try:
         draft = tk.get_action('c4w_project_update')({}, data)
-        for name in ('image1', 'image2', 'image3'):
-            upload = request.files.get(name)
-            if step == 6 and upload and upload.filename:
-                draft = tk.get_action('c4w_project_image_upload')({}, {
-                    'id': project_id, 'field': name, 'upload': upload, 'version': draft['version'],
-                    'crop_x': data.get(name + '_crop_x', 0.5),
-                    'crop_y': data.get(name + '_crop_y', 0.5)})
         if data.get('action') == 'submit':
-            draft = tk.get_action('c4w_project_submit')({}, {'id': project_id, 'version': draft['version']})
             tk.h.flash_success(tk._('Project sent for review. You can add data whenever you are ready.'))
             return redirect(helpers.c4w_url('project_review', project_id=project_id))
     except tk.ValidationError as exc:
-        # Re-read the revision: image uploads and valid earlier steps may
-        # already have been saved. Never echo a stale concurrency version.
+        # A failed save is atomic. Keep the submitted version so a retry
+        # cannot silently overwrite a concurrent editor's changes.
         latest = _load(project_id)
+        latest['version'] = data.get('version', latest['version'])
         if data.get('action') == 'submit':
             step = next((group['step'] for group in project_fields.STEPS
                          if any(f['name'] in exc.error_dict for f in group['fields'])), step)
@@ -129,5 +122,5 @@ def review(project_id):
             errors = exc.error_dict
         else:
             tk.h.flash_success(tk._('Review saved.'))
-            return redirect(helpers.c4w_url('admin_index'))
+            return redirect(helpers.c4w_url('admin_moderation'))
     return _render(6, draft, errors=errors, review=True)

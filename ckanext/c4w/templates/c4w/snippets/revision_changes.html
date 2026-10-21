@@ -1,0 +1,8 @@
+<section class="c4w-revision-changes"><h2>{{ _('Changes to the published version') }}</h2>
+{% for change in changes %}
+<details open><summary>{{ _(change.label) }}</summary><div class="c4w-revision-columns">
+<div><h3>{{ _('Published') }}</h3><div class="c4w-prose">{{ change.before }}</div></div>
+<div><h3>{{ _('Proposed') }}</h3><div class="c4w-prose">{{ change.after }}</div></div>
+</div></details>
+{% else %}<p>{{ _('No changes to the published version.') }}</p>{% endfor %}
+</section>

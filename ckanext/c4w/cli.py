@@ -412,13 +412,10 @@ def content_admin(username, grant, actor, apply):
         raise click.ClickException('Actor must be an active CKAN sysadmin.')
     if not user or user.state != 'active':
         raise click.ClickException('Target must be an active existing CKAN account.')
-    db.ensure_mappers()
-    existing = db.Session.query(db.C4wPortalAdmin).filter_by(user_id=user.id).first()
     if apply:
-        if grant and existing is None:
-            db.Session.add(db.C4wPortalAdmin(user_id=user.id, granted_by=admin.id))
-        elif not grant and existing is not None:
-            db.Session.delete(existing)
-        db.Session.commit()
+        import ckan.plugins.toolkit as tk
+        tk.get_action('c4w_admin_user_update')(
+            {'user': admin.name, 'auth_user_obj': admin},
+            {'id': user.id, 'operation': 'grant' if grant else 'revoke'})
     click.echo('%s C4W content admin %s: %s' % ('Applied' if apply else 'Preview',
                                                'grant' if grant else 'revocation', user.name))

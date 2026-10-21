@@ -51,7 +51,7 @@ with tempfile.TemporaryDirectory(prefix='c4w-backup-') as tmp:
   cur.execute(sql.SQL('SELECT row_to_json(t) FROM {} t').format(sql.Identifier(table)))
   rows=[r[0] for r in cur.fetchall()]; rows_by_table[table]=rows; counts[table]=len(rows)
   for row in rows:
-   for key in ('created_by','author_id','uploaded_by','user_id','reviewed_by','manager_reviewed_by'):
+   for key in ('created_by','author_id','uploaded_by','user_id','reviewed_by','manager_reviewed_by','submitted_by','modified_by','granted_by'):
     if row.get(key): users.add(row[key])
    if row.get('ckan_org_id'): groups.add(row['ckan_org_id'])
    if table=='c4w_relation':

@@ -1,0 +1,25 @@
+{% extends 'c4w/base.html' %}
+{% block subtitle %}{{ _('Edit') }} · {{ item.title }}{% endblock %}
+{% block styles %}{{ super() }}{% if item.entity_type == 'project' %}<link rel="stylesheet" href="{{ h.url_for_static('/c4w/vendor/maplibre-gl.css') }}">{% endif %}{% endblock %}
+{% block scripts %}{{ super() }}{% if item.entity_type == 'project' %}<script type="module" src="{{ h.url_for_static('/c4w/project-map.js') }}"></script>{% endif %}{% endblock %}
+{% block c4w_content %}
+<div class="c4w-page c4w-admin-editor" id="c4w-main">
+  <header class="c4w-pagehead"><div><h1>{{ _('Edit') }} · {{ item.title }}</h1><p>{{ _('Changes to published content are saved directly. Visibility is managed separately.') }}</p></div><a href="{{ h.c4w_url('admin_inventory', section=section) }}">{{ _('Content administration') }}</a></header>
+  {% if item.entity_type == 'dataset' %}<p class="c4w-note">{{ _('Edit the description and metadata here. Measurement files and dashboard processing are unchanged.') }}</p>{% endif %}
+  {% if item.legacy %}<p class="c4w-note">{{ _('Imported content: existing values are retained when you edit other fields.') }}</p>{% endif %}
+  {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
+  {% if item.blocked %}
+    <div class="c4w-note"><p>{{ _('This item has an open contribution. Resolve it before editing directly; its draft has been preserved.') }}</p><a class="c4w-btn" href="{{ review_url }}">{{ _('Review contribution') }}</a></div>
+  {% else %}
+  <form class="c4w-form c4w-form--wide" method="post" enctype="multipart/form-data" novalidate data-project-form>
+    {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ version }}">
+    {% for group in groups %}
+    <details class="c4w-editor-section" open><summary>{{ _(group.title) }}</summary>
+      {% snippet 'c4w/snippets/editor_fields.html', fields=group.fields, data=data, errors=errors, image_limit=image_limit, map_style=map_style %}
+    </details>
+    {% endfor %}
+    <div class="c4w-form__actions"><button class="c4w-btn" type="submit">{{ _('Save changes') }}</button><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_inventory', section=section) }}">{{ _('Cancel') }}</a></div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

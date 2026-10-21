@@ -71,7 +71,7 @@ def get_auth_functions():
     """
     from ckanext.c4w.logic.action import (
         datasets, events, moderation, organisations, platforms, posts,
-        registration, resources, project_write, lookup, content_write, deletion)
+        registration, resources, project_write, lookup, content_write, deletion, editorial, admins)
 
     functions = {
         'c4w_stats': c4w_stats,
@@ -81,6 +81,6 @@ def get_auth_functions():
         'c4w_project_record_view': c4w_project_record_view,
     }
     for module in (datasets, events, moderation, organisations, platforms,
-                   posts, registration, resources, project_write, lookup, content_write, deletion):
+                   posts, registration, resources, project_write, lookup, content_write, deletion, editorial, admins):
         functions.update(module.get_auth_functions())
     return functions

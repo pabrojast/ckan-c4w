@@ -1,0 +1,45 @@
+{% extends 'c4w/base.html' %}
+{% block subtitle %}{{ _('Administrators') }}{% endblock %}
+{% block c4w_content %}
+<div class="c4w-page c4w-admin-users" id="c4w-main">
+  <header class="c4w-pagehead"><h1>{{ _('Administrators') }}</h1><a href="{{ h.c4w_url('admin_index') }}">{{ _('Content administration') }}</a></header>
+  <p>{{ _('C4W administrators can edit content, review submissions and receive review notifications. IHP-WINS system administrators manage these assignments.') }}</p>
+  {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
+  <section aria-labelledby="c4w-add-admin">
+    <h2 id="c4w-add-admin">{{ _('Add an administrator') }}</h2>
+    <form method="get" class="c4w-admin-user-search">
+      <label for="c4w-admin-user-query">{{ _('Search existing accounts by name, username or email') }}</label>
+      <div><input id="c4w-admin-user-query" class="c4w-input" name="q" value="{{ listing.q }}" minlength="2" maxlength="100" required><button class="c4w-btn" type="submit">{{ _('Search accounts') }}</button></div>
+      <p class="c4w-field__hint">{{ _('Enter at least two characters. The person must already have an active IHP-WINS account.') }}</p>
+    </form>
+    {% if listing.q | length >= 2 %}
+      {% if listing.results %}
+        <ul class="c4w-admin-user-list">
+        {% for user in listing.results %}
+          <li><div><strong>{{ user.fullname or user.name }}</strong><small>{{ user.name }}{% if user.email %} · {{ user.email }}{% endif %}</small>{% if not user.email %}<small>{{ _('No email address: review notifications cannot be sent to this account.') }}</small>{% endif %}</div>
+          {% if user.assigned %}<span class="c4w-badge">{{ _('Already an administrator') }}</span>
+          {% else %}<form method="post">{{ h.csrf_input() }}<input type="hidden" name="id" value="{{ user.id }}"><input type="hidden" name="q" value="{{ listing.q }}"><button class="c4w-btn" name="operation" value="grant">{{ _('Add administrator') }}</button></form>{% endif %}</li>
+        {% endfor %}
+        </ul>
+      {% else %}<p>{{ _('No active accounts match this search.') }}</p>{% endif %}
+      {% if listing.more %}<p>{{ _('Showing the first 20 matches. Refine your search to find the right account.') }}</p>{% endif %}
+    {% elif listing.q %}<p>{{ _('Enter at least two characters.') }}</p>{% endif %}
+  </section>
+  <section aria-labelledby="c4w-current-admins">
+    <h2 id="c4w-current-admins">{{ _('Current C4W administrators') }} ({{ listing.administrators | length }})</h2>
+    {% if not listing.notification_count %}<p class="c4w-note">{{ _('No active C4W administrator has an email address configured for notifications. Requests remain available in Moderation.') }}</p>{% endif %}
+    {% if listing.administrators %}
+      <ul class="c4w-admin-user-list">
+      {% for user in listing.administrators %}
+        <li><div><strong>{{ user.fullname or user.name or _('Account unavailable') }}</strong><small>{{ user.name }}{% if user.email %} · {{ user.email }}{% endif %}</small>
+        <small>{{ _('Receives review notifications') if user.receives_notifications else _('Review notifications unavailable') }}</small>
+        {% if not user.active %}<small>{{ _('Inactive account') }}</small>{% endif %}
+        {% if user.sysadmin %}<small>{{ _('System administrator: keeps content access if removed from this list.') }}</small>{% endif %}
+        {% if user.created %}<small>{{ _('Added') }} {{ user.created[:10] }}</small>{% endif %}</div>
+        <form method="post">{{ h.csrf_input() }}<input type="hidden" name="id" value="{{ user.id }}"><input type="hidden" name="q" value="{{ listing.q }}"><button class="c4w-btn c4w-btn--quiet" name="operation" value="revoke">{{ _('Remove administrator') }}</button></form></li>
+      {% endfor %}
+      </ul>
+    {% else %}<p>{{ _('No C4W administrators have been assigned yet.') }}</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

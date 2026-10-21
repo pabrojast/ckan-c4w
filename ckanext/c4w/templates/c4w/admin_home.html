@@ -1,0 +1,10 @@
+{% extends 'c4w/base.html' %}
+{% block subtitle %}{{ _('Content administration') }}{% endblock %}
+{% block c4w_content %}
+<div class="c4w-page" id="c4w-main">
+<header class="c4w-pagehead"><h1>{{ _('Content administration') }}</h1><a class="c4w-btn" href="{{ h.c4w_url('admin_moderation') }}">{{ _('Moderation') }}{% if pending_count %} ({{ pending_count }}){% endif %}</a></header>
+<p>{{ _('Find and edit published content, manage visibility, or open the complete inventory for each section.') }}</p>
+{% if h.c4w_is_sysadmin() %}<p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_users') }}">{{ _('Administrators') }}</a></p>{% endif %}
+{% snippet 'c4w/snippets/admin_navigation.html', sections=sections, section='' %}
+</div>
+{% endblock %}

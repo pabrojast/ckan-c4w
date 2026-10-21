@@ -2631,3 +2631,33 @@ html.c4w-portal .c4w-contribute > .c4w-contribute__note { font-size: 0.875rem !i
   .c4w-facets { order: 1; margin-bottom: 1rem; }
   .c4w-listing__results { order: 2; }
 }
+
+/* Shared editorial workspace and review comparisons. */
+.c4w-admin-editor .c4w-form { max-width: 960px; }
+.c4w-editor-section { margin-block: 1rem; border: 1px solid var(--c4w-rule); border-radius: 10px; padding: 1rem; }
+.c4w-editor-section > summary { cursor: pointer; font-weight: 700; margin-bottom: 1rem; }
+.c4w-editor-section .c4w-field { min-width: 0; }
+.c4w-rich-editor { overflow-wrap: anywhere; }
+.c4w-link-dialog { width: min(90vw, 480px); max-height: 85vh; border: 1px solid var(--c4w-rule); border-radius: 12px; padding: 1.5rem; }
+.c4w-link-dialog::backdrop { background: #001f3f80; }
+.c4w-link-dialog label { display: block; margin-bottom: 1rem; }
+.c4w-link-dialog button { margin: .25rem; }
+.c4w-revision-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.c4w-revision-columns > div { min-width: 0; overflow-wrap: anywhere; border: 1px solid var(--c4w-rule); padding: .75rem; }
+.c4w-revision-changes details { margin-block: 1rem; }
+.c4w-queue small { display: block; }
+.c4w-footer__ihp { display: inline-flex; margin-top: 1.25rem; background: #0077d4; padding: .75rem; border-radius: 4px; }
+.c4w-footer__ihp img { display: block; width: 130px; height: auto; max-width: 100%; }
+@media (max-width: 600px) { .c4w-revision-columns { grid-template-columns: 1fr; } .c4w-editor-section { padding: .75rem; } }
+
+/* C4W administrator assignments. */
+.c4w-admin-users section { margin-block: 2rem; }
+.c4w-admin-user-search { max-width: 720px; }
+.c4w-admin-user-search > div { display: flex; gap: .75rem; margin-top: .5rem; }
+.c4w-admin-user-search input { flex: 1; min-width: 0; }
+.c4w-admin-user-list { list-style: none; padding: 0; }
+.c4w-admin-user-list li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--c4w-rule); padding-block: 1rem; }
+.c4w-admin-user-list li > div { min-width: 0; overflow-wrap: anywhere; }
+.c4w-admin-user-list small { display: block; color: var(--c4w-muted); }
+.c4w-admin-user-list form { flex-shrink: 0; }
+@media (max-width: 600px) { .c4w-admin-user-list li { align-items: flex-start; flex-direction: column; } .c4w-admin-user-search > div { flex-direction: column; } }

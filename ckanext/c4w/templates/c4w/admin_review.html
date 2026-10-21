@@ -1,0 +1,15 @@
+{% extends 'c4w/base.html' %}
+{% import 'c4w/macros/form.html' as form with context %}
+{% block subtitle %}{{ _('Review') }} · {{ item.title }}{% endblock %}
+{% block c4w_content %}
+<div class="c4w-page" id="c4w-main">
+<header class="c4w-pagehead"><h1>{{ _('Review') }} · {{ item.title }}</h1><a href="{{ h.c4w_url('admin_moderation') }}">{{ _('Moderation') }}</a></header>
+{% snippet 'c4w/snippets/form_errors.html', errors=errors %}
+{% snippet 'c4w/snippets/project_summary.html', data=data, steps=steps %}
+<form method="post" class="c4w-form">
+{{ h.csrf_input() }}<input type="hidden" name="version" value="{{ version }}">
+{{ form.textarea('note', _('Message to the author'), '', errors, hint=_('Required when requesting changes or rejecting.'), maxlength=2000) }}
+<div class="c4w-form__actions"><button class="c4w-btn" name="decision" value="approve">{{ _('Approve and publish') }}</button><button class="c4w-btn c4w-btn--quiet" name="decision" value="changes_requested">{{ _('Request corrections') }}</button><button class="c4w-btn c4w-btn--quiet" name="decision" value="rejected">{{ _('Reject') }}</button></div>
+</form>
+</div>
+{% endblock %}

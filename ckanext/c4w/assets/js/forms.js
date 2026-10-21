@@ -154,6 +154,51 @@
         button.addEventListener('click', () => { editor.focus(); document.execCommand(command); textarea.value = editor.innerHTML; });
         toolbar.append(button);
       });
+      const linkButton = document.createElement('button'); linkButton.type = 'button'; linkButton.textContent = t('Link');
+      linkButton.setAttribute('aria-label', t('Insert or edit link'));
+      const dialog = document.createElement('dialog'); dialog.className = 'c4w-link-dialog';
+      const title = document.createElement('h3'); title.textContent = t('Insert or edit link');
+      const textLabel = document.createElement('label'); textLabel.textContent = t('Link text');
+      const linkText = document.createElement('input'); linkText.className = 'c4w-input'; textLabel.append(linkText);
+      const urlLabel = document.createElement('label'); urlLabel.textContent = t('Web address or email link');
+      const linkUrl = document.createElement('input'); linkUrl.className = 'c4w-input'; linkUrl.placeholder = 'https://'; urlLabel.append(linkUrl);
+      const message = document.createElement('p'); message.setAttribute('role', 'alert');
+      const save = document.createElement('button'); save.type = 'button'; save.className = 'c4w-btn'; save.textContent = t('Save link');
+      const unlink = document.createElement('button'); unlink.type = 'button'; unlink.className = 'c4w-btn c4w-btn--quiet'; unlink.textContent = t('Remove link');
+      const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'c4w-btn c4w-btn--quiet'; cancel.textContent = t('Cancel');
+      dialog.append(title, textLabel, urlLabel, message, save, unlink, cancel); root.append(dialog);
+      let savedRange, existingLink;
+      function rememberSelection() {
+        const selected = window.getSelection();
+        if (selected.rangeCount && editor.contains(selected.getRangeAt(0).commonAncestorContainer)) savedRange = selected.getRangeAt(0).cloneRange();
+      }
+      editor.addEventListener('keyup', rememberSelection); editor.addEventListener('mouseup', rememberSelection);
+      linkButton.addEventListener('mousedown', event => { rememberSelection(); event.preventDefault(); });
+      linkButton.addEventListener('click', () => {
+        rememberSelection();
+        if (!savedRange) { savedRange = document.createRange(); savedRange.selectNodeContents(editor); savedRange.collapse(false); }
+        let node = savedRange.startContainer; if (node.nodeType !== 1) node = node.parentElement;
+        existingLink = node.closest('a'); if (existingLink && !editor.contains(existingLink)) existingLink = null;
+        linkText.value = existingLink ? existingLink.textContent : savedRange.toString();
+        linkUrl.value = existingLink ? existingLink.getAttribute('href') : '';
+        unlink.hidden = !existingLink; message.textContent = ''; dialog.showModal(); linkUrl.focus();
+      });
+      function changed() { textarea.value = editor.innerHTML; editor.dispatchEvent(new Event('input', {bubbles: true})); dialog.close(); editor.focus(); }
+      save.addEventListener('click', () => {
+        const value = linkUrl.value.trim();
+        if (!/^(https?:\/\/|mailto:)/i.test(value) || /[\u0000-\u0020]/.test(value)) { message.textContent = t('Use an http, https or mailto address.'); return; }
+        try { new URL(value); } catch (_) { message.textContent = t('Enter a valid address.'); return; }
+        const anchor = existingLink || document.createElement('a'); anchor.href = value;
+        anchor.textContent = linkText.value.trim() || value; anchor.rel = 'noopener noreferrer';
+        if (!existingLink) { savedRange.deleteContents(); savedRange.insertNode(anchor); }
+        savedRange = null; changed();
+      });
+      unlink.addEventListener('click', () => { if (existingLink) existingLink.replaceWith(...existingLink.childNodes); savedRange = null; changed(); });
+      cancel.addEventListener('click', () => dialog.close()); toolbar.append(linkButton);
+      const counter = document.createElement('p'); counter.className = 'c4w-field__hint';
+      const limit = Number(root.dataset.limit || 15000);
+      const count = () => { counter.textContent = `${editor.textContent.length.toLocaleString()} / ${limit.toLocaleString()} ` + t('characters'); };
+      editor.addEventListener('input', count); count(); root.append(counter);
       textarea.hidden = true; textarea.after(toolbar, editor);
       editor.addEventListener('input', () => { textarea.value = editor.innerHTML; });
       editor.addEventListener('paste', event => { event.preventDefault(); document.execCommand('insertText', false, event.clipboardData.getData('text/plain')); });
@@ -174,12 +219,21 @@
     document.querySelectorAll('[data-image-crop]').forEach(root => {
       const input = root.querySelector('input[type=file]'), img = root.querySelector('img');
       const sliders = root.querySelectorAll('input[type=range]'); let url;
+      const remove = root.querySelector('[data-image-remove]'), del = root.querySelector('[data-image-delete]');
+      if (remove) remove.disabled = false;
+      if (del) del.addEventListener('click', () => {
+        input.value = ''; if (url) { URL.revokeObjectURL(url); url = null; }
+        img.removeAttribute('src'); img.hidden = true; del.hidden = true;
+        root.querySelector('.c4w-crop-controls').hidden = true; remove.value = 'true';
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+      });
       img.style.aspectRatio = root.dataset.ratio;
       function position() { img.style.objectPosition = `${Number(sliders[0].value) * 100}% ${Number(sliders[1].value) * 100}%`; }
       sliders.forEach(s => s.addEventListener('input', position));
       input.addEventListener('change', () => {
         if (!input.files[0]) return;
         if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(input.files[0]);
+        if (remove) remove.value = ''; if (del) del.hidden = false;
         img.src = url; img.hidden = false; root.querySelector('.c4w-crop-controls').hidden = false; position();
       });
     });

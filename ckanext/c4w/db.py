@@ -592,6 +592,9 @@ c4w_project_revision_table = Table(
     Column('version', types.Integer, nullable=False, default=1),
     Column('created_by', types.UnicodeText, nullable=False),
     Column('submitted_at', types.DateTime),
+    Column('submitted_by', types.UnicodeText),
+    Column('modified_by', types.UnicodeText),
+    Column('notification_status', types.UnicodeText),
     Column('reviewed_at', types.DateTime),
     Column('reviewed_by', types.UnicodeText),
     Column('review_note', types.UnicodeText),
@@ -610,6 +613,9 @@ c4w_content_revision_table = Table(
     Column('version', types.Integer, nullable=False, default=1),
     Column('created_by', types.UnicodeText, nullable=False),
     Column('submitted_at', types.DateTime),
+    Column('submitted_by', types.UnicodeText),
+    Column('modified_by', types.UnicodeText),
+    Column('notification_status', types.UnicodeText),
     Column('reviewed_at', types.DateTime),
     Column('reviewed_by', types.UnicodeText),
     Column('review_note', types.UnicodeText),
@@ -803,6 +809,8 @@ def ensure_mappers():
 #
 # Tuples are (table_name, column_name, column_sql_type).
 _AUTO_HEAL_COLUMNS = [
+    *[(table, column, 'TEXT') for table in ('c4w_project_revision', 'c4w_content_revision')
+      for column in ('submitted_by', 'modified_by', 'notification_status')],
     ('c4w_organisation', 'hidden', 'BOOLEAN NOT NULL DEFAULT FALSE'),
     ('c4w_event', 'hidden', 'BOOLEAN NOT NULL DEFAULT FALSE'),
     ('c4w_post', 'hidden', 'BOOLEAN NOT NULL DEFAULT FALSE'),

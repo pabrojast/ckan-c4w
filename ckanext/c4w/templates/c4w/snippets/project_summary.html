@@ -10,7 +10,7 @@
             {% if f.kind != 'image' or data.get(f.name ~ '_url') %}
               <dt>{{ _(f.label) }}</dt>
               <dd>
-                {% if f.kind == 'rich' %}{{ h.literal(value) }}
+                {% if f.kind in ['rich', 'news'] %}{{ h.literal(value) }}
                 {% elif f.kind == 'image' %}<img src="{{ data.get(f.name ~ '_url') }}" alt="{{ _(f.label) }}" loading="lazy">
                 {% elif f.kind == 'geometry' %}{{ _('Project area provided') }}
                 {% else %}{{ h.c4w_project_field_value(f, value) }}{% endif %}

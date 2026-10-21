@@ -605,11 +605,14 @@ def c4w_lookup_options(kind, values=None):
     return result
 
 
-def c4w_project_language_options():
+def c4w_project_language_options(selected=None):
     from babel import Locale
     locale = Locale.parse(tk.request.environ.get('CKAN_LANG') or 'en')
-    return sorted([(code, label) for code, label in locale.languages.items()
-                   if code.isalpha() and len(code) in (2, 3)], key=lambda pair: pair[1])
+    from ckanext.c4w.logic import legacy
+    options = {code: label for code, label in locale.languages.items() if code.isalpha() and len(code) in (2, 3)}
+    for code in legacy.languages(selected):
+        options.setdefault(code, code + ' (' + tk._('Imported value') + ')')
+    return sorted(options.items(), key=lambda pair: pair[1])
 
 
 def c4w_project_field_value(field, value):
@@ -641,8 +644,34 @@ def c4w_admin_section(entity_type, item=None):
     return admin_section(entity_type, item)
 
 
+def c4w_safe_description(value):
+    from markupsafe import Markup
+    from ckanext.c4w.logic.sanitize import sanitize_html
+    return Markup(sanitize_html(str(value or '')))
+
+
+def c4w_editor_options(field, selected=None):
+    from ckanext.c4w.logic.checks import as_list
+    if field['kind'] == 'country':
+        return c4w_country_options(selected)
+    if field['kind'] == 'language':
+        return c4w_project_language_options(selected)
+    if field['kind'] == 'category':
+        from ckanext.c4w import db
+        options = [(r.id, r.path or r.text) for r in db.Session.query(db.C4wCategory).order_by(db.C4wCategory.text).all()]
+    else:
+        options = [(o['term'], o['label']) for o in c4w_option_list(field['vocabulary'])]
+    known = {value for value, label in options}
+    for value in as_list(selected):
+        if value not in known:
+            options.append((value, value + ' (' + tk._('Imported value') + ')'))
+    return options
+
+
 def get_helpers():
     return {
+        'c4w_safe_description': c4w_safe_description,
+        'c4w_editor_options': c4w_editor_options,
         'c4w_site_host': c4w_site_host,
         'c4w_event_status': c4w_event_status,
         'c4w_is_public': c4w_is_public,

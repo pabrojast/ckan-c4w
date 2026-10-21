@@ -9,22 +9,117 @@ from ckanext.c4w.logic import helpers as c4w_helpers
 from ckanext.c4w.logic.access import require_sysadmin, require_content_admin, safe_next
 
 
-def admin_index():
+def admin_moderation():
     _user, bounced = require_content_admin()
     if bounced is not None:
         return bounced
+    from ckanext.c4w.logic import mail
     listing = tk.get_action('c4w_moderation_list')({}, {})
     try:
         managers = tk.get_action('c4w_manager_list')({}, {}).get('requests')
     except Exception:
         managers = []
     return tk.render('c4w/admin.html', extra_vars={
+        'notification_warning': not mail.moderation_recipients(),
         'sections': tk.get_action('c4w_admin_summary')({}, {})['sections'],
         'groups': listing.get('groups') or [],
         'managers': managers or [],
         'project_requests': listing.get('project_requests') or [],
         'content_requests': listing.get('content_requests') or [],
     })
+
+
+def admin_index():
+    _, bounced = require_content_admin()
+    if bounced is not None:
+        return bounced
+    listing = tk.get_action('c4w_moderation_list')({}, {})
+    count = len(listing.get('project_requests', [])) + len(listing.get('content_requests', [])) + sum(len(g['rows']) for g in listing.get('groups', []))
+    return tk.render('c4w/admin_home.html', extra_vars=dict(
+        sections=tk.get_action('c4w_admin_summary')({}, {})['sections'], pending_count=count))
+
+
+def admin_edit(section, item_id):
+    _, bounced = require_content_admin()
+    if bounced is not None:
+        return bounced
+    from ckanext.c4w.logic import admin_fields, forms
+    from ckanext.c4w.logic.sanitize import sanitize_html, sanitize_rich_html
+    from ckan.model.meta import Session
+    args = dict(section=section, id=item_id)
+    try:
+        item = tk.get_action('c4w_admin_entity_edit_show')({}, args)
+    except tk.ObjectNotFound:
+        tk.abort(404)
+    fields = admin_fields.fields(item['entity_type'])
+    errors, data, version = {}, dict(item['payload']), item['version']
+    if request.method == 'POST':
+        multi = [f['name'] for f in fields if f['kind'] in ('multi', 'countries', 'languages', 'organisations')]
+        posted = forms.parse_form_data(request.form, request.files, multi=multi)
+        # Unchecked booleans are deliberately cleared, while omitted API fields
+        # retain their stored value in the action.
+        for f in fields:
+            if f['kind'] == 'bool':
+                posted.setdefault(f['name'], False)
+        try:
+            tk.get_action('c4w_admin_entity_update')({}, dict(posted, **args))
+        except tk.ValidationError as exc:
+            Session.rollback()
+            errors = exc.error_dict
+            data.update(forms.echo_values(posted))
+            version = posted.get('version', '')
+        else:
+            tk.h.flash_success(tk._('Changes saved. The visibility setting is unchanged.'))
+            return redirect(c4w_helpers.c4w_url('admin_edit', **dict(section=section, item_id=item_id)))
+    for f in fields:
+        name = f['name']
+        if f['kind'] in ('rich', 'news'):
+            data[name] = (sanitize_rich_html if f['kind'] == 'news' else sanitize_html)(str(data.get(name) or ''))
+        elif f['kind'] in ('terms', 'urls', 'editors') and isinstance(data.get(name), list):
+            if f['kind'] == 'editors':
+                import ckan.model as model
+                data[name] = [u.name for u in (model.User.get(v) for v in data[name]) if u]
+            data[name] = ', '.join(data[name])
+    entity = item['entity_type']
+    review_url = (c4w_helpers.c4w_url('project_review', project_id=item_id) if entity == 'project' else
+                  c4w_helpers.c4w_url('content_review', entity=entity, content_id=item_id) if entity in ('post', 'event') else
+                  c4w_helpers.c4w_url('admin_review', section=section, item_id=item_id))
+    return tk.render('c4w/admin_edit.html', extra_vars=dict(item=item, section=section,
+        groups=admin_fields.groups(entity), data=data, errors=errors, version=version,
+        review_url=review_url, image_limit=tk.config.get('ckan.max_image_size') or 2,
+        map_style=tk.config.get('ckanext.c4w.basemap_style') or 'https://tiles.openfreemap.org/styles/positron'))
+
+
+def admin_review(section, item_id):
+    _, bounced = require_content_admin()
+    if bounced is not None:
+        return bounced
+    from ckanext.c4w.logic import admin_fields
+    from ckan.model.meta import Session
+    args = dict(section=section, id=item_id)
+    try:
+        item = tk.get_action('c4w_admin_entity_edit_show')({}, args)
+    except tk.ObjectNotFound:
+        tk.abort(404)
+    if item['revision_status'] and item['entity_type'] in ('project', 'post', 'event'):
+        return redirect(c4w_helpers.c4w_url('project_review', project_id=item_id) if item['entity_type'] == 'project' else
+                        c4w_helpers.c4w_url('content_review', entity=item['entity_type'], content_id=item_id))
+    errors = {}
+    if request.method == 'POST':
+        try:
+            tk.get_action('c4w_admin_entity_review')({}, dict(request.form, **args))
+        except tk.ValidationError as exc:
+            Session.rollback(); errors = exc.error_dict
+        else:
+            tk.h.flash_success(tk._('Review saved.'))
+            return redirect(c4w_helpers.c4w_url('admin_moderation'))
+    from ckanext.c4w.logic.sanitize import sanitize_html, sanitize_rich_html
+    data = dict(item['payload'])
+    for f in admin_fields.fields(item['entity_type']):
+        if f['kind'] in ('rich', 'news'):
+            data[f['name']] = (sanitize_rich_html if f['kind'] == 'news' else sanitize_html)(str(data.get(f['name']) or ''))
+    return tk.render('c4w/admin_review.html', extra_vars=dict(item=item, data=data,
+        steps=admin_fields.groups(item['entity_type']), errors=errors, version=request.form.get('version', item['version'])))
 
 
 def admin_projects():
@@ -36,6 +131,8 @@ def admin_platforms():
 
 
 def admin_event_edit(event_id=None):
+    if event_id:
+        return admin_edit('events', event_id)
     _, bounced = require_content_admin()
     if bounced is not None:
         return bounced

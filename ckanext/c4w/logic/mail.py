@@ -81,9 +81,31 @@ def send_manager_decision(fullname, email, approved, note=None,
 
 
 def notify_moderators(subject, body):
-    """Tell the configured moderation inbox something needs a look."""
-    email = (tk.config.get('ckanext.c4w.moderation_notify_email')
-             or u'').strip()
-    if not email:
+    """Notify explicitly assigned C4W administrators, without a global admin blast."""
+    recipients = moderation_recipients()
+    results = [_send(name, email, subject, body) for name, email in recipients]
+    return bool(results) and all(results)
+
+
+def moderation_recipients():
+    from ckanext.c4w import db
+    import ckan.model as model
+    db.ensure_mappers()
+    users = db.Session.query(model.User).join(
+        db.C4wPortalAdmin, db.C4wPortalAdmin.user_id == model.User.id).filter(
+        model.User.state == 'active').all()
+    recipients = {}
+    for user in users:
+        if user.email:
+            recipients[user.email.strip().lower()] = user.fullname or user.name
+    return [(name, email) for email, name in sorted(recipients.items())]
+
+
+def notify_review(user_id, decision, note, url):
+    import ckan.model as model
+    user = model.User.get(user_id) if user_id else None
+    if not user:
         return False
-    return _send(u'Citizens4Water moderators', email, subject, body)
+    label = {'approve': 'Approved', 'changes_requested': 'Changes requested', 'rejected': 'Rejected'}[decision]
+    return _send(user.fullname, user.email, tk._('Citizens4Water: contribution review'),
+                 label + '\n' + (note or '') + '\n' + url)

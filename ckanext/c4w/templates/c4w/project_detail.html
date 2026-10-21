@@ -11,7 +11,7 @@
   Every long-form field on this page is stored HTML that was sanitised on the
   way IN (logic/sanitize.py), which is why it renders with `| safe` here.
 #}
-{% macro rich(value) %}{% if value %}{{ value | safe }}{% endif %}{% endmacro %}
+{% macro rich(value) %}{% if value %}{{ h.c4w_safe_description(value) }}{% endif %}{% endmacro %}
 
 {% set LINKED = ('country', 'topic', 'has_tag', 'participation_task',
                  'water_type', 'water_data_type', 'stakeholder_type',
@@ -84,6 +84,10 @@
     </section>
   {% endif %}
 
+  {% for key, label in [('cs_aspects','Citizen science aspects'),('target_group','Target group'),('water_parameters','Specific water parameters'),('data_quality_initiatives','Data quality initiatives'),('community_impact_description','Community impact'),('outreach_methods','Outreach methods'),('ai_description','How AI is used'),('indigenous_description','Indigenous knowledge')] %}
+    {% if project.get(key) and (key != 'ai_description' or project.uses_ai) and (key != 'indigenous_description' or project.indigenous_knowledge) %}<section><h2>{{ _(label) }}</h2>{{ h.c4w_safe_description(project.get(key)) }}</section>{% endif %}
+  {% endfor %}
+
   {% if project.main_organisation or project.organisations %}
     <section>
       <h2>{{ _('Organisations') }}</h2>
@@ -112,7 +116,7 @@
 
 {% block detail_actions %}
   {% if project.can_edit %}
-    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_project_step', project_id=project.id, step=1) }}">{{ _('Edit project') }}</a>
+    <a class="c4w-btn c4w-btn--quiet" href="{{ (h.c4w_url('admin_edit', section='projects', item_id=project.id) if h.c4w_is_content_admin() else h.c4w_url('submit_project_step', project_id=project.id, step=1)) }}">{{ _('Edit project') }}</a>
   {% endif %}
   <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_start', project_id=project.id) }}">{{ _('Add data') }}</a>
   {% if project.url %}
@@ -144,7 +148,7 @@
       <dd>{{ h.c4w_term_label('difficulty_level', project.difficulty_level) }}</dd>
     </div>
   {% endif %}
-  {% if project.number_of_participants %}
+  {% if project.number_of_participants is defined and project.number_of_participants not in [none, ''] %}
     <div class="c4w-detail__facts-row">
       <dt>{{ _('Participants') }}</dt><dd>{{ project.number_of_participants }}</dd>
     </div>

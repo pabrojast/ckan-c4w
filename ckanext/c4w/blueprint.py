@@ -51,6 +51,26 @@ def submit():
     return views_account.submit()
 
 
+def admin_users():
+    from ckanext.c4w.logic.views_admin_users import admin_users as view
+    return view()
+
+
+def admin_moderation():
+    from ckanext.c4w.logic.views_admin import admin_moderation as view
+    return view()
+
+
+def admin_edit(section, item_id):
+    from ckanext.c4w.logic.views_admin import admin_edit as view
+    return view(section, item_id)
+
+
+def admin_review(section, item_id):
+    from ckanext.c4w.logic.views_admin import admin_review as view
+    return view(section, item_id)
+
+
 def admin_index():
     from ckanext.c4w.logic import views_admin
     return views_admin.admin_index()
@@ -327,6 +347,10 @@ def _register(bp):
                     strict_slashes=False)
     bp.add_url_rule('/admin', 'admin_index', admin_index, methods=['GET'],
                     strict_slashes=False)
+    bp.add_url_rule('/admin/administrators', 'admin_users', admin_users, methods=['GET', 'POST'])
+    bp.add_url_rule('/admin/moderation', 'admin_moderation', admin_moderation, methods=['GET'])
+    bp.add_url_rule('/admin/<section>/<item_id>/review', 'admin_review', admin_review, methods=['GET', 'POST'])
+    bp.add_url_rule('/admin/<section>/<item_id>/edit', 'admin_edit', admin_edit, methods=['GET', 'POST'])
     bp.add_url_rule('/admin/<section>', 'admin_inventory', admin_inventory,
                     methods=['GET'], strict_slashes=False)
     bp.add_url_rule('/admin/<section>/<item_id>/delete', 'admin_delete', admin_delete,

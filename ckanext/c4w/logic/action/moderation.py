@@ -31,12 +31,12 @@ def _title(row):
 
 
 def _queue_clause(model_cls):
-    """Rows a reviewer still has to look at: not public, or hidden."""
+    """Unpublished content; hiding a published item never requests a review."""
     parts = []
     if hasattr(model_cls, 'approved'):
         parts.append(model_cls.approved.isnot(True))
-    if hasattr(model_cls, 'hidden'):
-        parts.append(model_cls.hidden.is_(True))
+    if hasattr(model_cls, 'status') and not hasattr(model_cls, 'approved'):
+        parts.append(model_cls.status != constants.POST_STATUS_PUBLISHED)
     return parts
 
 
@@ -71,6 +71,12 @@ def c4w_my_submissions(context, data_dict):
                     db.C4wRelation.object_id == user.id)
         )
         clauses.append(model_cls.id.in_(editor_ids))
+        revision_model = db.C4wProjectRevision if entity_type == 'project' else db.C4wContentRevision
+        revision_query = Session.query(revision_model.project_id if entity_type == 'project' else revision_model.entity_id).filter(
+            or_(revision_model.created_by == user.id, revision_model.modified_by == user.id, revision_model.submitted_by == user.id))
+        if entity_type != 'project':
+            revision_query = revision_query.filter(revision_model.entity_type == entity_type)
+        clauses.append(model_cls.id.in_(revision_query))
         rows = (Session.query(model_cls)
                 .filter(or_(*clauses))
                 .order_by(model_cls.modified.desc().nullslast())
@@ -81,9 +87,15 @@ def c4w_my_submissions(context, data_dict):
         for row in rows:
             item = db.entity_dictize(entity_type, row, include_private=True)
             item['title'] = _title(row)
+            if entity_type not in ('project', 'post', 'event'):
+                from ckanext.c4w.logic.action.editorial import revision
+                rev = revision(entity_type, row)
+                if rev:
+                    item['proposal'] = dict(status=rev.status, review_note=rev.review_note)
             if entity_type == 'project':
                 from ckanext.c4w.logic.action.project_write import _revision, _dict
                 item['proposal'] = _dict(row, _revision(row))
+                item['modified'] = item['proposal']['modified'] or item.get('modified')
             if entity_type in ('post', 'event'):
                 from ckanext.c4w.logic.action import content_write
                 item['proposal'] = content_write.dictize(entity_type, row, content_write.revision(entity_type, row))
@@ -184,7 +196,8 @@ def c4w_moderation_list(context, data_dict):
     from ckanext.c4w.logic.action.project_write import _dict
     from ckanext.c4w.logic.action import content_write
     content_revisions = Session.query(db.C4wContentRevision).all()
-    content_keys = {(r.entity_type, r.entity_id) for r in content_revisions}
+    content_keys = {(r.entity_type, r.entity_id) for r in content_revisions
+                    if r.entity_type in content_write.FIELDS or r.status != 'pending'}
     content_requests = []
     for rev in content_revisions:
         if rev.status == 'pending' and rev.entity_type in content_write.FIELDS:
@@ -193,6 +206,10 @@ def c4w_moderation_list(context, data_dict):
                 content_requests.append(content_write.dictize(rev.entity_type, row, rev))
     project_requests = [_dict(p, revisions[p.id]) for p in Session.query(db.C4wProject).filter(
         db.C4wProject.id.in_([key for key, r in revisions.items() if r.status == 'pending'])).all()]
+    import ckan.model as model
+    for proposal in project_requests + content_requests:
+        author = model.User.get(proposal.get('submitted_by'))
+        proposal['submitted_name'] = (author.fullname or author.name) if author else tk._('Previous contributor')
     for entity_type in constants.MODERATED_ENTITY_TYPES:
         model_cls = models[entity_type]
         parts = _queue_clause(model_cls)
@@ -206,7 +223,9 @@ def c4w_moderation_list(context, data_dict):
         for row in rows:
             if (entity_type, row.id) in content_keys:
                 continue
-            if entity_type == 'project' and row.id in revisions and not row.approved:
+            if entity_type == 'project' and row.id in revisions:
+                continue
+            if entity_type == 'dataset' and not row.submitted_at and not any(r.entity_type == entity_type and r.entity_id == row.id and r.status == 'pending' for r in content_revisions):
                 continue
             item = db.entity_dictize(entity_type, row, include_private=True)
             item['title'] = _title(row)
@@ -245,7 +264,7 @@ def c4w_entity_moderate(context, data_dict):
     from ckan.model.meta import Session
 
     if operation == 'approve':
-        if entity_type in ('post', 'event') and Session.query(db.C4wContentRevision).filter_by(entity_type=entity_type, entity_id=row.id).first():
+        if entity_type != 'project' and Session.query(db.C4wContentRevision).filter_by(entity_type=entity_type, entity_id=row.id).first():
             raise tk.ValidationError({'message': [tk._('Review the submitted contribution before approving it.')]})
         if entity_type == 'project' and Session.query(db.C4wProjectRevision).filter_by(project_id=row.id).first():
             raise tk.ValidationError({'message': [tk._('Review and approve the submitted project revision.')]})

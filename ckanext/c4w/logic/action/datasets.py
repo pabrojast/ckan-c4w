@@ -702,7 +702,17 @@ def c4w_dataset_submit(context, data_dict):
     errors = _complete_errors(row, context)
     if errors:
         raise tk.ValidationError(errors)
-    first_time = row.submitted_at is None
+    from ckanext.c4w.logic.action import editorial
+    rev = editorial.revision('dataset', row)
+    notify = rev is None or rev.status != 'pending'
+    if rev is None:
+        rev = db.C4wContentRevision(entity_type='dataset', entity_id=row.id, created_by=_user_id(context), version=0)
+        Session.add(rev)
+    rev.payload = db.dump_extras(editorial.snapshot('dataset', row))
+    rev.version += 1
+    rev.status = 'pending'
+    rev.submitted_by = rev.modified_by = _user_id(context)
+    rev.submitted_at = rev.modified = db._utcnow()
     row.submitted_at = db._utcnow()
     row.wizard_step = 6
     _touch(row)
@@ -711,14 +721,17 @@ def c4w_dataset_submit(context, data_dict):
     status = row.processing_status
     if status in (u'uploaded', u'mapped', u'failed', u'draft'):
         status = jobs.dispatch(row.id)
-    if first_time:
+    if notify:
         try:
-            url = tk.h.url_for('c4w.admin_index', qualified=True)
+            from ckanext.c4w.logic import helpers
+            url = helpers.c4w_url('admin_review', section='data', item_id=row.id, qualified=True)
         except Exception:
             url = u''
-        mail.notify_moderators(
-            tk._(u'[Citizens4Water] New dataset submitted: %s') % row.title,
+        sent = mail.notify_moderators(
+            tk._(u'[Citizens4Water] Dataset submitted: %s') % row.title,
             u'%s\n\n%s' % (row.title, url))
+        rev.notification_status = 'sent' if sent else 'failed'
+        Session.commit()
     row = _get(row.id)
     return _dictize(row, context)
 

@@ -125,7 +125,12 @@ def dictize(entity, row, rev):
     if entity == 'event':
         payload['country'] = country_code(payload.get('country'))
     published = row.status == constants.POST_STATUS_PUBLISHED if entity == 'post' else bool(row.approved)
-    return dict(id=row.id, slug=row.slug, entity_type=entity, title=payload.get('title'),
+    from ckanext.c4w.logic import review, admin_fields
+    return dict(changes=review.changes(_snapshot(entity, row), payload, admin_fields.fields(entity)) if published else [],
+                submitted_by=(rev.submitted_by or rev.created_by) if rev else None,
+                submitted_at=rev.submitted_at.isoformat() if rev and rev.submitted_at else None,
+                notification_status=rev.notification_status if rev else None,
+                id=row.id, slug=row.slug, entity_type=entity, title=payload.get('title'),
                 payload=payload, published=published, status=rev.status if rev else ('approved' if published else 'draft'),
                 version=rev.version if rev else 0, review_note=rev.review_note if rev else '',
                 modified=(rev.modified or db._utcnow()).isoformat() if rev else None)
@@ -178,15 +183,32 @@ def c4w_content_update(context, data_dict):
     tk.check_access('c4w_content_update', context, data_dict)
     entity, row, rev = _working(context, data_dict)
     payload = dict(_snapshot(entity, row), **db.load_extras(rev.payload))
-    updates, errors = validate(entity, dict(payload, **data_dict), context,
+    updates, errors = validate(entity, dict(payload, **data_dict), context, complete=data_dict.get('action') == 'submit',
                                legacy_country=getattr(row, 'country', None))
     if errors:
         raise tk.ValidationError(errors)
     payload.update(updates)
     if checks.is_truthy(data_dict.get('remove_image')):
         payload['image_url'] = ''
-    rev.payload = db.dump_extras(payload)
-    _touch(rev); Session.commit()
+    cleanup = None
+    try:
+        upload = data_dict.get('image')
+        if entity == 'post' and getattr(upload, 'filename', None):
+            from ckanext.c4w.logic.project_images import store_image
+            try:
+                url, cleanup = store_image(upload, 'image3', dict(
+                    crop_x=data_dict.get('image_crop_x', .5), crop_y=data_dict.get('image_crop_y', .5)))
+            except tk.ValidationError as exc:
+                raise tk.ValidationError({'image': next(iter(exc.error_dict.values()))})
+            payload['image_url'] = url
+        rev.payload = db.dump_extras(payload)
+        _touch(rev); rev.modified_by = context['auth_user_obj'].id
+        Session.commit()
+    except Exception:
+        Session.rollback()
+        if cleanup:
+            cleanup()
+        raise
     return dictize(entity, row, rev)
 
 
@@ -215,7 +237,14 @@ def c4w_content_submit(context, data_dict):
                          legacy_country=getattr(row, 'country', None))
     if errors:
         raise tk.ValidationError(errors)
-    _touch(rev, 'pending'); rev.submitted_at = db._utcnow(); Session.commit()
+    _touch(rev, 'pending'); rev.submitted_at = db._utcnow()
+    rev.submitted_by = context['auth_user_obj'].id
+    Session.commit()
+    from ckanext.c4w.logic import mail, helpers
+    sent = mail.notify_moderators(tk._('Citizens4Water: contribution submitted for review'),
+        helpers.c4w_url('content_review', entity=entity, content_id=row.id, qualified=True))
+    rev.notification_status = 'sent' if sent else 'failed'
+    Session.commit()
     return dictize(entity, row, rev)
 
 
@@ -225,13 +254,13 @@ def c4w_content_review(context, data_dict):
     if rev.status != 'pending':
         raise tk.ValidationError({'message': [tk._('Only submitted proposals can be reviewed.')]})
     decision = data_dict.get('decision')
-    if decision not in ('approve', 'changes_requested'):
+    if decision not in ('approve', 'changes_requested', 'rejected'):
         raise tk.ValidationError({'decision': [tk._('Invalid decision.')]})
     try:
         note = checks.clean_text(data_dict.get('note'), max_length=2000)
     except ValueError as exc:
         raise tk.ValidationError({'note': [tk._(str(exc))]})
-    if decision == 'changes_requested' and not note:
+    if decision != 'approve' and not note:
         raise tk.ValidationError({'note': [tk._('Explain which changes are needed.')]})
     if decision == 'approve':
         payload = dict(_snapshot(entity, row), **db.load_extras(rev.payload))
@@ -243,9 +272,12 @@ def c4w_content_review(context, data_dict):
         if errors:
             raise tk.ValidationError(errors)
         _publish(entity, row, values, payload)
-    _touch(rev, 'approved' if decision == 'approve' else 'changes_requested')
+    _touch(rev, 'approved' if decision == 'approve' else decision)
     rev.review_note = note; rev.reviewed_at = db._utcnow(); rev.reviewed_by = context['auth_user_obj'].id
     Session.commit()
+    from ckanext.c4w.logic import mail, helpers
+    mail.notify_review(rev.submitted_by or rev.created_by, decision, note,
+        helpers.c4w_url('content_review', entity=entity, content_id=row.id, qualified=True))
     return dictize(entity, row, rev)
 
 
@@ -277,6 +309,9 @@ def c4w_event_admin_save(context, data_dict):
     db.ensure_mappers()
     if data_dict.get('id'):
         _, row, rev = _working(context, dict(data_dict, entity_type='event'))
+        from ckanext.c4w.logic.action.editorial import _blocked
+        if _blocked(rev, context):
+            raise tk.ValidationError({'message': [tk._('Resolve the existing contribution before editing directly.')]})
         payload = dict(_snapshot('event', row), **db.load_extras(rev.payload))
     else:
         row = rev = None
@@ -295,6 +330,7 @@ def c4w_event_admin_save(context, data_dict):
     rev.payload = db.dump_extras(values)
     _touch(rev, 'approved' if mode == 'publish' else 'draft')
     rev.review_note = ''
+    rev.modified_by = context['auth_user_obj'].id
     if mode == 'publish':
         _publish('event', row, values, values)
         rev.reviewed_at = db._utcnow()

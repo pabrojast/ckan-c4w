@@ -11,6 +11,7 @@
       <a class="c4w-btn" href="{{ h.c4w_url('submit') }}">{{ _('New submission') }}</a>
     </header>
 
+    <p>{{ _('Track new submissions and changes to existing content across the portal. Drafts are only sent to Moderation when you submit them.') }}</p>
     {% if groups %}
       {% for group in groups %}
         <section class="c4w-queue">
@@ -36,7 +37,7 @@
                     {% endif %}
                   </td>
                   <td>
-                    {% if item.entity_type in ['project', 'post', 'event'] %}
+                    {% if item.proposal is defined %}
                       <span class="c4w-badge">{{ _(item.proposal.status | replace('_', ' ') | capitalize) }}</span>
                       {% if item.proposal.review_note %}<p>{{ item.proposal.review_note }}</p>{% endif %}
                     {% elif item.approved is not none %}

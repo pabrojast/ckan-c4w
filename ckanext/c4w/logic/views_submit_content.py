@@ -39,14 +39,15 @@ def edit(entity, content_id=None):
     draft = _load(entity, content_id) if content_id else None
     if request.method == 'GET':
         return _render(entity, draft)
-    data = forms.parse_form_data(request.form)
+    data = forms.parse_form_data(request.form, request.files)
+    creating = draft is None
     try:
         args = dict(data, entity_type=entity)
         if draft:
             args['id'] = draft['id']
         draft = tk.get_action('c4w_content_update' if draft else 'c4w_content_create')({}, args)
         upload = request.files.get('image')
-        if upload and upload.filename:
+        if creating and upload and upload.filename:
             draft = tk.get_action('c4w_content_image_upload')({}, dict(entity_type=entity,
                 id=draft['id'], version=draft['version'], upload=upload))
         if data.get('action') == 'submit':
@@ -58,7 +59,9 @@ def edit(entity, content_id=None):
         Session.rollback()
         if draft:
             draft = _load(entity, draft['id'])
-        return _render(entity, draft, dict((draft or {}).get('payload', {}), **data), exc.error_dict)
+            if not creating:
+                draft['version'] = data.get('version', draft['version'])
+        return _render(entity, draft, dict((draft or {}).get('payload', {}), **forms.echo_values(data)), exc.error_dict)
     except tk.NotAuthorized:
         Session.rollback()
         return _render(entity, draft, data, {'message': [tk._('Confirm your email before contributing.')]})
@@ -80,5 +83,5 @@ def review(entity, content_id):
             draft = _load(entity, content_id)
         else:
             tk.h.flash_success(tk._('Review saved.'))
-            return redirect(helpers.c4w_url('admin_index'))
+            return redirect(helpers.c4w_url('admin_moderation'))
     return _render(entity, draft, errors=errors, review=True)

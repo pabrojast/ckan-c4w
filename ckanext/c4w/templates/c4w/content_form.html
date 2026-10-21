@@ -5,6 +5,7 @@
 <div class="c4w-page c4w-content-form" id="c4w-main">
   <header class="c4w-pagehead"><h1>{{ self.subtitle() }}</h1><a href="{{ h.c4w_url('admin_inventory', section='events') if admin_mode else h.c4w_url('account') }}">{{ _('All events') if admin_mode else _('My submissions') }}</a></header>
   {% if draft %}<p><span class="c4w-badge">{{ _(draft.status | replace('_', ' ') | capitalize) }}</span>{% if draft.published %} · {{ _('A published version is available. Save a draft to work privately, or publish your changes.') if admin_mode else _('A published version is available. Changes need a new review.') }}{% endif %}</p>{% endif %}
+  {% if draft and draft.notification_status == 'failed' %}<p class="c4w-note">{{ _('Your request is in Moderation, but email delivery could not be confirmed.') }}</p>{% endif %}
   {% if draft and draft.review_note %}<div class="c4w-note"><strong>{{ _('Reviewer feedback') }}</strong><p>{{ draft.review_note }}</p></div>{% endif %}
   {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
   {% if review %}
@@ -21,11 +22,12 @@
         {% for field, kind, label in [('project_id','project','Project'),('main_organisation_id','organisation','Organiser')] %}{% if data.get(field) %}<p><strong>{{ _(label) }}:</strong> {% for item in h.c4w_lookup_options(kind, data.get(field)) %}{{ item.title }}{% endfor %}</p>{% endif %}{% endfor %}
       {% endif %}
     </article>
+    {% if draft.published %}{% snippet 'c4w/snippets/revision_changes.html', changes=draft.changes %}{% endif %}
     {% if h.c4w_is_content_admin() and draft.status == 'pending' %}
       <form class="c4w-form" method="post">
         {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ draft.version }}">
-        {{ form.textarea('note', _('Feedback for the author'), '', errors, hint=_('Required when requesting changes.'), maxlength=2000) }}
-        <div class="c4w-form__actions"><button class="c4w-btn" name="decision" value="approve">{{ _('Approve and publish') }}</button><button class="c4w-btn c4w-btn--quiet" name="decision" value="changes_requested">{{ _('Request changes') }}</button></div>
+        {{ form.textarea('note', _('Feedback for the author'), '', errors, hint=_('Required when requesting changes or rejecting.'), maxlength=2000) }}
+        <div class="c4w-form__actions"><button class="c4w-btn" name="decision" value="approve">{{ _('Approve and publish') }}</button><button class="c4w-btn c4w-btn--quiet" name="decision" value="changes_requested">{{ _('Request changes') }}</button><button class="c4w-btn c4w-btn--quiet" name="decision" value="rejected">{{ _('Reject') }}</button></div>
       </form>
     {% endif %}
     <p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('content_edit', entity=entity, content_id=draft.id) }}">{{ _('Edit contribution') }}</a></p>
@@ -39,8 +41,7 @@
       {% if entity == 'post' %}
         {{ form.textarea('excerpt', _('Short summary'), data.excerpt, errors, rows=3, maxlength=1000) }}
         <div data-rich-editor>{{ form.textarea('content', _('Your news'), data.content, errors, required=true, rows=10) }}</div>
-        {% if data.image_url %}<img src="{{ data.image_url }}" alt="{{ _('Current image') }}" style="max-width:100%;height:auto">{{ form.checkbox('remove_image', _('Remove current image'), false, errors) }}{% endif %}
-        {{ form.file('image', _('Image (optional)'), errors, accept='image/png,image/jpeg,image/webp', hint=_('PNG, JPEG or WebP. Maximum {n} MB.').format(n=h.c4w_image_limit_mb())) }}
+        {% snippet 'c4w/snippets/editor_fields.html', fields=[{'name':'image', 'label':'Image', 'kind':'image', 'when':none}], data=data, errors=errors, image_limit=h.c4w_image_limit_mb() %}
       {% else %}
         <div data-rich-editor>{{ form.textarea('description', _('About the event'), data.description, errors, required=true, rows=8) }}</div>
         {% call form.row() %}{{ form.date('start_date', _('Start date'), data.start_date, errors, required=true) }}{{ form.date('end_date', _('End date'), data.end_date, errors) }}{% endcall %}

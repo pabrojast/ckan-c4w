@@ -1,0 +1,64 @@
+{% import 'c4w/macros/form.html' as form with context %}
+          {% for f in fields %}
+            {% set value = data.get(f.name) %}
+            <div {% if f.when %}data-conditional="{{ f.when }}"{% endif %}>
+            {% if f.kind in ['rich', 'news'] %}
+              <div data-rich-editor data-limit="{{ 100000 if f.kind == 'news' else 15000 }}">{{ form.textarea(f.name, _(f.label), value, errors, required=f.required, rows=7) }}</div>
+            {% elif f.kind == 'textarea' %}
+              {{ form.textarea(f.name, _(f.label), value, errors, maxlength=5000) }}
+            {% elif f.kind == 'bool' %}
+              {{ form.checkbox(f.name, _(f.label), value, errors) }}
+            {% elif f.kind == 'select' %}
+              {{ form.select(f.name, _(f.label), h.c4w_editor_options(f, value), value, errors, required=f.required, empty_label=_('Choose…')) }}
+            {% elif f.kind == 'multi' %}
+              {{ form.checkboxes(f.name, _(f.label), h.c4w_editor_options(f, value), value, errors) }}
+            {% elif f.kind in ['countries', 'languages'] %}
+              <div class="c4w-field" data-filter-select>
+                <label class="c4w-field__label" for="c4w-f-{{ f.name }}">{{ _(f.label) }}</label>
+                <input class="c4w-input" type="search" placeholder="{{ _('Filter options…') }}" aria-label="{{ _('Filter options') }}">
+                <select class="c4w-input" id="c4w-f-{{ f.name }}" name="{{ f.name }}" multiple size="6">
+                  {% for option in (h.c4w_country_options() if f.kind == 'countries' else h.c4w_project_language_options(value)) %}
+                    {% set code = option.term if option is mapping else option[0] %}
+                    {% set label = option.label if option is mapping else option[1] %}
+                    <option value="{{ code }}" {% if code in (value or []) %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <p class="c4w-field__hint">{{ _('Select all that apply. Use Ctrl or Command to select multiple options on a computer.') }}</p>
+                {% if errors.get(f.name) %}<p class="c4w-field__error">{{ errors[f.name] | join(' ') }}</p>{% endif %}
+              </div>
+            {% elif f.kind in ['organisation', 'organisations', 'project'] %}
+              {{ form.lookup(f.name, _(f.label), ('project' if f.kind == 'project' else 'organisation'), value or '', errors, multiple=f.kind == 'organisations') }}
+            {% elif f.kind == 'geometry' %}
+              <div data-project-map data-style="{{ map_style }}">
+                <p>{{ _('Draw an area on the map or import a GeoJSON file. Location is optional.') }}</p>
+                <div class="c4w-map-tools">
+                  <button class="c4w-btn c4w-btn--quiet" type="button" data-draw>{{ _('Draw area') }}</button>
+                  <button class="c4w-btn c4w-btn--quiet" type="button" data-finish>{{ _('Finish area') }}</button>
+                  <button class="c4w-btn c4w-btn--quiet" type="button" data-undo>{{ _('Undo point') }}</button>
+                  <button class="c4w-btn c4w-btn--quiet" type="button" data-edit-areas>{{ _('Edit boundaries') }}</button>
+                  <button class="c4w-btn c4w-btn--quiet" type="button" data-clear>{{ _('Clear areas') }}</button>
+                </div>
+                <div class="c4w-project-map" aria-label="{{ _('Project area map') }}"></div>
+                <p data-map-status role="status"></p>
+                <label>{{ _('Import GeoJSON') }}<input class="c4w-input" type="file" accept=".json,.geojson,application/geo+json" data-geojson-import></label>
+                <details><summary>{{ _('GeoJSON coordinates') }}</summary>{{ form.textarea(f.name, _(f.label), value, errors) }}</details>
+              </div>
+            {% elif f.kind in ['country', 'language', 'category'] %}
+              {{ form.select(f.name, _(f.label), h.c4w_editor_options(f, value), value, errors, empty_label=_('Choose…')) }}
+            {% elif f.kind == 'image' %}
+              <div class="c4w-project-image" data-image-crop data-ratio="{{ '2.75' if f.name in ['image3', 'image', 'profile_image'] else '1.5' }}">
+                {{ form.file(f.name, _(f.label), errors, accept='image/jpeg,image/png,image/webp', hint=_('PNG, JPEG or WebP. Maximum %(size)s MB.', size=image_limit)) }}
+                <img src="{{ data.get(f.name ~ '_url') or '' }}" alt="{{ _(f.label) }}" {% if not data.get(f.name ~ '_url') %}hidden{% endif %}>
+                <div class="c4w-crop-controls" hidden>
+                  <label>{{ _('Horizontal framing') }}<input name="{{ f.name }}_crop_x" type="range" min="0" max="1" step="0.01" value="0.5"></label>
+                  <label>{{ _('Vertical framing') }}<input name="{{ f.name }}_crop_y" type="range" min="0" max="1" step="0.01" value="0.5"></label>
+                </div>
+                <input type="hidden" name="remove_{{ f.name }}" value="" data-image-remove disabled>
+                <button type="button" class="c4w-btn c4w-btn--quiet" data-image-delete {% if not data.get(f.name ~ '_url') %}hidden{% endif %}>{{ _('Delete image') }}</button>
+                <noscript>{{ form.checkbox('remove_' ~ f.name, _('Delete image when saving'), false) }}</noscript>
+              </div>
+            {% else %}
+              {{ form.input(f.name, _(f.label), value, errors, type=(f.kind if f.kind in ['url', 'email', 'date', 'time', 'number'] else 'text'), required=f.required) }}
+            {% endif %}
+            </div>
+          {% endfor %}

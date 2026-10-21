@@ -8,7 +8,7 @@
       <p class="c4w-listing__count">{{ ungettext('{n} item', '{n} items', listing.count).format(n=listing.count) }}</p>
     </div>
     {% if entity_type == 'event' %}<a class="c4w-btn" href="{{ h.c4w_url('admin_event_new') }}">{{ _('New event') }}</a>{% endif %}
-    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_index') }}">{{ _('Moderation') }}</a>
+    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_moderation') }}">{{ _('Moderation') }}</a>
   </header>
   {% snippet 'c4w/snippets/admin_navigation.html', sections=sections, section=section %}
   <p class="c4w-form__lede">{{ _('Hide removes an item from the public portal without deleting it. Unhide preserves its approval or draft status. Related content is managed separately.') }}</p>
@@ -49,10 +49,6 @@
           {% endif %}
         </td>
         <td>
-          {% if entity_type == 'event' %}
-            <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_event_edit', event_id=item.id) }}">{{ _('Edit') }}</a>
-            <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_detail_url(item) }}">{{ _('View') }}</a>
-          {% endif %}
           {% if item.public_visible %}<span class="c4w-badge c4w-badge--approved">{{ _('Published') }}</span>
           {% else %}
             <span class="c4w-badge c4w-badge--hidden">{{ _('Not visible to the public') }}</span>
@@ -63,6 +59,8 @@
           {% endif %}
         </td>
         <td>
+          <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_edit', section=section, item_id=item.id) }}">{{ _('Edit') }}</a>
+          <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_detail_url(item) }}">{{ _('View') }}</a>
           <form method="post" action="{{ h.c4w_url('admin_moderate', entity=entity_type, item_id=item.id, operation='hide') }}">
             {{ h.csrf_input() }}<input type="hidden" name="next" value="{{ return_url }}">
             <button type="submit" class="c4w-btn c4w-btn--quiet">{{ _('Unhide') if item.hidden else _('Hide') }}</button>

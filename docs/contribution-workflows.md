@@ -246,3 +246,11 @@ The imported Citizen Science Fair has a guarded, idempotent date repair in
 2925-06-18 end date to 2025-06-18 after a backup and a dry run against the
 explicit target site. The Scivil and Flemish Government footer assets are
 unchanged copies of the supplied originals, scaled proportionally with CSS.
+
+### Editorial update
+
+See [Content administration](content-administration.md#editorial-workflow-dev-october-2026)
+for the separate moderation queue, direct editing across all eight inventories,
+rejection/resubmission, submitter notifications and compatibility with imported
+project values. Project wizard image saves are atomic with the submitted step;
+a failed upload or final validation leaves the previous revision intact.

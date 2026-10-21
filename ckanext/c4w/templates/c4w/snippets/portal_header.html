@@ -39,8 +39,10 @@
           <li><a href="{{ h.c4w_url('account') }}">{{ _('My submissions') }}</a></li>
           <li><a href="{{ h.c4w_url('submit') }}">{{ _('Contribute') }}</a></li>
           {% if h.c4w_is_content_admin() %}
-            <li><a href="{{ h.c4w_url('admin_index') }}">{{ _('Admin') }}</a></li>
+            <li><a href="{{ h.c4w_url('admin_index') }}">{{ _('Content administration') }}</a></li>
+            <li><a href="{{ h.c4w_url('admin_moderation') }}">{{ _('Moderation') }}</a></li>
           {% endif %}
+          {% if h.c4w_is_sysadmin() %}<li><a href="{{ h.c4w_url('admin_users') }}">{{ _('Administrators') }}</a></li>{% endif %}
           {% if h.c4w_profile_url() %}
             <li><a href="{{ h.c4w_profile_url() }}">{{ _('Profile') }}</a></li>
           {% endif %}

@@ -4,21 +4,16 @@
 
 {% block c4w_content %}
   <div class="c4w-page" id="c4w-main">
-    <header class="c4w-pagehead">
-      <h1>{{ _('Content administration') }}</h1>
-    </header>
-    <p class="c4w-form__lede">{{ _('Choose a section to manage all its content, including published and hidden items.') }}</p>
-    {% snippet 'c4w/snippets/admin_navigation.html', sections=sections, section='' %}
-    <h2>{{ _('Moderation') }}</h2>
-    <p class="c4w-form__lede">{{ _('Review submitted contributions below. Visibility can be managed independently in each section.') }}</p>
-
+    <header class="c4w-pagehead"><h1>{{ _('Moderation') }}</h1><a href="{{ h.c4w_url('admin_index') }}">{{ _('Content administration') }}</a></header>
+    <p>{{ _('Review new contributions and changes to published content. Drafts stay in My submissions until their author sends them for review.') }}</p>
+    {% if notification_warning %}<p class="c4w-note">{{ _('No active C4W administrator has an email address configured for notifications. Requests remain available here.') }}{% if h.c4w_is_sysadmin() %} <a href="{{ h.c4w_url('admin_users') }}">{{ _('Add administrators') }}</a>{% endif %}</p>{% endif %}
     {% if project_requests %}
       <section class="c4w-queue">
         <h2>{{ _('Project proposals') }} <span class="c4w-directory__count">{{ project_requests | length }}</span></h2>
         <div class="c4w-table-wrap"><table class="c4w-table">
           <thead><tr><th>{{ _('Project') }}</th><th>{{ _('Request') }}</th><th>{{ _('Actions') }}</th></tr></thead>
           <tbody>{% for proposal in project_requests %}<tr>
-            <td>{{ proposal.name }}</td><td>{{ _('Changes to a published project') if proposal.published else _('New project') }}</td>
+            <td>{{ proposal.name }}<small>{{ proposal.submitted_name or '' }} · {{ (proposal.submitted_at or '')[:16] }}</small>{% if proposal.notification_status == 'failed' %}<small>{{ _('Email notification failed') }}</small>{% endif %}</td><td>{{ _('Changes to a published project') if proposal.published else _('New project') }}</td>
             <td><a class="c4w-btn" href="{{ h.c4w_url('project_review', project_id=proposal.id) }}">{{ _('Review proposal') }}</a></td>
           </tr>{% endfor %}</tbody>
         </table></div>
@@ -27,7 +22,7 @@
     {% if content_requests %}
       <section class="c4w-queue"><h2>{{ _('News and event proposals') }} <span class="c4w-directory__count">{{ content_requests | length }}</span></h2>
         <div class="c4w-table-wrap"><table class="c4w-table"><thead><tr><th>{{ _('Title') }}</th><th>{{ _('Type') }}</th><th>{{ _('Actions') }}</th></tr></thead><tbody>
-        {% for proposal in content_requests %}<tr><td>{{ proposal.title }}{% if proposal.published %}<br>{{ _('Changes to published content') }}{% endif %}</td><td>{{ _('News') if proposal.entity_type == 'post' else _('Event') }}</td><td><a class="c4w-btn" href="{{ h.c4w_url('content_review', entity=proposal.entity_type, content_id=proposal.id) }}">{{ _('Review proposal') }}</a></td></tr>{% endfor %}
+        {% for proposal in content_requests %}<tr><td>{{ proposal.title }}<small>{{ proposal.submitted_name }} · {{ (proposal.submitted_at or '')[:16] }}</small>{% if proposal.published %}<br>{{ _('Changes to published content') }}{% endif %}</td><td>{{ _('News') if proposal.entity_type == 'post' else _('Event') }}</td><td><a class="c4w-btn" href="{{ h.c4w_url('content_review', entity=proposal.entity_type, content_id=proposal.id) }}">{{ _('Review proposal') }}</a></td></tr>{% endfor %}
         </tbody></table></div>
       </section>
     {% endif %}
@@ -124,12 +119,7 @@
                       {% if group.entity_type == 'dataset' %}{{ h.c4w_status_badge(item.processing_status) }}{% endif %}
                     </td>
                     <td class="c4w-table__actions">
-                      {% if not item.approved %}
-                        <form method="post" action="{{ h.c4w_url('admin_moderate', entity=group.entity_type, item_id=item.id, operation='approve') }}">
-                          {{ h.csrf_input() }}
-                          <button type="submit" class="c4w-btn">{{ _('Approve') }}</button>
-                        </form>
-                      {% endif %}
+                      <a class="c4w-btn" href="{{ h.c4w_url('admin_review', section=h.c4w_admin_section(group.entity_type, item), item_id=item.id) }}">{{ _('Review contribution') }}</a>
                       {% if group.can_hide %}
                         <form method="post" action="{{ h.c4w_url('admin_moderate', entity=group.entity_type, item_id=item.id, operation='hide') }}">
                           {{ h.csrf_input() }}
