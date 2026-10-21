@@ -37,7 +37,7 @@ def main():
         for _ in range(40):
             # The initialization server accepts socket connections before the
             # requested database exists. Wait for the final TCP server and DB.
-            if subprocess.run(['docker','exec',name,'psql','-X','-h','127.0.0.1','-U','postgres','-d','c4w_restore','-Atc','SELECT 1'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0:break
+            if subprocess.run(['docker','exec','-e','PGPASSWORD',name,'psql','-X','-h','127.0.0.1','-U','postgres','-d','c4w_restore','-Atc','SELECT 1'],env=dict(os.environ, PGPASSWORD=password),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0:break
             time.sleep(.5)
         else:raise RuntimeError('PostgreSQL did not start')
         psql=['docker','exec','-i',name,'psql','-X','-v','ON_ERROR_STOP=1','-U','postgres','-d','c4w_restore']
