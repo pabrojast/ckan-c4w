@@ -4,18 +4,21 @@
 {% block styles %}{{ super() }}{% if step_number == 4 %}<link rel="stylesheet" href="{{ h.url_for_static('/c4w/vendor/maplibre-gl.css') }}">{% endif %}{% endblock %}
 {% block scripts %}{{ super() }}{% if step_number == 4 %}<script type="module" src="{{ h.url_for_static('/c4w/project-map.js') }}"></script>{% endif %}{% endblock %}
 {% block c4w_content %}
+{% set admin = h.c4w_is_content_admin() %}
+{% set edit_url = h.c4w_url('submit_project_step', project_id=draft.id, step=1) if draft else '' %}
 <div class="c4w-page c4w-project-workspace" id="c4w-main">
   <header class="c4w-pagehead">
-    <div><a href="{{ h.c4w_url('account') }}">← {{ _('My submissions') }}</a>
+    <div><a href="{{ h.c4w_url('admin_inventory', section='projects') if admin else h.c4w_url('account') }}">← {{ _('Content administration') if admin else _('My submissions') }}</a>
       <h1>{{ draft.name if draft else _('Propose a project') }}</h1>
-      <p class="c4w-form__lede">{{ _('Describe your initiative. Save your progress and send it to the Citizens4Water team when ready.') }}</p>
+      <p class="c4w-form__lede">{{ _('Review the contribution and publish when ready.') if admin else _('Describe your initiative. Save your progress and send it to the Citizens4Water team when ready.') }}</p>
     </div>
     {% if draft %}<span class="c4w-badge">{{ _(draft.status | replace('_', ' ') | capitalize) }}</span>{% endif %}
   </header>
-  {% if draft and draft.published %}<p class="c4w-note">{{ _('The approved version stays public while your changes are reviewed.') }} <a href="{{ h.c4w_url('project_detail', slug=draft.slug) }}">{{ _('Public version') }}</a></p>{% endif %}
+  {% if draft and draft.published %}<p class="c4w-note">{{ _('The published version stays unchanged until these changes are published.') }} <a href="{{ h.c4w_url('project_detail', slug=draft.slug) }}">{{ _('Public version') }}</a></p>{% endif %}
   {% if draft and draft.notification_status == 'failed' %}<p class="c4w-note">{{ _('Your request is in Moderation, but email delivery could not be confirmed.') }}</p>{% endif %}
   {% if draft and draft.review_note %}<div class="c4w-note"><strong>{{ _('Reviewer feedback') }}</strong><p>{{ draft.review_note }}</p></div>{% endif %}
   {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
+  {% if draft %}{% snippet 'c4w/snippets/contribution_navigation.html', draft=draft, review=review, edit_url=edit_url %}{% endif %}
   <div class="c4w-project-layout">
     <nav class="c4w-project-steps" aria-label="{{ _('Project form steps') }}">
       {% for item in steps %}
@@ -42,19 +45,14 @@
         <div class="c4w-form__actions">
           {% if draft and step_number > 1 %}<a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_project_step', project_id=draft.id, step=step_number - 1) }}">{{ _('Back') }}</a>{% endif %}
           <button class="c4w-btn c4w-btn--quiet" name="action" value="exit">{{ _('Save and exit') }}</button>
-          <button class="c4w-btn" name="action" value="{{ 'submit' if step_number == 6 else 'next' }}">{{ _('Send for review') if step_number == 6 else _('Save and continue') }}</button>
+          {% if admin %}<button class="c4w-btn" name="action" value="review">{{ _('Save and review') }}</button>{% endif %}
+          {% if step_number < 6 or not admin %}<button class="c4w-btn" name="action" value="{{ 'submit' if step_number == 6 else 'next' }}">{{ _('Send for review') if step_number == 6 else _('Save and continue') }}</button>{% endif %}
         </div>
       </form>
     {% else %}
       {% snippet 'c4w/snippets/project_summary.html', data=data, steps=steps %}
       {% if draft.published %}{% snippet 'c4w/snippets/revision_changes.html', changes=draft.changes %}{% endif %}
-      {% if h.c4w_is_content_admin() and draft.status == 'pending' %}
-        <form method="post" class="c4w-form c4w-form__section">
-          {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ draft.version }}">
-          {{ form.textarea('note', _('Message to the author'), '', errors, hint=_('Required when requesting corrections or rejecting.')) }}
-          <div class="c4w-form__actions"><button class="c4w-btn" name="decision" value="approve">{{ _('Approve and publish') }}</button><button class="c4w-btn c4w-btn--quiet" name="decision" value="changes_requested">{{ _('Request corrections') }}</button><button class="c4w-btn c4w-btn--quiet" name="decision" value="rejected">{{ _('Reject') }}</button></div>
-        </form>
-      {% endif %}
+      {% snippet 'c4w/snippets/contribution_actions.html', draft=draft, errors=errors, edit_url=edit_url %}
     {% endif %}
     {% if draft %}<aside class="c4w-note c4w-project-data"><h2>{{ _('Project data') }}</h2><p>{{ _('Data is optional and reviewed separately. You can add files now or return later.') }}</p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_start', project_id=draft.id) }}">{{ _('Add data to this project') }}</a></aside>{% endif %}
     </div>

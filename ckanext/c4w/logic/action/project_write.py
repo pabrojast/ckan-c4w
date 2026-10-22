@@ -254,14 +254,16 @@ def c4w_project_review(context, data_dict):
     project = _project(context, data_dict.get('id'))
     Session.query(db.C4wProject.id).filter_by(id=project.id).with_for_update().one()
     revision = _revision(project, lock=True)
-    if revision is None or revision.status != 'pending':
+    if revision is None:
         raise tk.ValidationError({'message': [tk._('Only submitted proposals can be reviewed.')]})
     if str(data_dict.get('version')) != str(revision.version):
         raise tk.ValidationError({'message': [tk._('The proposal has changed. Reload and review the latest version.')]})
-    decision = data_dict.get('decision')
-    if decision not in ('approve', 'changes_requested', 'rejected'):
-        raise tk.ValidationError({'decision': [tk._('Invalid decision.')]})
-    note = checks.clean_text(data_dict.get('note'), max_length=2000)
+    from ckanext.c4w.logic.review import decision_for
+    decision = decision_for(revision.status, data_dict.get('decision'))
+    try:
+        note = checks.clean_text(data_dict.get('note'), max_length=2000)
+    except ValueError as exc:
+        raise tk.ValidationError({'note': [str(exc)]})
     if decision != 'approve' and not note:
         raise tk.ValidationError({'note': [tk._('Explain which changes are needed.')]})
     if decision == 'approve':

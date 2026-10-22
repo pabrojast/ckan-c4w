@@ -84,9 +84,11 @@ def admin_edit(section, item_id):
     review_url = (c4w_helpers.c4w_url('project_review', project_id=item_id) if entity == 'project' else
                   c4w_helpers.c4w_url('content_review', entity=entity, content_id=item_id) if entity in ('post', 'event') else
                   c4w_helpers.c4w_url('admin_review', section=section, item_id=item_id))
+    draft_edit_url = (c4w_helpers.c4w_url('submit_project_step', project_id=item_id, step=1) if entity == 'project' else
+                      c4w_helpers.c4w_url('content_edit', entity=entity, content_id=item_id) if entity in ('post', 'event') else None)
     return tk.render('c4w/admin_edit.html', extra_vars=dict(item=item, section=section,
         groups=admin_fields.groups(entity), data=data, errors=errors, version=version,
-        review_url=review_url, image_limit=tk.config.get('ckan.max_image_size') or 2,
+        review_url=review_url, draft_edit_url=draft_edit_url, image_limit=tk.config.get('ckan.max_image_size') or 2,
         map_style=tk.config.get('ckanext.c4w.basemap_style') or 'https://tiles.openfreemap.org/styles/positron'))
 
 

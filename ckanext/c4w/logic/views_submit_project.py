@@ -70,6 +70,8 @@ def start():
         if dataset.get('can_edit'):
             return redirect(helpers.c4w_url('submit_data_step', dataset_id=dataset['id'],
                                            step=1, project_id=draft['id']))
+    if data.get('action') == 'review':
+        return redirect(helpers.c4w_url('project_review', project_id=draft['id']))
     return redirect(helpers.c4w_url('account') if data.get('action') == 'exit' else
                     helpers.c4w_url('submit_project_step', project_id=draft['id'], step=2))
 
@@ -103,6 +105,8 @@ def step(project_id, step):
     except tk.NotAuthorized:
         tk.abort(403, tk._('Confirm your email before contributing.'))
     tk.h.flash_success(tk._('Draft saved.'))
+    if data.get('action') == 'review':
+        return redirect(helpers.c4w_url('project_review', project_id=project_id))
     if data.get('action') == 'exit':
         return redirect(helpers.c4w_url('account'))
     return redirect(helpers.c4w_url('submit_project_step', project_id=project_id,
@@ -119,8 +123,14 @@ def review(project_id):
         try:
             tk.get_action('c4w_project_review')({}, dict(request.form, id=project_id))
         except tk.ValidationError as exc:
+            from ckan.model.meta import Session
+            Session.rollback()
             errors = exc.error_dict
+            draft = _load(project_id)
         else:
+            if request.form.get('decision') in ('approve', 'publish_draft'):
+                tk.h.flash_success(tk._('Changes published. The visibility setting is unchanged.'))
+                return redirect(helpers.c4w_url('admin_edit', section='projects', item_id=project_id))
             tk.h.flash_success(tk._('Review saved.'))
             return redirect(helpers.c4w_url('admin_moderation'))
     return _render(6, draft, errors=errors, review=True)

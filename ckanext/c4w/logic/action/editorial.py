@@ -64,10 +64,10 @@ def version(entity, row, rev):
     return hashlib.sha256(json.dumps(values, sort_keys=True, default=str).encode()).hexdigest()
 
 
-def _blocked(rev, context):
-    if not rev or rev.status in ('approved', 'rejected'):
-        return False
-    return rev.status == 'pending' or (rev.modified_by or rev.created_by) != context['auth_user_obj'].id
+def _blocked(rev):
+    # Resume open contributions explicitly, including the administrator's own
+    # draft: a form based on the published row must never erase saved changes.
+    return bool(rev and rev.status not in ('approved', 'rejected'))
 
 
 def _dict(entity, row, rev, context):
@@ -76,7 +76,7 @@ def _dict(entity, row, rev, context):
     return dict(id=row.id, slug=row.slug, entity_type=entity,
                 title=getattr(row, 'name', None) or getattr(row, 'title', ''),
                 payload=data, published=published, hidden=bool(row.hidden),
-                version=version(entity, row, rev), blocked=_blocked(rev, context),
+                version=version(entity, row, rev), blocked=_blocked(rev),
                 revision_status=rev.status if rev else None,
                 review_note=rev.review_note if rev else '',
                 legacy=bool(getattr(row, 'legacy_id', None)))
@@ -156,7 +156,7 @@ def c4w_admin_entity_update(context, data_dict):
     rev = revision(entity, row, lock=True)
     if data_dict.get('version') != version(entity, row, rev):
         raise tk.ValidationError({'message': [tk._('This content changed in another window. Reload before saving.')]})
-    if _blocked(rev, context):
+    if _blocked(rev):
         raise tk.ValidationError({'message': [tk._('Resolve the existing contribution before editing directly. No draft has been overwritten.')]})
     # Only allow declared fields, never arbitrary extras, flags, ownership or pipeline state.
     baseline = snapshot(entity, row)

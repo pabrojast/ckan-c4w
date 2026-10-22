@@ -251,11 +251,8 @@ def c4w_content_submit(context, data_dict):
 def c4w_content_review(context, data_dict):
     tk.check_access('c4w_content_review', context, data_dict)
     entity, row, rev = _working(context, data_dict, create=False)
-    if rev.status != 'pending':
-        raise tk.ValidationError({'message': [tk._('Only submitted proposals can be reviewed.')]})
-    decision = data_dict.get('decision')
-    if decision not in ('approve', 'changes_requested', 'rejected'):
-        raise tk.ValidationError({'decision': [tk._('Invalid decision.')]})
+    from ckanext.c4w.logic.review import decision_for
+    decision = decision_for(rev.status, data_dict.get('decision'))
     try:
         note = checks.clean_text(data_dict.get('note'), max_length=2000)
     except ValueError as exc:
@@ -309,8 +306,10 @@ def c4w_event_admin_save(context, data_dict):
     db.ensure_mappers()
     if data_dict.get('id'):
         _, row, rev = _working(context, dict(data_dict, entity_type='event'))
-        from ckanext.c4w.logic.action.editorial import _blocked
-        if _blocked(rev, context):
+        # This legacy API resumes the administrator's own draft payload. The
+        # general direct editor instead starts from the published snapshot.
+        if rev.status == 'pending' or (rev.status not in ('approved', 'rejected')
+                and (rev.modified_by or rev.created_by) != context['auth_user_obj'].id):
             raise tk.ValidationError({'message': [tk._('Resolve the existing contribution before editing directly.')]})
         payload = dict(_snapshot('event', row), **db.load_extras(rev.payload))
     else:

@@ -66,6 +66,8 @@ def edit(entity, content_id=None):
         Session.rollback()
         return _render(entity, draft, data, {'message': [tk._('Confirm your email before contributing.')]})
     tk.h.flash_success(tk._('Draft saved.'))
+    if data.get('action') == 'review':
+        return redirect(helpers.c4w_url('content_review', entity=entity, content_id=draft['id']))
     return redirect(helpers.c4w_url('content_edit', entity=entity, content_id=draft['id']))
 
 
@@ -82,6 +84,9 @@ def review(entity, content_id):
             Session.rollback(); errors = exc.error_dict
             draft = _load(entity, content_id)
         else:
+            if request.form.get('decision') in ('approve', 'publish_draft'):
+                tk.h.flash_success(tk._('Changes published. The visibility setting is unchanged.'))
+                return redirect(helpers.c4w_url('admin_edit', section='news' if entity == 'post' else 'events', item_id=content_id))
             tk.h.flash_success(tk._('Review saved.'))
             return redirect(helpers.c4w_url('admin_moderation'))
     return _render(entity, draft, errors=errors, review=True)

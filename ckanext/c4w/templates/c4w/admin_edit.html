@@ -9,7 +9,14 @@
   {% if item.legacy %}<p class="c4w-note">{{ _('Imported content: existing values are retained when you edit other fields.') }}</p>{% endif %}
   {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
   {% if item.blocked %}
-    <div class="c4w-note"><p>{{ _('This item has an open contribution. Resolve it before editing directly; its draft has been preserved.') }}</p><a class="c4w-btn" href="{{ review_url }}">{{ _('Review contribution') }}</a></div>
+    <div class="c4w-note">
+      <p>{{ _('This item has changes awaiting review. You can review and publish them, or continue editing the contribution.') if item.revision_status == 'pending' else _('This item has a saved draft. As an administrator, you can continue editing it or review and publish its changes.') }}</p>
+      <p>{{ _('The published version stays unchanged until you publish. Opening the draft keeps its saved changes.') }}</p>
+      <div class="c4w-form__actions">
+        {% if draft_edit_url %}<a class="c4w-btn" href="{{ draft_edit_url }}">{{ _('Continue editing draft') }}</a>{% endif %}
+        <a class="c4w-btn c4w-btn--quiet" href="{{ review_url }}">{{ _('Review and publish') }}</a>
+      </div>
+    </div>
   {% else %}
   <form class="c4w-form c4w-form--wide" method="post" enctype="multipart/form-data" novalidate data-project-form>
     {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ version }}">

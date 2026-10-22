@@ -76,7 +76,7 @@ Account recovery uses the existing CKAN password-reset mechanism. Test it with
 a disposable account first; never capture a real user's password or reset link
 in release notes, source control or public logs.
 
-## Editorial workflow (DEV, October 2026)
+## Editorial workflow
 
 **Content administration** (`/citizens4water/admin`) opens the eight inventories.
 Each item has **Edit** and **View**. Saving an existing published item takes effect
@@ -91,6 +91,20 @@ they are hidden. Project/news/event reviews compare the public and proposed valu
 Approve publishes the proposal; Request corrections and Reject require a reason.
 Authors can edit and resubmit rejected contributions. An open proposal must be
 resolved before direct administrative editing; another author's draft is protected.
+
+An open draft now offers **Continue editing draft** and **Review and publish**.
+C4W administrators can open the saved contribution, use **Save and review** from
+any project step, check the differences and explicitly select **Publish draft**.
+There is no need to submit a separate request to themselves. Publishing validates
+the complete draft and checks its version; opening or saving it does not change
+the public content. After publication, the direct editor opens again. This applies
+to projects, news and events, including drafts created by another contributor.
+The draft's authorship and the publishing administrator are retained in the
+revision audit. Drafts never enter the moderation queue unless submitted.
+
+For the project/content review actions, `decision=publish_draft` is restricted to
+content administrators and draft/changes-requested revisions. Ordinary `approve`
+still requires a pending submission. Multi-select comparisons ignore ordering.
 
 **My submissions** includes created/managed content and revisions the user has
 created, edited or submitted, including revisions of imported projects. It covers

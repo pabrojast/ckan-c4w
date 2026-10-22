@@ -1,0 +1,19 @@
+{% import 'c4w/macros/form.html' as form with context %}
+{% if h.c4w_is_content_admin() and draft.status in ('draft', 'changes_requested', 'pending') %}
+  <form id="c4w-review-actions" method="post" class="c4w-form c4w-form__section">
+    <h2>{{ _('Publish saved changes') if draft.status != 'pending' else _('Review decision') }}</h2>
+    <p>{{ _('Publishing applies the saved contribution to this item. Its visibility setting stays unchanged.') }}</p>
+    {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ draft.version }}">
+    {{ form.textarea('note', _('Message to the author'), '', errors, hint=_('Required when requesting corrections or rejecting.') if draft.status == 'pending' else _('Optional.'), maxlength=2000) }}
+    <div class="c4w-form__actions">
+      <button class="c4w-btn" name="decision" value="{{ 'approve' if draft.status == 'pending' else 'publish_draft' }}">{{ _('Approve and publish') if draft.status == 'pending' else _('Publish draft') }}</button>
+      <a class="c4w-btn c4w-btn--quiet" href="{{ edit_url }}">{{ _('Continue editing draft') }}</a>
+      {% if draft.status == 'pending' %}
+        <button class="c4w-btn c4w-btn--quiet" name="decision" value="changes_requested">{{ _('Request corrections') }}</button>
+        <button class="c4w-btn c4w-btn--quiet" name="decision" value="rejected">{{ _('Reject') }}</button>
+      {% endif %}
+    </div>
+  </form>
+{% else %}
+  <p><a class="c4w-btn" href="{{ edit_url }}">{{ _('Continue editing') }}</a></p>
+{% endif %}

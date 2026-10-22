@@ -2,12 +2,15 @@
 {% import 'c4w/macros/form.html' as form with context %}
 {% block subtitle %}{{ (_('Edit event') if draft else _('New event')) if admin_mode else _('Review contribution') if review else _('Share news') if entity == 'post' else _('Share an event') }}{% endblock %}
 {% block c4w_content %}
+{% set admin = h.c4w_is_content_admin() %}
+{% set edit_url = h.c4w_url('content_edit', entity=entity, content_id=draft.id) if draft else '' %}
 <div class="c4w-page c4w-content-form" id="c4w-main">
   <header class="c4w-pagehead"><h1>{{ self.subtitle() }}</h1><a href="{{ h.c4w_url('admin_inventory', section='events') if admin_mode else h.c4w_url('account') }}">{{ _('All events') if admin_mode else _('My submissions') }}</a></header>
   {% if draft %}<p><span class="c4w-badge">{{ _(draft.status | replace('_', ' ') | capitalize) }}</span>{% if draft.published %} · {{ _('A published version is available. Save a draft to work privately, or publish your changes.') if admin_mode else _('A published version is available. Changes need a new review.') }}{% endif %}</p>{% endif %}
   {% if draft and draft.notification_status == 'failed' %}<p class="c4w-note">{{ _('Your request is in Moderation, but email delivery could not be confirmed.') }}</p>{% endif %}
   {% if draft and draft.review_note %}<div class="c4w-note"><strong>{{ _('Reviewer feedback') }}</strong><p>{{ draft.review_note }}</p></div>{% endif %}
   {% snippet 'c4w/snippets/form_errors.html', errors=errors %}
+  {% if draft and not admin_mode %}{% snippet 'c4w/snippets/contribution_navigation.html', draft=draft, review=review, edit_url=edit_url %}{% endif %}
   {% if review %}
     <article class="c4w-content-preview c4w-prose">
       <h2>{{ data.title }}</h2>
@@ -23,14 +26,7 @@
       {% endif %}
     </article>
     {% if draft.published %}{% snippet 'c4w/snippets/revision_changes.html', changes=draft.changes %}{% endif %}
-    {% if h.c4w_is_content_admin() and draft.status == 'pending' %}
-      <form class="c4w-form" method="post">
-        {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ draft.version }}">
-        {{ form.textarea('note', _('Feedback for the author'), '', errors, hint=_('Required when requesting changes or rejecting.'), maxlength=2000) }}
-        <div class="c4w-form__actions"><button class="c4w-btn" name="decision" value="approve">{{ _('Approve and publish') }}</button><button class="c4w-btn c4w-btn--quiet" name="decision" value="changes_requested">{{ _('Request changes') }}</button><button class="c4w-btn c4w-btn--quiet" name="decision" value="rejected">{{ _('Reject') }}</button></div>
-      </form>
-    {% endif %}
-    <p><a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('content_edit', entity=entity, content_id=draft.id) }}">{{ _('Edit contribution') }}</a></p>
+    {% snippet 'c4w/snippets/contribution_actions.html', draft=draft, errors=errors, edit_url=edit_url %}
   {% else %}
     <p>{{ _('Save a draft or publish the event directly. Publishing preserves its Hide / Unhide setting.') if admin_mode else _('Save a draft and return whenever you are ready. The team reviews your submission before publication.') }}</p>
     <form class="c4w-form" method="post" enctype="multipart/form-data" novalidate
@@ -53,7 +49,7 @@
         {{ form.lookup('project_id', _('Related project (optional)'), 'project', data.project_id or '', errors) }}
         {{ form.lookup('main_organisation_id', _('Organiser (optional)'), 'organisation', data.main_organisation_id or '', errors) }}
       {% endif %}
-      <div class="c4w-form__actions"><button class="c4w-btn c4w-btn--quiet" name="{{ 'mode' if admin_mode else 'action' }}" value="{{ 'draft' if admin_mode else 'save' }}" type="submit">{{ _('Save draft') }}</button><button class="c4w-btn" name="{{ 'mode' if admin_mode else 'action' }}" value="{{ 'publish' if admin_mode else 'submit' }}" type="submit">{{ _('Publish changes') if admin_mode else _('Send for review') }}</button></div>
+      <div class="c4w-form__actions"><button class="c4w-btn c4w-btn--quiet" name="{{ 'mode' if admin_mode else 'action' }}" value="{{ 'draft' if admin_mode else 'save' }}" type="submit">{{ _('Save draft') }}</button><button class="c4w-btn" name="{{ 'mode' if admin_mode else 'action' }}" value="{{ 'publish' if admin_mode else 'review' if admin else 'submit' }}" type="submit">{{ _('Publish changes') if admin_mode else _('Save and review') if admin else _('Send for review') }}</button></div>
       {% if draft and not admin_mode %}<p><a href="{{ h.c4w_url('content_review', entity=entity, content_id=draft.id) }}">{{ _('Preview saved contribution') }}</a></p>{% endif %}
     </form>
   {% endif %}

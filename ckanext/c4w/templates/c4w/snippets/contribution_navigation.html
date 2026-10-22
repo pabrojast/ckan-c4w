@@ -1,0 +1,11 @@
+{% if review %}
+  <div class="c4w-note">
+    <p>{% if h.c4w_is_content_admin() and draft.status in ('draft', 'changes_requested') %}{{ _('This draft has not been submitted for review. As an administrator, you can edit it or publish its saved changes below.') }}{% else %}{{ _('Review the saved contribution below, or continue editing.') }}{% endif %}</p>
+    <div class="c4w-form__actions">
+      <a class="c4w-btn" href="{{ edit_url }}">{{ _('Continue editing draft') }}</a>
+      {% if h.c4w_is_content_admin() and draft.status in ('draft', 'changes_requested', 'pending') %}<a class="c4w-btn c4w-btn--quiet" href="#c4w-review-actions">{{ _('Review and publish') }}</a>{% endif %}
+    </div>
+  </div>
+{% elif h.c4w_is_content_admin() %}
+  <p class="c4w-note">{{ _('You are editing the saved contribution. Save and review lets you check and publish your changes without sending a separate review request.') }}</p>
+{% endif %}
