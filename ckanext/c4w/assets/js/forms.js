@@ -144,6 +144,12 @@
     });
     document.querySelectorAll('[data-rich-editor]').forEach(root => {
       const textarea = root.querySelector('textarea');
+      // Keep non-breaking spaces as Unicode on submission. The equivalent
+      // "&nbsp;at ..." from imported HTML can look like a shell command to
+      // an upstream filter, although its rendered text is ordinary prose.
+      textarea.form?.addEventListener('submit', () => {
+        textarea.value = textarea.value.replace(/&nbsp;/g, '\u00a0');
+      });
       const editor = document.createElement('div'); editor.className = 'c4w-rich-editor';
       editor.contentEditable = 'true'; editor.setAttribute('role', 'textbox'); editor.setAttribute('aria-multiline', 'true');
       editor.setAttribute('aria-label', root.querySelector('label').textContent); editor.innerHTML = textarea.value;
