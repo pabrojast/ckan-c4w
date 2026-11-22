@@ -97,3 +97,36 @@ How the importer behaves:
   ckanext-colab at 76885c7 and ckan-c4w from `master`. The next dev image
   built from that repository will drop the claim screens and the importer.
   The imported data and the `c4w_project_claim` table stay.
+
+## Web search for missing websites (same day)
+
+The first import left 93 projects without a website. A web search covered
+91 of them. The other two were URLs the parser had dropped and now reads:
+FreshWater Watch, wrapped onto two lines in the cell, and the GDV mapping
+row, with two URLs in one cell.
+
+- **20 matches with high confidence.** They were reviewed by hand and
+  applied with `enrich-cs-sheet.py --found`.
+  - Bellingen Riverwatch keeps only its NSW open-data link. The site found
+    was a Squarespace staging domain.
+  - The search's data link takes precedence over one guessed from the site's
+    navigation. Agency-wide catalogues (USGS "data access tools") are
+    ignored.
+  - Six new images were dropped because they were the host institution's
+    logo (CT.GOV, European Commission, EPA Victoria, UNL, Metropolitan
+    Council, Alliance banner).
+- **14 matches with medium confidence.** They were not applied. They are
+  listed for review in the report's `web_search` column.
+- **The rest had no official site.** Most are one-off studies.
+- **Re-import:** 281 projects updated, 8 skipped as already on the portal,
+  2 new images. Image `ckan-base210@sha256:5059f1a4…1dd238` (r3) is on the
+  same dev base.
+- **Totals now:** 208 projects with a website (73 without), 84 with an
+  image, 67 with a contact e-mail, 30 with a data link, and 137 whose status
+  still needs confirming.
+- **Adding data, checked on dev:**
+  - a person whose claim was approved used "Add data" on the project and
+    created a draft data set linked to it;
+  - the draft stays private (404, not listed on the project) until it is
+    moderated;
+  - the test accounts and the data set were removed afterwards.
