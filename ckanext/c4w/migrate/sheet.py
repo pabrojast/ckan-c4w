@@ -221,17 +221,48 @@ def as_html(text):
                     for part in text.split(u'\n') if part.strip())
 
 
-def website(row):
-    """The Website cell as a URL, or None.
+def website_links(row):
+    """Every address in the Website cell, in order.
 
-    Some cells hold a paper's file name or a phrase ("explore a lake")
-    instead of a link; those are not addresses and must not become one.
+    A cell may wrap one URL over two lines ("https://x.org/\\ncontent/map")
+    or hold several URLs. A cell that starts with a paper's file name or a
+    phrase ("explore a lake") holds no address at all.
     """
-    text = clean(row.get('website'))
-    if not text or u' ' in text or u'.' not in text or text.startswith(
-            ('=', '#')):
-        return None
-    return ensure_scheme(text)
+    raw = normalise_text(_s(row.get('website'))) or u''
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
+    links = []
+    for line in lines:
+        for token in line.split():
+            if re.match(r'^(https?://|www\.)', token, re.I):
+                links.append(token)
+            elif links and len(line.split()) == 1 and links[-1].endswith(u'/'):
+                # The continuation of a URL the cell wrapped onto a new line.
+                links.append(links[-1] + token.lstrip(u'/'))
+            elif not links:
+                text = clean(raw)
+                if text and u' ' not in text and u'.' in text and \
+                        not text.startswith((u'=', u'#')):
+                    return [ensure_scheme(text)]
+                return []
+            else:
+                return [ensure_scheme(l) for l in links]
+    return [ensure_scheme(l) for l in links]
+
+
+def website(row):
+    """The first address in the Website cell, or None."""
+    links = website_links(row)
+    return links[0] if links else None
+
+
+def _data_link(urls):
+    """A link that looks like a data page rather than the project's site."""
+    for url in urls:
+        host, path = host_of(url), url.lower()
+        if host.startswith(u'data.') or re.search(
+                r'/(data|dataset|datasets|data-map|map|maps|portal)(/|$|-)', path):
+            return url
+    return None
 
 
 def is_reference(url):
@@ -447,6 +478,10 @@ def map_row(row, enrichment=None):
     aim = objectives or measurement or site_description
 
     term, unverified = status(row.get('status'))
+    if unverified and enrichment.get('project_status') in (
+            u'active', u'completed'):
+        # Found on the project's own site during the web search.
+        term, unverified = enrichment['project_status'], False
     author, author_email, contact_raw = contact(row.get('contact'))
     if not author_email and enrichment.get('email'):
         author_email = enrichment['email']
@@ -463,6 +498,8 @@ def map_row(row, enrichment=None):
 
     data_url = ensure_scheme(clean(row.get('data_portal'))) \
         if clean(row.get('data_portal')) else None
+    if not data_url:
+        data_url = _data_link(website_links(row)[1:])
     if not data_url and enrichment.get('data_url'):
         data_url = ensure_scheme(enrichment['data_url'])
 

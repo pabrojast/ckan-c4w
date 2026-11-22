@@ -60,7 +60,8 @@ DATA_PATH = re.compile(r'/(data|datasets?|explorer|dashboard|projects?/|'
 # Story maps and survey forms live on data hosts but are not data.
 NOT_DATA_HOSTS = ('storymaps.arcgis.com', 'survey123.arcgis.com')
 NOT_DATA_PATH = re.compile(r'(polic|contributor|donat|documentation|'
-                           r'instruction|news|about|privacy|%3a)', re.I)
+                           r'instruction|news|about|privacy|%3a|'
+                           r'web-tools/data-access-tools)', re.I)
 DATA_TEXT = re.compile(r'\b(data (explorer|portal|viewer|map|download|'
                        r'access|hub|dashboard)|view (the )?data|access (the )?'
                        r'data|download (the )?data|our data|open data)\b',
@@ -207,12 +208,45 @@ def prepare_image(payload):
     return out.getvalue()
 
 
-def enrich(row, out_dir, cache_dir):
+def enrich(row, out_dir, cache_dir, found=None):
+    """Look up one project. `found` is what a web search reported for it
+    (website, data_url, contact_email, status); it only fills gaps."""
+    hit = (found or {}).get(slugify(sheet.clean(row.get('name')))) or {}
+    record = _enrich(row, out_dir, cache_dir, hit.get('website'))
+    if not hit:
+        return record
+    record['search_evidence'] = hit.get('evidence')
+    # A link the search checked against this project beats one guessed from
+    # the site's navigation, which is often an agency-wide catalogue.
+    searched = sheet.ensure_scheme(hit['data_url']) if hit.get('data_url') else None
+    if searched and (sheet.host_of(searched) in NOT_DATA_HOSTS
+                     or NOT_DATA_PATH.search(searched)):
+        searched = None
+    if searched and not sheet.clean(row.get('data_portal')):
+        record['data_url'] = searched
+        record['fields'].append('data_url')
+    if hit.get('contact_email') and not sheet.contact(row.get('contact'))[1] \
+            and not record.get('email'):
+        record['email'] = hit['contact_email']
+        record['fields'].append('author_email')
+    if hit.get('status') in ('active', 'completed') and \
+            sheet.status(row.get('status'))[1]:
+        record['project_status'] = hit['status']
+        record['fields'].append('status')
+    record['fields'] = sorted(set(record['fields']))
+    return record
+
+
+def _enrich(row, out_dir, cache_dir, found_website=None):
     name = sheet.clean(row.get('name'))
     slug = slugify(name)
     record = {'slug': slug, 'name': name, 'fields': []}
     website = sheet.clean(row.get('website'))
     url = sheet.website(row)
+    if found_website and (not url or sheet.is_reference(url)):
+        url = sheet.ensure_scheme(found_website)
+        record['project_url'] = url
+        record['fields'].append('website')
     if not url:
         record['status'] = 'no website' if not website else 'not a URL'
         return record
@@ -317,6 +351,12 @@ def main():
     parser.add_argument('--no-fetch', action='store_true',
                         help='Only convert the sheet to rows.json.')
     parser.add_argument('--workers', type=int, default=6)
+    parser.add_argument('--found', nargs='+', metavar='JSON',
+                        help='Web-search results ([{slug, website, data_url, '
+                        'contact_email, status, confidence}]). Only '
+                        '"high" confidence entries are used, only those '
+                        'projects are looked up again, and the result is '
+                        'merged into the existing enriched.json.')
     args = parser.parse_args()
 
     out_dir = os.path.abspath(args.out_dir)
@@ -332,9 +372,23 @@ def main():
         return
 
     merged, _notes = sheet.merge_duplicates(rows)
-    results = {}
+    results, found = {}, None
+    if args.found:
+        found = {}
+        for path in args.found:
+            with open(path, encoding='utf-8') as handle:
+                for hit in json.load(handle):
+                    if hit.get('confidence') == 'high':
+                        found[hit['slug']] = hit
+        with open(os.path.join(out_dir, 'enriched.json'),
+                  encoding='utf-8') as handle:
+            results = json.load(handle)['projects']
+        merged = [row for row in merged
+                  if slugify(sheet.clean(row.get('name'))) in found]
+        print('web search: %d projects with a high-confidence match'
+              % len(merged))
     with concurrent.futures.ThreadPoolExecutor(args.workers) as pool:
-        futures = {pool.submit(enrich, row, out_dir, cache_dir): row
+        futures = {pool.submit(enrich, row, out_dir, cache_dir, found): row
                    for row in merged}
         for done, future in enumerate(
                 concurrent.futures.as_completed(futures), 1):

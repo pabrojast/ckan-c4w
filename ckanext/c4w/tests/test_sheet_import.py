@@ -53,6 +53,34 @@ def test_publisher_links_and_text_cells_never_become_the_website():
     assert text['columns']['url'] is None and 'reference_url' not in text['extras']
 
 
+def test_wrapped_and_multiple_website_links():
+    wrapped = sheet.map_row(row(
+        website='https://freshwaterwatch.thewaterhub.org/\ncontent/data-map   '))
+    assert wrapped['columns']['url'] == 'https://freshwaterwatch.thewaterhub.org/'
+    assert wrapped['columns']['data_url'] == \
+        'https://freshwaterwatch.thewaterhub.org/content/data-map'
+    two = sheet.map_row(row(
+        website='https://www.ala.org.au/ https://data.nt.gov.au/dataset/x '))
+    assert two['columns']['url'] == 'https://www.ala.org.au/'
+    assert two['columns']['data_url'] == 'https://data.nt.gov.au/dataset/x'
+    phrase = sheet.map_row(row(website='Explore a lake (link expired)'))
+    assert phrase['columns']['url'] is None
+
+
+def test_web_search_fills_website_and_status_only_when_missing():
+    found = {'project_url': 'https://project.example.org/',
+             'project_status': 'completed', 'fields': ['website', 'status']}
+    paper = sheet.map_row(row(website='https://www.mdpi.com/x', status=None),
+                          found)
+    assert paper['columns']['url'] == 'https://project.example.org/'
+    assert paper['extras']['reference_url'] == 'https://www.mdpi.com/x'
+    assert paper['columns']['status'] == 'completed'
+    assert 'status_unverified' not in paper['extras']
+    sheet_wins = sheet.map_row(row(status='Active'), found)
+    assert sheet_wins['columns']['url'] == 'https://BronxRiverWater.org'
+    assert sheet_wins['columns']['status'] == 'active'
+
+
 def test_unknown_status_and_regions_are_flagged_not_guessed():
     mapped = sheet.map_row(row(status=None, country='Global', region='Global'))
     assert mapped['columns']['status'] == 'active'
