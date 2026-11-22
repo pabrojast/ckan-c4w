@@ -66,3 +66,34 @@ How the importer behaves:
   to the person by e-mail.
 - **E-mail:** reviewers are notified of each new request, and the person who
   asked is told the decision.
+
+## DEV deployment, 2026-11-22
+
+- Backup before any change: `output/backups/c4w-dev-20261122-033202-pre-cs-import`
+  (18 C4W tables, 209 media objects).
+- Image `pabrojast/ckan-base210@sha256:9da598d59762c5f6d4a0e05cd842cd1198ef499f4f2908a4340eca7c52cba2ab`
+  (`c4w-cs-import-dev-20261122-r2`). Built on the dev digest
+  `sha256:97758f8b…e777e` (`toolbox-paridad-dev-20261120-121ff70`). It replaces
+  only ckanext-c4w (b52dcf4) and the `ckanext/` tree of ckanext-colab
+  (cee4585, branch `feat/c4w-project-claims-20261122`). Before the build, the
+  deployed C4W and Colab sources matched `origin/master` and
+  `origin/production` 76885c7 file for file. Deployed with
+  `deploy-stories-dev.py --web-only`.
+- Import: 281 projects created and 8 skipped as already on the portal
+  (HydroCrowd, Florida LAKEWATCH, WAV ×2, FLOW, CrowdWater, Titicaca Aqua
+  Watch, Plastic Pirates). The portal now lists 315 projects. 82 of them have
+  an image.
+- End-to-end check through the full WSGI stack, with throwaway accounts and
+  mail captured in-process:
+  - the form validates;
+  - the claim appears in the Colab inbox for a C4W content administrator;
+  - approving gives the person editing rights and removes the badge;
+  - rejecting requires a reason, which reaches the person;
+  - a user without the role gets 403 on both the inbox and the API.
+
+  The accounts, claims and role were removed afterwards, and the test project
+  is back to `claimable=true`.
+- **Not yet pinned.** `ckan-unesco-docker` (`miserver-2.10`) still builds
+  ckanext-colab at 76885c7 and ckan-c4w from `master`. The next dev image
+  built from that repository will drop the claim screens and the importer.
+  The imported data and the `c4w_project_claim` table stay.
