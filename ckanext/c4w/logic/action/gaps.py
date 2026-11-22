@@ -237,8 +237,9 @@ def c4w_project_gap_fill(context, data_dict):
             version=data_dict.get('version')))
         db.Session.refresh(project)
         filled = sorted(name for name in values
-                        if name == 'image1' or name == 'status'
-                        or getattr(project, name) != stored.get(name))
+                        if name in ('image1', 'status') or (
+                            name in TEXT_FIELDS
+                            and getattr(project, name) != stored.get(name)))
     else:
         # Marking a gap is not an edit of the content, but it still must not
         # be based on a page that is out of date.

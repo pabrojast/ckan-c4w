@@ -145,6 +145,25 @@ def test_not_available_takes_a_gap_off_the_list_until_restored(env):
     assert result['dismissed'] == ['data'] and 'website' in result['open']
 
 
+def test_an_uploaded_image_fills_the_image_gap(env, monkeypatch):
+    from io import BytesIO
+    from werkzeug.datastructures import FileStorage
+    from ckanext.c4w.logic import project_images
+    seen = {}
+
+    def store(upload, box, crop):
+        seen.update(box=box, crop=crop)
+        return '/uploads/c4w/river.jpg', lambda: None
+    monkeypatch.setattr(project_images, 'store_image', store)
+    result = fill(env, image1=FileStorage(BytesIO(b'img'), filename='r.png'),
+                  image1_credit='Agency')
+    assert env.project.image1_url == '/uploads/c4w/river.jpg'
+    assert env.project.image1_credit == 'Agency'
+    assert seen['box'] == 'image1' and 'image' not in result['open']
+    audit = db.load_extras(env.project.extras)['gap_fills'][-1]
+    assert audit['filled'] == ['image1', 'image1_credit']
+
+
 def test_plain_text_becomes_paragraphs(env):
     env.project.description = ''
     db.Session.commit()
