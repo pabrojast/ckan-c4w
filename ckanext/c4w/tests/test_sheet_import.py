@@ -61,6 +61,19 @@ def test_unknown_status_and_regions_are_flagged_not_guessed():
     assert mapped['terms']['geographic_extent'] == [('global', 'Global')]
     assert sheet.countries('Japan and USA')[0] == ['JP', 'US']
     assert sheet.countries('UK and Taiwan')[0] == ['GB', 'TW']
+    assert sheet.countries('Trinidad & Tobago') == (['TT'], [])
+    assert sheet.countries('Bosnia and Herzegovina, Italy') == (['BA', 'IT'], [])
+
+
+def test_existing_project_with_reordered_name_and_same_site_is_a_duplicate():
+    mapped = sheet.map_row(row(name='Florida LAKEWATCH',
+                               website='https://lakewatch.ifas.ufl.edu/'))
+    existing = [('p1', 'LAKEWATCH Florida', 'https://lakewatch.ifas.ufl.edu/', None),
+                ('p2', 'Citrus Survey', 'https://lakewatch.ifas.ufl.edu/x', None)]
+    assert sheet.find_existing(mapped, existing) == ('p1', 'website')
+    other = sheet.map_row(row(name='Lake Apopka Restoration',
+                              website='https://lakewatch.ifas.ufl.edu/'))
+    assert sheet.find_existing(other, existing) is None
 
 
 def test_enrichment_only_fills_gaps():

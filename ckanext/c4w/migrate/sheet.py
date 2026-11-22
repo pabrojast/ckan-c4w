@@ -312,8 +312,20 @@ def _territories():
 def countries(value, region=None):
     """ISO-3166 alpha-2 codes, plus the parts that did not resolve."""
     codes, unresolved = [], []
-    for part in _split(value):
+    text = clean(value) or u''
+    # "Trinidad & Tobago", "Bosnia and Herzegovina": the separator inside a
+    # country's own name must not split it in two.
+    for label, code in sorted(_territories().items(), key=lambda i: -len(i[0])):
+        if u' and ' in label or u' & ' in label:
+            pattern = re.escape(label).replace(r'\ and\ ', r'\s*(?:and|&)\s*')
+            pattern = pattern.replace(r'\ \&\ ', r'\s*(?:and|&)\s*')
+            text, found = re.subn(pattern, u', ' + code + u', ', text, flags=re.I)
+            if found and code not in codes:
+                codes.append(code)
+    for part in _split(text):
         lowered = part.lower()
+        if part in codes:
+            continue
         lowered = re.sub(r'\s*\(.*$', u'', lowered).strip()
         if not lowered or lowered in NON_COUNTRIES:
             continue
@@ -577,11 +589,22 @@ def merge_duplicates(rows):
     return [merged[k] for k in order], notes
 
 
+def _words(value):
+    value = unicodedata.normalize('NFKD', u'%s' % (value or u''))
+    value = value.encode('ascii', 'ignore').decode('ascii').lower()
+    return set(re.findall(r'[a-z0-9]{3,}', value)) - {
+        'the', 'and', 'for', 'program', 'programme', 'project'}
+
+
 def _similar(a, b):
-    """Two names that start alike. A shared host alone is not enough:
+    """Two names that start alike or share most words ("Florida LAKEWATCH"
+    and "LAKEWATCH Florida"). A shared host alone is not enough:
     extension.psu.edu or a state agency hosts many unrelated programmes."""
-    a, b = name_key(a), name_key(b)
-    return bool(a and b) and a[:8] == b[:8]
+    if name_key(a)[:8] and name_key(a)[:8] == name_key(b)[:8]:
+        return True
+    left, right = _words(a), _words(b)
+    return bool(left and right) and (
+        len(left & right) * 2 >= max(len(left), len(right)))
 
 
 def _same_site(a, b):
