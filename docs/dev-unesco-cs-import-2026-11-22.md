@@ -130,3 +130,57 @@ row, with two URLs in one cell.
   - the draft stays private (404, not listed on the project) until it is
     moderated;
   - the test accounts and the data set were removed afterwards.
+
+## Missing information screen (same day)
+
+`/citizens4water/admin/missing` is open to sysadmins and C4W content
+administrators. It is linked from the content administration page.
+
+- **What it lists.** Each imported project, with what it still lacks:
+  - website, contact e-mail, data link, image;
+  - a status nobody has confirmed;
+  - description, objectives, country.
+
+  For each gap there is an input. Countries and the project area are set in
+  the full editor.
+- **How saving works.**
+  - Only fields that were typed in are saved. An empty input never clears a
+    field.
+  - Saving uses `c4w_admin_entity_update`, so the full editor's checks apply,
+    and so does its guard against a page that changed in another window. A
+    project with an open draft or contribution is not editable here.
+  - Choosing a status confirms it and clears `status_unverified`.
+- **Not available.** A gap can be marked "not available", for example a
+  one-off study with no website. It leaves the list but can be restored.
+- **Web-search suggestions.** The 14 medium-confidence matches are stored as
+  `suggested_website` / `suggested_data_url`
+  (`enrich-cs-sheet.py OUT --suggest result*.json`, then a re-import). They
+  are shown with a **Use it** button and are never published on their own.
+- **Audit trail.** Every save is logged in `extras.gap_fills` (who, when,
+  which fields) and marks the row as edited, so later sheet imports skip it.
+- **CSV export.** The same list can be downloaded as CSV, with the current
+  filters.
+- **Project editors.** Someone who has claimed a project sees what is still
+  missing on its page, with a link to the project form.
+
+Deployed to DEV as `ckan-base210@sha256:a2b17f17…2844` (r5, ckan-c4w
+f133291), on the same dev base.
+
+- **Re-import.** 281 projects updated; 14 now carry a suggestion.
+- **Open gaps among the 281 imported projects:**
+
+  | Gap | Projects |
+  |---|---|
+  | Website | 73 |
+  | Contact e-mail | 214 |
+  | Data link | 251 |
+  | Image | 197 |
+  | Status to confirm | 137 |
+  | Country | 4 |
+
+  5 projects are complete.
+- **End-to-end check** with throwaway accounts and a throwaway project:
+  - a user without the role gets 403 on both the page and the save;
+  - **Use it**, a fill with an image upload, an invalid e-mail, a stale page,
+    "not available" and restore all work;
+  - the image file was removed together with the project afterwards.
