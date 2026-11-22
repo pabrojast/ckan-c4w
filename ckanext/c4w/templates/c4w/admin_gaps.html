@@ -1,0 +1,144 @@
+{% extends "c4w/base.html" %}
+{% import 'c4w/macros/ui.html' as ui with context %}
+{% block subtitle %}{{ _('Missing information') }} · {{ _('Admin') }}{% endblock %}
+{% block c4w_content %}
+{% set labels = {} %}{% for g in listing.gaps %}{% do labels.update({g.key: _(g.label)}) %}{% endfor %}
+<div class="c4w-page c4w-admin-gaps" id="c4w-main">
+  <header class="c4w-pagehead">
+    <div><h1>{{ _('Missing information') }}</h1>
+      <p class="c4w-listing__count">{{ _('{complete} of {total} projects complete').format(complete=listing.complete, total=listing.total) }}</p>
+    </div>
+    <a class="c4w-btn c4w-btn--quiet" href="{{ csv_url }}">{{ _('Download CSV') }}</a>
+    <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_index') }}">{{ _('Content administration') }}</a>
+  </header>
+  <p class="c4w-form__lede">{{ _('Fill in what each project page is missing. Only the fields you type in are saved; empty inputs never clear anything. If something does not exist (for example a one-off study with no website), mark it as not available to take it off the list.') }}</p>
+
+  <ul class="c4w-gap-counts">
+    {% for g in listing.gaps %}
+      <li><a href="{{ h.c4w_url('admin_gaps', **dict(params, gap=g.key, page=None)) }}"
+             {% if params.gap == g.key %}aria-current="true"{% endif %}>{{ _(g.label) }} <strong>{{ listing.counts[g.key] }}</strong></a></li>
+    {% endfor %}
+  </ul>
+
+  <form class="c4w-listing__controls" method="get" action="{{ h.c4w_url('admin_gaps') }}">
+    <div class="c4w-listing__search">
+      <label class="c4w-sr-only" for="c4w-gaps-q">{{ _('Search projects') }}</label>
+      <input id="c4w-gaps-q" type="search" name="q" value="{{ params.q or '' }}" placeholder="{{ _('Search by name or slug') }}">
+      <button type="submit" aria-label="{{ _('Search') }}">{{ ui.icon('search') }}</button>
+    </div>
+    <label for="c4w-gaps-gap">{{ _('Missing') }}</label>
+    <select id="c4w-gaps-gap" name="gap">
+      <option value="">{{ _('Anything') }}</option>
+      {% for g in listing.gaps %}<option value="{{ g.key }}" {% if params.gap == g.key %}selected{% endif %}>{{ _(g.label) }}</option>{% endfor %}
+    </select>
+    <label for="c4w-gaps-scope">{{ _('Projects') }}</label>
+    <select id="c4w-gaps-scope" name="scope">
+      <option value="imported" {% if (params.scope or 'imported') == 'imported' %}selected{% endif %}>{{ _('Imported from the UNESCO list') }}</option>
+      <option value="all" {% if params.scope == 'all' %}selected{% endif %}>{{ _('All projects') }}</option>
+    </select>
+    <label class="c4w-check"><input type="checkbox" name="dismissed" value="1" {% if params.dismissed %}checked{% endif %}> <span>{{ _('Include items marked not available') }}</span></label>
+    <button class="c4w-btn c4w-btn--quiet" type="submit">{{ _('Filter') }}</button>
+  </form>
+
+  <p class="c4w-listing__count">{{ ungettext('{n} project to complete', '{n} projects to complete', listing.count).format(n=listing.count) }}</p>
+
+  {% for item in listing.results %}
+  {% set p = 'p-' ~ item.id %}
+  <article class="c4w-gap" id="{{ p }}">
+    <header class="c4w-gap__head">
+      <div>
+        <h2><a href="{{ h.c4w_url('project_detail', slug=item.slug) }}">{{ item.name }}</a></h2>
+        <small class="c4w-admin-slug">{{ item.slug }}</small>
+      </div>
+      <div class="c4w-gap__badges">
+        {% if item.claimable %}<span class="c4w-badge c4w-badge--unclaimed">{{ _('Unclaimed') }}</span>{% else %}<span class="c4w-badge c4w-badge--approved">{{ _('Has an editor') }}</span>{% endif %}
+        {% if item.hidden %}<span class="c4w-badge c4w-badge--hidden">{{ _('Hidden') }}</span>{% endif %}
+      </div>
+    </header>
+    <p class="c4w-gap__missing">{{ _('Missing:') }}
+      {% for key in item.open %}<span class="c4w-gap__chip">{{ labels[key] }}</span>{% endfor %}
+    </p>
+    {% if item.dismissed %}
+    <form class="c4w-gap__dismissed" method="post" action="{{ h.c4w_url('admin_gap_fill', project_id=item.id) }}">
+      {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ item.version }}"><input type="hidden" name="next" value="{{ return_url }}">
+      {{ _('Not available:') }}
+      {% for key in item.dismissed %}<button class="c4w-gap__chip c4w-gap__chip--off" type="submit" name="restore" value="{{ key }}" title="{{ _('Put back on the list') }}">{{ labels[key] }} ↺</button>{% endfor %}
+    </form>
+    {% endif %}
+
+    {% if item.reference_url or item.contact_raw or item.country_raw %}
+    <dl class="c4w-gap__clues">
+      {% if item.reference_url %}<dt>{{ _('Publication') }}</dt><dd><a href="{{ item.reference_url }}" rel="noopener noreferrer nofollow" target="_blank">{{ item.reference_url }}</a></dd>{% endif %}
+      {% if item.contact_raw %}<dt>{{ _('Contact in the sheet') }}</dt><dd>{{ item.contact_raw }}</dd>{% endif %}
+      {% if item.country_raw %}<dt>{{ _('Place in the sheet') }}</dt><dd>{{ item.country_raw }}</dd>{% endif %}
+    </dl>
+    {% endif %}
+
+    {% if item.blocked %}
+      <p class="c4w-note">{{ _('This project has a draft or a contribution waiting for review. Finish it in the full editor first; nothing here would overwrite it.') }}
+        <a href="{{ h.c4w_url('admin_edit', section='projects', item_id=item.id) }}">{{ _('Open the editor') }}</a></p>
+    {% else %}
+      {% for suggestion, field, gap in [(item.suggested_website, 'url', 'website'), (item.suggested_data_url, 'data_url', 'data')] %}
+        {% if suggestion and gap in item.open %}
+        <form class="c4w-note c4w-gap__suggestion" method="post" action="{{ h.c4w_url('admin_gap_fill', project_id=item.id) }}">
+          {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ item.version }}"><input type="hidden" name="next" value="{{ return_url }}">
+          <input type="hidden" name="{{ field }}" value="{{ suggestion }}">
+          <span>{{ _('Possible website found by a web search, not yet checked:') if gap == 'website' else _('Possible data link found by a web search, not yet checked:') }}
+            <a href="{{ suggestion }}" rel="noopener noreferrer nofollow" target="_blank">{{ suggestion }}</a>
+            {% if item.suggestion_evidence %}<small>{{ item.suggestion_evidence }}</small>{% endif %}</span>
+          <button class="c4w-btn c4w-btn--quiet" type="submit">{{ _('Use it') }}</button>
+        </form>
+        {% endif %}
+      {% endfor %}
+
+      <form class="c4w-gap__form" method="post" enctype="multipart/form-data" action="{{ h.c4w_url('admin_gap_fill', project_id=item.id) }}" novalidate>
+        {{ h.csrf_input() }}<input type="hidden" name="version" value="{{ item.version }}"><input type="hidden" name="next" value="{{ return_url }}">
+        {% for key in item.open %}
+        <fieldset class="c4w-gap__field">
+          <legend>{{ labels[key] }}</legend>
+          {% if key == 'website' %}
+            <label class="c4w-sr-only" for="{{ p }}-url">{{ _('Project website') }}</label>
+            <input class="c4w-input" id="{{ p }}-url" type="url" name="url" placeholder="https://" maxlength="1000">
+          {% elif key == 'contact' %}
+            <label class="c4w-field__label" for="{{ p }}-author">{{ _('Contact person') }}</label>
+            <input class="c4w-input" id="{{ p }}-author" name="author" value="{{ item.author }}" maxlength="300">
+            <label class="c4w-field__label" for="{{ p }}-email">{{ _('Contact email') }}</label>
+            <input class="c4w-input" id="{{ p }}-email" type="email" name="author_email" maxlength="300">
+          {% elif key == 'data' %}
+            <label class="c4w-sr-only" for="{{ p }}-data">{{ _('Data link') }}</label>
+            <input class="c4w-input" id="{{ p }}-data" type="url" name="data_url" placeholder="https://" maxlength="1000">
+          {% elif key == 'image' %}
+            <label class="c4w-sr-only" for="{{ p }}-image">{{ _('Thumbnail') }}</label>
+            <input class="c4w-input c4w-file" id="{{ p }}-image" type="file" name="image1" accept="image/png,image/jpeg,image/webp">
+            <label class="c4w-field__label" for="{{ p }}-credit">{{ _('Image credit') }}</label>
+            <input class="c4w-input" id="{{ p }}-credit" name="image1_credit" value="{{ item.image1_credit }}" maxlength="300">
+            <p class="c4w-field__hint">{{ _('JPEG, PNG or WebP, up to {n} MB. It is fitted to 600 × 400.').format(n=image_limit) }}</p>
+          {% elif key == 'status' %}
+            <label class="c4w-sr-only" for="{{ p }}-status">{{ _('Activity status') }}</label>
+            <select class="c4w-input" id="{{ p }}-status" name="status">
+              <option value="">{{ _('Not confirmed yet') }}</option>
+              {% for value, label in statuses %}<option value="{{ value }}">{{ _(label) }}{% if value == item.status %} ({{ _('shown now') }}){% endif %}</option>{% endfor %}
+            </select>
+          {% elif key in ('description', 'aim') %}
+            <label class="c4w-sr-only" for="{{ p }}-{{ key }}">{{ labels[key] }}</label>
+            <textarea class="c4w-input c4w-textarea" id="{{ p }}-{{ key }}" name="{{ key }}" rows="3" maxlength="10000"></textarea>
+          {% elif key == 'country' %}
+            <p class="c4w-field__hint">{{ _('Countries and the project area are set in the full editor.') }}
+              <a href="{{ h.c4w_url('admin_edit', section='projects', item_id=item.id) }}">{{ _('Edit all fields') }}</a></p>
+          {% endif %}
+          <label class="c4w-check c4w-gap__na"><input type="checkbox" name="dismiss" value="{{ key }}"> <span>{{ _('Not available') }}</span></label>
+        </fieldset>
+        {% endfor %}
+        <div class="c4w-form__actions">
+          <button class="c4w-btn" type="submit">{{ _('Save') }}</button>
+          <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('admin_edit', section='projects', item_id=item.id) }}">{{ _('Edit all fields') }}</a>
+        </div>
+      </form>
+    {% endif %}
+  </article>
+  {% else %}
+  <p class="c4w-empty">{{ _('Nothing is missing for these filters.') }}</p>
+  {% endfor %}
+  {% snippet 'c4w/snippets/pagination.html', page=listing.page, pages=listing.pages %}
+</div>
+{% endblock %}

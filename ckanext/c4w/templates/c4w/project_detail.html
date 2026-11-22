@@ -56,6 +56,12 @@
 {% endblock %}
 
 {% block detail_body %}
+  {% if project.can_edit and project.missing %}
+    <p class="c4w-note c4w-note--warn c4w-project-missing">
+      <span>{{ _('This page is still missing:') }} {% for label in project.missing %}{{ _(label) }}{% if not loop.last %}, {% endif %}{% endfor %}.</span>
+      <a href="{{ h.c4w_url('admin_gaps', scope='all', q=project.slug) if h.c4w_is_content_admin() else h.c4w_url('submit_project_step', project_id=project.id, step=1) }}">{{ _('Complete it') }}</a>
+    </p>
+  {% endif %}
   {% if project.description %}
     <section>
       <h2>{{ _('About') }}</h2>

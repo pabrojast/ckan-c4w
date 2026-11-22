@@ -301,3 +301,95 @@ def admin_manager(user_id, operation):
             tk.h.flash_success(tk._('Request rejected.'))
     return redirect(safe_next(request.form.get('next'),
                               c4w_helpers.c4w_url('admin_index')))
+
+
+GAP_FILTERS = ('scope', 'gap', 'q', 'page', 'dismissed')
+
+
+def admin_gaps():
+    """Projects with missing information, and inputs to fill it in."""
+    _user, bounced = require_content_admin()
+    if bounced is not None:
+        return bounced
+    params = {key: request.args.get(key) for key in GAP_FILTERS if request.args.get(key)}
+    as_csv = request.args.get('format') == 'csv'
+    try:
+        listing = tk.get_action('c4w_project_gaps')({}, dict(params, page='all') if as_csv else params)
+    except tk.ValidationError:
+        return tk.abort(400, tk._('Invalid filter.'))
+    if as_csv:
+        return _gaps_csv(listing)
+    from ckanext.c4w.logic.action.gaps import GAPS
+    return tk.render('c4w/admin_gaps.html', extra_vars={
+        'listing': listing, 'params': params,
+        'gap_fields': {key: fields for key, _label, fields in GAPS},
+        'statuses': constants.STATUSES,
+        'image_limit': tk.config.get('ckan.max_image_size') or 2,
+        'return_url': c4w_helpers.c4w_url('admin_gaps', **dict(params, page=listing['page'])),
+        'csv_url': c4w_helpers.c4w_url('admin_gaps', **dict(params, format='csv', page=None)),
+    })
+
+
+def _gaps_csv(listing):
+    import csv
+    import io
+    from flask import Response
+    labels = {g['key']: g['label'] for g in listing['gaps']}
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(['project', 'slug', 'page', 'missing', 'not_available',
+                     'website', 'suggested_website', 'suggested_data_url',
+                     'publication', 'contact_in_sheet', 'claimed'])
+    for item in listing['results']:
+        writer.writerow([
+            item['name'], item['slug'],
+            c4w_helpers.c4w_url('project_detail', slug=item['slug'], qualified=True),
+            '; '.join(labels[k] for k in item['open']),
+            '; '.join(labels[k] for k in item['dismissed']),
+            item['url'], item['suggested_website'], item['suggested_data_url'],
+            item['reference_url'], item['contact_raw'],
+            'no' if item['claimable'] else 'yes'])
+    return Response(out.getvalue(), mimetype='text/csv', headers={
+        'Content-Disposition': 'attachment; filename="c4w-missing-information.csv"'})
+
+
+def admin_gap_fill(project_id):
+    """POST endpoint for one project's row on the missing-information screen."""
+    _user, bounced = require_content_admin()
+    if bounced is not None:
+        return bounced
+    from ckan.model.meta import Session
+    data = {key: request.form.get(key) for key in (
+        'version', 'url', 'data_url', 'author', 'author_email', 'status',
+        'description', 'aim', 'image1_credit', 'image1_crop_x', 'image1_crop_y')
+        if request.form.get(key) is not None}
+    data.update(id=project_id, dismiss=request.form.getlist('dismiss'),
+                restore=request.form.getlist('restore'))
+    if request.files.get('image1') and request.files['image1'].filename:
+        data['image1'] = request.files['image1']
+    back = safe_next(request.form.get('next'), c4w_helpers.c4w_url('admin_gaps'))
+    try:
+        result = tk.get_action('c4w_project_gap_fill')({}, data)
+    except tk.ObjectNotFound:
+        return tk.abort(404, tk._('Not found'))
+    except tk.NotAuthorized:
+        return tk.abort(403, tk._('Not authorized'))
+    except tk.ValidationError as exc:
+        Session.rollback()
+        from ckanext.c4w.logic import project_fields
+        names = dict((name, f['label']) for name, f in project_fields.FIELDS.items())
+        messages = []
+        for field, errors in exc.error_dict.items():
+            for message in (errors if isinstance(errors, list) else [errors]):
+                label = names.get(field)
+                messages.append('%s: %s' % (tk._(label), message) if label else '%s' % message)
+        tk.h.flash_error(tk._('Not saved.') + ' ' + ' '.join(messages))
+    else:
+        tk.h.flash_success(tk._('Saved. Still missing: %s') % (
+            ', '.join(tk._(_gap_label(k)) for k in result['open']) or tk._('nothing')))
+    return redirect('%s#p-%s' % (back, project_id))
+
+
+def _gap_label(key):
+    from ckanext.c4w.logic.action.gaps import LABELS
+    return LABELS[key]

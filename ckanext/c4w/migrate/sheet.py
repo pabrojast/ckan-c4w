@@ -563,6 +563,16 @@ def map_row(row, enrichment=None):
             extras[key + '_text'] = shadow
     if enrichment.get('fields'):
         extras['enriched_fields'] = sorted(enrichment['fields'])
+    # A web-search match nobody has checked yet. It is offered on the
+    # "Missing information" screen and never published as the website.
+    suggestion = enrichment.get('suggestion') or {}
+    if not website_url and suggestion.get('website'):
+        extras['suggested_website'] = ensure_scheme(suggestion['website'])
+    if not data_url and suggestion.get('data_url'):
+        extras['suggested_data_url'] = ensure_scheme(suggestion['data_url'])
+    if (extras.get('suggested_website') or extras.get('suggested_data_url')) \
+            and suggestion.get('evidence'):
+        extras['suggestion_evidence'] = clean(suggestion['evidence'])
 
     keywords = theme_keywords(row.get('theme')) or [u'Water']
     keywords.append(u'Citizen science')
@@ -690,6 +700,7 @@ MANAGED_EXTRAS = (
     'country_raw', 'language_raw', 'ai_technology_raw',
     'citizen_involvement_url', 'status_unverified', 'uses_ai',
     'ai_description', 'description_text', 'aim_text', 'enriched_fields',
+    'suggested_website', 'suggested_data_url', 'suggestion_evidence',
 )
 BATCH = 50
 

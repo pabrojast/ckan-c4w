@@ -344,6 +344,30 @@ def _enrich(row, out_dir, cache_dir, found_website=None):
     return record
 
 
+def suggest(out_dir, paths):
+    path = os.path.join(os.path.abspath(out_dir), 'enriched.json')
+    with open(path, encoding='utf-8') as handle:
+        results = json.load(handle)['projects']
+    count = 0
+    for source in paths:
+        with open(source, encoding='utf-8') as handle:
+            for hit in json.load(handle):
+                if hit.get('confidence') != 'medium' or not (
+                        hit.get('website') or hit.get('data_url')):
+                    continue
+                record = results.setdefault(hit['slug'], {
+                    'slug': hit['slug'], 'status': 'suggestion only',
+                    'fields': []})
+                record['suggestion'] = {
+                    'website': hit.get('website'),
+                    'data_url': hit.get('data_url'),
+                    'evidence': hit.get('evidence')}
+                count += 1
+    with open(path, 'w', encoding='utf-8') as handle:
+        json.dump({'projects': results}, handle, indent=1, ensure_ascii=False)
+    print('suggestions attached: %d' % count)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('sheet')
@@ -357,7 +381,16 @@ def main():
                         '"high" confidence entries are used, only those '
                         'projects are looked up again, and the result is '
                         'merged into the existing enriched.json.')
+    parser.add_argument('--suggest', nargs='+', metavar='JSON',
+                        help='Web-search results to offer for review: the '
+                        '"medium" confidence entries are attached to the '
+                        'existing enriched.json as suggestions, without '
+                        'fetching anything. The import stores them for the '
+                        '"Missing information" screen; they are never '
+                        'published as the website.')
     args = parser.parse_args()
+    if args.suggest:
+        return suggest(args.out_dir, args.suggest)
 
     out_dir = os.path.abspath(args.out_dir)
     cache_dir = os.path.join(out_dir, 'cache')

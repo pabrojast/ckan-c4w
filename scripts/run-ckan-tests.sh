@@ -116,6 +116,7 @@ MUST_RESOLVE = [
     ("/citizens4water/admin", "c4w.admin_index"),
     ("/citizens4water/admin/projects", "c4w.admin_projects"),
     ("/citizens4water/admin/platforms", "c4w.admin_platforms"),
+    ("/citizens4water/admin/missing", "c4w.admin_gaps"),
     # The data flow.
     ("/citizens4water/data", "c4w.dataset_list"),
     ("/citizens4water/data/river-watch", "c4w.dataset_detail"),

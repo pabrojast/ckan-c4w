@@ -154,6 +154,9 @@ def c4w_project_show(context, data_dict):
         raise tk.ObjectNotFound(tk._('Project not found'))
     out = _dictize_detail(project, include_contact=_common.is_authenticated(context))
     out['can_edit'] = _common.can_edit('project', project, context)
+    if out['can_edit']:
+        from ckanext.c4w.logic.action import gaps
+        out['missing'] = [gaps.LABELS[key] for key in gaps.open_gaps(project)]
     from ckan.model.meta import Session
     related = Session.query(db.C4wDataset).filter_by(project_id=project.id).order_by(db.C4wDataset.modified.desc()).all()
     out['datasets'] = [db.entity_dictize('dataset', row) for row in related

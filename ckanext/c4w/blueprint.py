@@ -86,6 +86,16 @@ def admin_platforms():
     return views_admin.admin_platforms()
 
 
+def admin_gaps():
+    from ckanext.c4w.logic import views_admin
+    return views_admin.admin_gaps()
+
+
+def admin_gap_fill(project_id):
+    from ckanext.c4w.logic import views_admin
+    return views_admin.admin_gap_fill(project_id)
+
+
 def admin_inventory(section):
     from ckanext.c4w.logic.views_admin import admin_inventory as view
     return view(section)
@@ -354,6 +364,10 @@ def _register(bp):
                     strict_slashes=False)
     bp.add_url_rule('/admin/administrators', 'admin_users', admin_users, methods=['GET', 'POST'])
     bp.add_url_rule('/admin/moderation', 'admin_moderation', admin_moderation, methods=['GET'])
+    bp.add_url_rule('/admin/missing', 'admin_gaps', admin_gaps, methods=['GET'],
+                    strict_slashes=False)
+    bp.add_url_rule('/admin/missing/<project_id>', 'admin_gap_fill', admin_gap_fill,
+                    methods=['POST'])
     bp.add_url_rule('/admin/<section>/<item_id>/review', 'admin_review', admin_review, methods=['GET', 'POST'])
     bp.add_url_rule('/admin/<section>/<item_id>/edit', 'admin_edit', admin_edit, methods=['GET', 'POST'])
     bp.add_url_rule('/admin/<section>', 'admin_inventory', admin_inventory,
