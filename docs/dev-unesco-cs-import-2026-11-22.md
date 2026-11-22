@@ -93,10 +93,11 @@ How the importer behaves:
 
   The accounts, claims and role were removed afterwards, and the test project
   is back to `claimable=true`.
-- **Not yet pinned.** `ckan-unesco-docker` (`miserver-2.10`) still builds
-  ckanext-colab at 76885c7 and ckan-c4w from `master`. The next dev image
-  built from that repository will drop the claim screens and the importer.
-  The imported data and the `c4w_project_claim` table stay.
+- **Pinned for the next DEV build.** `ckan-unesco-docker` `miserver-2.10`
+  commit 76787a9 builds ckanext-colab at cee4585 and ckan-c4w at d64e3b6
+  (`ARG C4W_REF`; it was unpinned from `master` before). Pushing it did not
+  trigger a build: the DEV workflow only runs by hand. The production
+  branch is unchanged.
 
 ## Web search for missing websites (same day)
 
