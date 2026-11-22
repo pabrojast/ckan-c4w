@@ -1886,6 +1886,7 @@ html.c4w-portal .c4w-chooser p { margin: 0 !important; color: var(--c4w-muted) !
 
 .c4w-badge--muted { background: var(--c4w-band); color: var(--c4w-muted); }
 .c4w-badge--draft { background: var(--c4w-band); color: var(--c4w-muted); border: 1px dashed var(--c4w-line); }
+.c4w-badge--unclaimed { background: var(--c4w-band); color: var(--c4w-ink, inherit); border: 1px dashed var(--c4w-line); }
 .c4w-badge--uploaded,
 .c4w-badge--mapped { background: var(--c4w-pale); color: var(--c4w-deep); }
 .c4w-badge--queued,

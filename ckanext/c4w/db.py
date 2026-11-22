@@ -625,6 +625,31 @@ c4w_content_revision_table = Table(
 )
 
 
+# A person asking to manage a project they did not create -- typically one
+# imported from the UNESCO list with no owner. Approval adds an ``editor``
+# relation; the request row stays as the audit trail. ``history`` is a JSON
+# list of {at, by, action, note}.
+c4w_project_claim_table = Table(
+    'c4w_project_claim', metadata,
+    Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
+    Column('project_id', types.UnicodeText, nullable=False),
+    Column('user_id', types.UnicodeText, nullable=False),
+    Column('role_in_project', types.UnicodeText),
+    Column('organisation', types.UnicodeText),
+    Column('contact_email', types.UnicodeText),
+    Column('reason', types.UnicodeText, nullable=False),
+    Column('evidence_url', types.UnicodeText),
+    Column('status', types.UnicodeText, nullable=False, default=u'pending'),
+    Column('rejection_reason', types.UnicodeText),
+    Column('reviewed_by', types.UnicodeText),
+    Column('reviewed_at', types.DateTime),
+    Column('history', types.UnicodeText, nullable=False, default=u'[]'),
+    Column('created', types.DateTime, nullable=False, default=_utcnow),
+    Index('ix_c4w_project_claim_queue', 'status', 'created'),
+    Index('ix_c4w_project_claim_project', 'project_id', 'user_id'),
+)
+
+
 c4w_portal_admin_table = Table(
     'c4w_portal_admin', metadata,
     Column('user_id', types.UnicodeText, primary_key=True),
@@ -648,6 +673,7 @@ c4w_deletion_table = Table(
 
 _ALL_TABLES = [
     c4w_portal_admin_table,
+    c4w_project_claim_table,
     c4w_deletion_table,
     c4w_content_revision_table,
     c4w_project_revision_table,
@@ -740,6 +766,10 @@ class C4wPortalAdmin(DomainObject):
     pass
 
 
+class C4wProjectClaim(DomainObject):
+    pass
+
+
 class C4wDeletion(DomainObject):
     pass
 
@@ -783,6 +813,7 @@ def _ensure_mappers():
     mapper(C4wProjectRevision, c4w_project_revision_table)
     mapper(C4wContentRevision, c4w_content_revision_table)
     mapper(C4wPortalAdmin, c4w_portal_admin_table)
+    mapper(C4wProjectClaim, c4w_project_claim_table)
     mapper(C4wDeletion, c4w_deletion_table)
     _mapped = True
     from ckanext.c4w.logic.integrity import install

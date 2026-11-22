@@ -47,6 +47,9 @@
   {% if project.locality %}
     <span>{{ ui.icon('map-pin', 'c4w-icon--sm') }} {{ project.locality }}</span>
   {% endif %}
+  {% if project.claimable %}
+    <span class="c4w-badge c4w-badge--unclaimed" title="{{ _('Imported from the UNESCO list of citizen-science water projects. Nobody manages this page yet.') }}">{{ _('Unclaimed') }}</span>
+  {% endif %}
   {% if project.total_accesses %}
     <span>{{ ungettext('{n} view', '{n} views', project.total_accesses).format(n=project.total_accesses) }}</span>
   {% endif %}
@@ -118,6 +121,9 @@
   {% if project.can_edit %}
     <a class="c4w-btn c4w-btn--quiet" href="{{ (h.c4w_url('admin_edit', section='projects', item_id=project.id) if h.c4w_is_content_admin() else h.c4w_url('submit_project_step', project_id=project.id, step=1)) }}">{{ _('Edit project') }}</a>
   {% endif %}
+  {% if project.claimable and not project.can_edit %}
+    <a class="c4w-btn" href="{{ h.c4w_url('project_claim', slug=project.slug) }}">{{ _('Claim this project') }}</a>
+  {% endif %}
   <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('submit_data_start', project_id=project.id) }}">{{ _('Add data') }}</a>
   {% if project.url %}
     <a class="c4w-btn" href="{{ project.url }}"
@@ -151,6 +157,22 @@
   {% if project.number_of_participants is defined and project.number_of_participants not in [none, ''] %}
     <div class="c4w-detail__facts-row">
       <dt>{{ _('Participants') }}</dt><dd>{{ project.number_of_participants }}</dd>
+    </div>
+  {% endif %}
+  {% if project.partners_text %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Partners') }}</dt><dd>{{ project.partners_text }}</dd>
+    </div>
+  {% endif %}
+  {% if project.sdg_relevance %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('SDG relevance') }}</dt><dd>{{ project.sdg_relevance }}</dd>
+    </div>
+  {% endif %}
+  {% if project.reference_url %}
+    <div class="c4w-detail__facts-row">
+      <dt>{{ _('Reference') }}</dt>
+      <dd><a href="{{ project.reference_url }}" rel="noopener noreferrer nofollow" target="_blank">{{ _('Publication about this project') }}</a></dd>
     </div>
   {% endif %}
   {% if project.funding_programme %}

@@ -1,0 +1,41 @@
+{% extends "c4w/base.html" %}
+
+{% import 'c4w/macros/form.html' as form with context %}
+
+{% block subtitle %}{{ _('Claim this project') }} · {{ project.name }}{% endblock %}
+
+{% block c4w_content %}
+  <div class="c4w-page c4w-claim" id="c4w-main">
+    <p><a href="{{ h.c4w_url('project_detail', slug=project.slug) }}">&larr; {{ project.name }}</a></p>
+    <h1>{{ _('Claim this project') }}</h1>
+
+    {% if mine and mine.status == 'pending' %}
+      <p class="c4w-auth__lede">{{ _('Your request to manage this project is waiting for review. The Citizens4Water team will reply by e-mail.') }}</p>
+    {% else %}
+      {% if mine and mine.status == 'rejected' %}
+        <div class="c4w-form-errors" role="status">
+          <p>{{ _('Your previous request was not approved.') }}{% if mine.rejection_reason %} {{ mine.rejection_reason }}{% endif %}</p>
+        </div>
+      {% endif %}
+      <p class="c4w-auth__lede">{{ _('Are you part of the team running this project? Ask to become its editor: once the Citizens4Water team approves, you can update this page and add your data sets.') }}</p>
+      {% if errors and errors.get('project') %}
+        <div class="c4w-form-errors" role="alert"><p>{{ errors.get('project') | join(' ') }}</p></div>
+      {% endif %}
+      <form class="c4w-form" method="post" action="{{ h.c4w_url('project_claim', slug=project.slug) }}" novalidate>
+        {{ h.csrf_input() }}
+        <div class="c4w-form__section">
+          {{ form.input('role_in_project', _('Your role in the project'), values.role_in_project, errors, placeholder=_('e.g. Project coordinator'), maxlength=200) }}
+          {{ form.input('organisation', _('Your organisation'), values.organisation, errors, maxlength=300) }}
+          {{ form.input('contact_email', _('Contact e-mail'), values.contact_email, errors, type='email', autocomplete='email', hint=_('An address the reviewers can check, ideally at the project or organisation domain.'), maxlength=200) }}
+          {{ form.input('evidence_url', _('Evidence (optional)'), values.evidence_url, errors, type='url', hint=_('A page that shows your role, such as the project team page.'), maxlength=1000) }}
+          {{ form.textarea('reason', _('Why should you manage this project?'), values.reason, errors, required=true, rows=6, hint=_('At least 20 characters.'), maxlength=4000) }}
+        </div>
+        <div class="c4w-form__actions">
+          <a class="c4w-btn c4w-btn--quiet" href="{{ h.c4w_url('project_detail', slug=project.slug) }}">{{ _('Cancel') }}</a>
+          <span class="c4w-form__spacer"></span>
+          <button type="submit" class="c4w-btn">{{ _('Send request') }}</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

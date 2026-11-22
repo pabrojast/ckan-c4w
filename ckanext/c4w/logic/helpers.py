@@ -668,8 +668,17 @@ def c4w_editor_options(field, selected=None):
     return options
 
 
+def c4w_claims_inbox_url():
+    """Where project claims are reviewed (ckanext-colab), or None."""
+    try:
+        return tk.url_for('colab.show_admin', tab='claims')
+    except Exception:
+        return None
+
+
 def get_helpers():
     return {
+        'c4w_claims_inbox_url': c4w_claims_inbox_url,
         'c4w_safe_description': c4w_safe_description,
         'c4w_editor_options': c4w_editor_options,
         'c4w_site_host': c4w_site_host,

@@ -126,6 +126,11 @@ def project_geojson(slug):
     return views_projects.project_geojson(slug)
 
 
+def project_claim(slug):
+    from ckanext.c4w.logic import views_claims
+    return views_claims.project_claim(slug)
+
+
 def project_legacy(legacy_id):
     from ckanext.c4w.logic import views_projects
     return views_projects.project_legacy(legacy_id)
@@ -448,6 +453,8 @@ def _register(bp):
                     methods=['GET'])
     bp.add_url_rule('/project/<slug>/geojson', 'project_geojson',
                     project_geojson, methods=['GET'])
+    bp.add_url_rule('/project/<slug>/claim', 'project_claim',
+                    project_claim, methods=['GET', 'POST'])
 
     # Organisations.
     bp.add_url_rule('/organisations', 'organisation_list', organisation_list,

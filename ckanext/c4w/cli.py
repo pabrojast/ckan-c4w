@@ -127,6 +127,78 @@ def import_command(dsn, media_root, only, since, fallback_user, dry_run,
         click.echo(u'  full report written to %s' % json_report)
 
 
+@c4w.command(name='import-sheet')
+@click.argument('source', type=click.Path(exists=True, dir_okay=False))
+@click.option('--enriched', type=click.Path(exists=True, dir_okay=False),
+              default=None,
+              help='JSON from scripts/enrich-cs-sheet.py: slug -> fields '
+                   'found on the project website. Fills gaps only.')
+@click.option('--media-root', type=click.Path(exists=True, file_okay=False),
+              default=None,
+              help='Directory the enrichment images are relative to.')
+@click.option('--dry-run', is_flag=True,
+              help='Map, match and report, then roll back. Uploads nothing.')
+@click.option('--report', 'report_path', type=click.Path(), default=None,
+              help='Write one CSV row per project (action, slug, terms).')
+@click.option('--json-report', type=click.Path(), default=None)
+def import_sheet(source, enriched, media_root, dry_run, report_path,
+                 json_report):
+    """Import the UNESCO citizen-science project list (.xlsx or .json).
+
+    Idempotent: rows are keyed by extras.import_key. Projects already on the
+    portal are skipped, and so are imported rows a person has since claimed
+    or edited.
+    """
+    import csv
+
+    from ckanext.c4w.migrate import sheet
+
+    if source.lower().endswith('.xlsx'):
+        try:
+            rows = sheet.read_xlsx(source)
+        except ImportError:
+            raise click.ClickException(
+                u'openpyxl is not installed here; convert the sheet with '
+                u'scripts/enrich-cs-sheet.py and pass the JSON instead.')
+    else:
+        rows = sheet.read_json(source)
+    enrichment = {}
+    if enriched:
+        with open(enriched, encoding='utf-8') as handle:
+            enrichment = json.load(handle)
+        enrichment = enrichment.get('projects', enrichment)
+
+    result = sheet.SheetImporter(dry_run=dry_run, media_root=media_root,
+                                 enrichment=enrichment).run(rows)
+
+    if dry_run:
+        click.secho(u'DRY RUN -- nothing was written', fg=u'yellow')
+    click.echo(u'  %s' % result['counts'])
+    click.echo(u'  with image: %s' % result['with_image'])
+    if result.get('media'):
+        click.echo(u'  media: uploaded %(uploaded)s, reused %(reused)s, '
+                   u'missing %(missing)s, failed %(failed)s'
+                   % dict(result['media'],
+                          missing=len(result['media']['missing']),
+                          failed=len(result['media']['failed'])))
+    for note in result['notes']:
+        click.echo(u'  note: %s' % note)
+    if report_path:
+        fields = ('row', 'action', 'name', 'slug', 'id', 'existing_id',
+                  'matched_on', 'image', 'terms', 'key')
+        with open(report_path, 'w', newline='', encoding='utf-8') as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields,
+                                    extrasaction='ignore')
+            writer.writeheader()
+            for entry in result['rows']:
+                writer.writerow(dict(entry, terms=u' '.join(
+                    entry.get('terms') or ())))
+        click.echo(u'  report written to %s' % report_path)
+    if json_report:
+        with open(json_report, 'w', encoding='utf-8') as handle:
+            json.dump(result, handle, indent=1, default=str)
+
+
 def _print_report(result, dry_run):
     if dry_run:
         click.secho(u'DRY RUN -- nothing was written', fg=u'yellow')

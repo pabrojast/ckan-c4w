@@ -109,3 +109,90 @@ def notify_review(user_id, decision, note, url):
     label = {'approve': 'Approved', 'changes_requested': 'Changes requested', 'rejected': 'Rejected'}[decision]
     return _send(user.fullname, user.email, tk._('Citizens4Water: contribution review'),
                  label + '\n' + (note or '') + '\n' + url)
+
+
+def _claim_review_url():
+    """The Colab inbox tab where claims are decided; '' if not routable."""
+    try:
+        return tk.url_for('colab.show_admin', tab='claims', qualified=True)
+    except Exception:
+        return u''
+
+
+def _project_url(project, endpoint='project_detail'):
+    from ckanext.c4w.logic import helpers as c4w_helpers
+    try:
+        return c4w_helpers.c4w_url(endpoint, slug=project.slug,
+                                   qualified=True)
+    except Exception:
+        return u''
+
+
+def claim_reviewers():
+    """Content administrators AND sysadmins: both may decide a claim."""
+    import ckan.model as model
+    recipients = dict((email, name) for name, email in
+                      moderation_recipients())
+    for user in model.Session.query(model.User).filter(
+            model.User.sysadmin.is_(True),
+            model.User.state == 'active').all():
+        if user.email and user.name not in ('default',):
+            recipients.setdefault(user.email.strip().lower(),
+                                  user.fullname or user.name)
+    return [(name, email) for email, name in sorted(recipients.items())]
+
+
+def notify_claim_reviewers(project, user, claim):
+    subject = tk._(u'Citizens4Water: request to manage "%s"') % project.name
+    lines = [
+        tk._(u'%s asked to become an editor of a Citizens4Water project.')
+        % (user.fullname or user.name),
+        u'',
+        tk._(u'Project: %s') % project.name,
+        _project_url(project),
+        tk._(u'Account: %s (%s)') % (user.name, user.email or u'-'),
+    ]
+    if claim.role_in_project:
+        lines.append(tk._(u'Role: %s') % claim.role_in_project)
+    if claim.organisation:
+        lines.append(tk._(u'Organisation: %s') % claim.organisation)
+    if claim.contact_email:
+        lines.append(tk._(u'Contact: %s') % claim.contact_email)
+    if claim.evidence_url:
+        lines.append(tk._(u'Evidence: %s') % claim.evidence_url)
+    lines += [u'', claim.reason or u'', u'',
+              tk._(u'Review it here:'), _claim_review_url()]
+    body = u'\n'.join(lines)
+    results = [_send(name, email, subject, body)
+               for name, email in claim_reviewers()]
+    return bool(results) and all(results)
+
+
+def send_claim_decision(user, project, claim):
+    if user is None:
+        return False
+    name = project.name if project is not None else u''
+    if claim.status == u'approved':
+        subject = tk._(u'You can now edit "%s" on Citizens4Water') % name
+        lines = [
+            tk._(u'Hello %s,') % (user.fullname or user.name),
+            u'',
+            tk._(u'Your request was approved: you are now an editor of '
+                 u'this project. Sign in to update its page and add data:'),
+            u'',
+            _project_url(project) if project is not None else u'',
+        ]
+    else:
+        subject = tk._(u'About your request to manage "%s"') % name
+        lines = [
+            tk._(u'Hello %s,') % (user.fullname or user.name),
+            u'',
+            tk._(u'The Citizens4Water team could not approve your request '
+                 u'to edit this project.'),
+        ]
+        if claim.rejection_reason:
+            lines += [u'', tk._(u'Message from the reviewers:'),
+                      claim.rejection_reason]
+    return _send(user.fullname or user.name,
+                 user.email or claim.contact_email, subject,
+                 u'\n'.join(lines))
